@@ -63,7 +63,7 @@ woken, when it ran again, why it waited, and who woke or preempted it.
 | 2b `iodisk` | another program reads from the same slow disk | 100% | 99% | 94% / 100% | **who else was using the disk** |
 | 3 `mem`, `memthp` | walking memory that was swapped out | 99–100% | 95–96% | 33–60% / 99–100% | which pressure caused the swapping |
 | 4 `slack` | the frame limiter's sleep ends late | sees the sleep | 99% | 0% | **that the sleep was late** |
-| 5 `ipc` | calls to a server that cannot get its CPU | 100% | 105% | 8% / 98% | **who had the server's CPU** |
+| 5 `ipc` | calls to a server that cannot get its CPU | 100% | 97–105% | 8–83% / 98–100% | only the server CPU's last holder (`bgload` in 98%, second version) |
 | 6 `cpuspike` | CPU work in the game (negative control) | "running", 100% | 99% | blames no stall in 91% | where the CPU time went |
 | 7 `squeeze` | the game's threads are confined to one core | 100% | 96% | 100% | **which CPU; that the other cores were idle** |
 | 8 `alloc` | new memory while memory is full | 97%, after a fix | 94% | **not ranked at all** | what was pushed out, and why memory was short |
@@ -567,12 +567,38 @@ which was itself kept off the CPU for the right amount of time. Two things fall 
 - **It cannot say who had the server's CPU.** The server was not preempted. It was asleep, was woken
   by the game's request, and then waited in the run queue behind `bgload`. hitchtrace records who
   takes a CPU *from* a running thread, not who is occupying it when a woken thread wants it. This is
-  the second gap `cases.md` predicted (the run-queue occupant).
+  the second gap `cases.md` predicted (the run-queue occupant). Fixed since; see the second version
+  below.
 - **The noise frames show the same group, smaller.** Every call costs the server's wake-up latency, so
   even an untroubled frame has 1–2 ms of "server kept off the CPU". In a frame that is over budget by
   1 ms for another reason, that is enough to rank first by stall time (39% of noise frames). It is
   real time, and removing it would have saved the frame, but it is not what made that frame
   different. The server has no lane on the timeline: only the game's process is logged.
+
+**Second version: naming who held the server's CPU** (`out/ipc-holder`, 2026-11-05). When a woken
+task gets its CPU after waiting in the run queue for at least 100 µs, hitchtrace now records the
+task it replaces there, the last holder of that CPU, and a chain hop through the woken task names
+it with the flag `queued` ("kept off the CPU 10.0 ms, last queued behind bgload0").
+
+| From one record | Burst frames (167) | Noise (26) |
+|---|---|---|
+| Has a group of waits ended by `mg_server` | 167 (100%) | 22 (85%) |
+| … saying the server was kept off the CPU | 167 (100%) | 2 (8%) |
+| … and naming `bgload` | **163 (98%)** | 1 |
+| The group's inherited time / the game's extra call time, median | 97% | |
+| That group is top-ranked by total | 139 (83%) | 0 |
+| … by stall time | 167 (100%) | 1 |
+
+- In the other 4 the last holder was a kernel worker on CPU 5 (`kworker/5:1`), which ran between
+  `bgload` and the server. Only the last holder is recorded, not the one that held the CPU longest.
+- The one noise record naming `bgload` is a frame that overlapped a burst by 0.5 ms, under the
+  1 ms the ground truth asks for: `bgload` did hold the CPU then.
+- The game is not the same as in the first run: this ran on a newer kernel (7.0.0-42, against -38),
+  and its calls took 2.0 ms normally and 7.0 ms in a burst (2.8 and 9.2 before), so fewer burst
+  frames went over (45%, against 81%). The main thread's wait for its own workers halved (median
+  7.5 ms, against 14.1), which is why the server's group now ranks first by total in 83% rather
+  than 8%. The ranking does not read the new field.
+- Only for chain hops. A game thread's own wait in the run queue still names nobody.
 
 ## Case 6: CPU work in the game (`cpuspike`), a negative control
 

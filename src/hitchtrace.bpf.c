@@ -90,9 +90,9 @@ struct hop_link {
 	__u32 pid;
 	__u32 tgid;
 	__u32 flags;		/* HT_HOP_* */
-	__u32 p_pid;		/* who last preempted the waker in between; 0 if nobody */
+	__u32 p_pid;		/* who last held the waker's CPU in between; 0 if nobody */
 	__u32 p_tgid;
-	__u32 __pad;
+	__u32 p_flags;		/* HT_HOP_QUEUED: held it while the waker was queued */
 	char comm[TASK_COMM_LEN];
 	char p_comm[TASK_COMM_LEN];
 };
@@ -159,10 +159,11 @@ struct task_state {
 	__u64 hist[HT_MEDIAN_WINDOW];	/* recent frame times, for the median */
 	__u32 hist_n;
 	__u32 hist_i;
-	__u32 preempt_pid;	/* who took the CPU at the last preemption */
-	__u32 preempt_tgid;
-	char preempt_comm[TASK_COMM_LEN];
-	__u64 preempt_ts;	/* ... and when */
+	__u32 preempt_pid;	/* who took the CPU at the last preemption, or */
+	__u32 preempt_tgid;	/* (preempt_queued) held it at the end of the */
+	char preempt_comm[TASK_COMM_LEN];	/* last long run-queue wait */
+	__u64 preempt_ts;	/* ... and when: switch-out, or switch-in */
+	bool preempt_queued;
 	struct hop_link links[HT_MAX_HOPS];
 	struct stall_ckpt ckpt[HT_CKPT];
 
@@ -743,6 +744,7 @@ static __always_inline int record_wakeup(void *ctx, struct task_struct *p)
 				l->p_tgid = wts->preempt_tgid;
 				__builtin_memcpy(l->p_comm, wts->preempt_comm,
 						 TASK_COMM_LEN);
+				l->p_flags = wts->preempt_queued ? HT_HOP_QUEUED : 0;
 			}
 		}
 	}
@@ -1200,6 +1202,7 @@ static __always_inline void resolve(struct task_state *ts, struct stall_table *t
 			h->preempt_pid = l->p_pid;
 			h->preempt_tgid = l->p_tgid;
 			__builtin_memcpy(h->preempt_comm, l->p_comm, TASK_COMM_LEN);
+			h->flags |= l->p_flags;
 		}
 		if (running)
 			h->flags |= HT_HOP_ONCPU;
@@ -1385,6 +1388,7 @@ int BPF_PROG(on_switch, bool preempt, struct task_struct *prev,
 				ts->preempt_pid = next->pid;
 				ts->preempt_tgid = next->tgid;
 				ts->preempt_ts = now;
+				ts->preempt_queued = false;
 				__builtin_memcpy(ts->preempt_comm, next->comm,
 						 TASK_COMM_LEN);
 			}
@@ -1485,6 +1489,23 @@ int BPF_PROG(on_switch, bool preempt, struct task_struct *prev,
 			account_preempted(ts, tbl, lo, blocked_ns);
 		if (tbl && rq_ns)
 			account_runqueue(tbl, hi > lo ? hi : lo, rq_ns);
+	}
+
+	/*
+	 * Woken, it then waited queued for [hi, now) while the CPU was held,
+	 * last by prev: like a preemptor, the cause for whoever this task kept
+	 * waiting meanwhile. Only a wait long enough to be a stall: a woken
+	 * task that preempts at once has displaced prev, not waited for it.
+	 * Who held the CPU before prev, or on another CPU the task was moved
+	 * from, is not seen.
+	 */
+	if (cause != HT_RUNNABLE && hi < now && now - hi >= min_stall_ns &&
+	    prev->pid) {
+		ts->preempt_pid = prev->pid;
+		ts->preempt_tgid = prev->tgid;
+		ts->preempt_ts = now;
+		ts->preempt_queued = true;
+		__builtin_memcpy(ts->preempt_comm, prev->comm, TASK_COMM_LEN);
 	}
 
 	ts->out_ts = 0;

@@ -581,6 +581,20 @@ class ChainMatchTest(unittest.TestCase):
         self.assertIn("need 3", ch.match_chain(self.hops(), ["a", "b", "c"]))
         self.assertIn("need 1", ch.match_chain([], ["hb_worker"]))
 
+    def test_holder(self):
+        queued = dict(hop("hb_server", 5, cause="runnable", flags=["queued"]),
+                      preemptor={"tid": 7, "tgid": 1, "comm": "hb_hog2"})
+        took = dict(queued, flags=[])
+        hops = [ch.parse_hop(queued, "t")]
+        self.assertIsNone(ch.match_chain(hops, ["hb_server>hb_hog"]))
+        self.assertIsNone(ch.match_chain(hops, ["hb_server>hb_hog[queued]"]))
+        self.assertIn("queued behind hb_hog2",
+                      ch.match_chain(hops, ["hb_server>bgload"]))
+        self.assertIn("preempted by hb_hog2",
+                      ch.match_chain([ch.parse_hop(took, "t")],
+                                     ["hb_server>hb_hog[queued]"]))
+        self.assertIn("expected", ch.match_chain(self.hops(), ["hb_worker>hb_hog"]))
+
 
 # ---------------------------------------------------------------------------
 # join

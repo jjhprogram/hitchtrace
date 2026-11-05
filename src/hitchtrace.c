@@ -349,7 +349,7 @@ static const char *short_name(__u32 cause)
 /* bit position -> name, for the JSON flag lists */
 static const char *const hop_flag_names[] = {
 	"irq", "softirq", "irqexit", "idle", "oncpu", "trunc", "stale", "hist",
-	"preemptor",
+	"preemptor", "queued",
 };
 static const char *const frame_flag_names[] = {
 	"open_stall", "no_root_state", "lost", "threads_full", "events_full",
@@ -649,7 +649,9 @@ static void hop_desc(char *buf, size_t sz, const struct ht_hop *h)
 			char who[TASK_COMM_LEN + 24];
 
 			task_label(who, sizeof(who), h->preempt_comm, h->preempt_pid);
-			append(buf, sz, &len, ", last preempted by %s", who);
+			append(buf, sz, &len, h->flags & HT_HOP_QUEUED ?
+			       ", last queued behind %s" : ", last preempted by %s",
+			       who);
 		}
 		if (h->ns > h->sched_ns)
 			append(buf, sz, &len, " (%.1f ms of it blocked)",
@@ -1140,7 +1142,10 @@ static void json_hop(FILE *f, const struct ht_hop *h)
 		json_str(f, where);
 	else
 		fprintf(f, "null");
-	/* who last took its CPU while it was being waited for */
+	/*
+	 * who last held its CPU while it was being waited for: took it, or
+	 * (flag "queued") was running there while it waited in the queue
+	 */
 	fprintf(f, ",\"preemptor\":");
 	if (h->preempt_pid) {
 		fprintf(f, "{\"tid\":%u,\"tgid\":%u,\"comm\":", h->preempt_pid,

@@ -390,7 +390,7 @@ function hopText(hop, waited) {
     return [who(hop.comm, hop.pid), "was running the whole time: this was a wait for its work"];
   if (hop.cause === "runnable") {
     let t = `was kept off the CPU for ${fmt(hop.ns)}${lower}`;
-    if (hop.preemptor) t += `, last preempted by ${who(hop.preemptor.comm, hop.preemptor.tid)}`;
+    if (hop.preemptor) t += `, last ${hop.flags.includes("queued") ? "queued behind" : "preempted by"} ${who(hop.preemptor.comm, hop.preemptor.tid)}`;
     if (hop.ns > hop.sched_ns) t += ` (${fmt(hop.ns - hop.sched_ns)} of it blocked)`;
     return [who(hop.comm, hop.pid), t];
   }

@@ -181,9 +181,23 @@ injection every 3 s), before the measured run.
    of the flight recorder, so it should not cost the game; the same placement
    applies to every tool, hitchtrace included.
 
+4. **After the measured run: hitchtrace names who held a queued task's CPU**
+   (2026-11-05). The run found `ipc`'s culprit named in 0 of 33 hitches: the
+   server is asleep when `bgload` takes its CPU, so it is never preempted,
+   and hitchtrace named a CPU's holder only for a preemption. A chain hop now
+   also names the task that held the CPU at the end of a run-queue wait of
+   at least 100 µs, with the flag `queued`. The `ipc` culprit rule is
+   unchanged in form (the first hop's `preemptor` names `bgload`) but now
+   accepts that holder. Only `ht` in `ipc` is rerun, as a second version;
+   the measured run's 0 of 33 stands.
+
 ## Run
 
 Measured run: `build/catch/catch-20261104-171550` (2026-11-04, all 30 runs
-completed). No rule was changed for it after it ran. Results and the misses
-looked at one by one:
+completed). No rule was changed for it after it ran; change 4 applies to a
+rerun of a changed hitchtrace. Results and the misses looked at one by one:
 [evaluation-status.md](evaluation-status.md#run-does-hitchtrace-catch-what-others-miss).
+
+Second version, after change 4: `build/catch/catch-ipc-holder` (2026-11-05,
+`ht` in `ipc` only, same rules otherwise). 29 injected hitches: 29 recorded,
+29 attributed, 29 culprit. 88 noise hitches: 10 attributed, 0 culprit.

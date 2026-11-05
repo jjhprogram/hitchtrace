@@ -6,6 +6,7 @@
  *	hb_root --job--> hb_worker --read(pipe)--> hb_feeder --> [hrtimer]
  *	   |  \
  *	   |   +-- hb_hogN (pinned busy threads, woken by the preempt injector)
+ *	   |   +-- hb_server (pinned with the hogs, lowest priority; replies)
  *	   |
  *	   +-- hitch_frame_mark(frame_id)	<- uprobe target: present entry
  *	   +-- hitch_present_end(frame_id)	<- uprobe target: present return
@@ -48,6 +49,10 @@
  *	present_long	the present itself waits ~20 ms	-> HT_BLOCK_PRESENT
  *			longer than the pace, the rest
  *			of the frame normal
+ *	server_queued	root asks hb_server for a reply	-> HT_BLOCK_FUTEX,
+ *			while the hogs hold its CPU for	   inherited, chain
+ *			~20 ms: the server waits in the	   root <- server,
+ *			queue, never running		   queued behind a hog
  *
  * A frame is the interval between two marks, so the present that follows mark
  * N -- the pace sleep and the hitch_present_end() after it -- belongs to frame
@@ -117,6 +122,7 @@
 #define INJECT_PRESENT_NS	(20 * NSEC_PER_MSEC)	/* on top of the pace */
 #define PREEMPT_WINDOW_NS	(20 * NSEC_PER_MSEC)	/* hogs run this long */
 #define PREEMPT_WORK_NS		(5 * NSEC_PER_MSEC)	/* root's work meanwhile */
+#define QUEUED_LEAD_NS		(1 * NSEC_PER_MSEC)	/* hogs on the CPU first */
 #define NHOGS			3
 #define CUTS_COUNT		40
 #define CUTS_NS			(500 * NSEC_PER_USEC)
@@ -294,6 +300,7 @@ enum inject_class {
 	INJ_POLL,
 	INJ_FAULT,
 	INJ_PRESENT_LONG,
+	INJ_SERVER_QUEUED,
 	INJ_MAX,
 	INJ_NONE = INJ_MAX,	/* also the index of the "not injected" stats */
 };
@@ -351,6 +358,13 @@ static const struct inject_info {
 		"the present itself waits ~20 ms past the pace, as if the "
 		"swapchain made the app sit out an extra vblank or two; the "
 		"rest of the frame is a normal one",
+	},
+	[INJ_SERVER_QUEUED] = {
+		"server_queued", "HT_BLOCK_FUTEX", "HT_RESOLVED_INHERITED",
+		"root asks hb_server for a reply while 3 hogs hold the "
+		"server's CPU for ~20 ms; the server, at the lowest priority, "
+		"waits in the queue behind them (chain root <- server, which "
+		"names a hog as the holder of its CPU)",
 	},
 };
 
@@ -655,6 +669,66 @@ static void hogs_run(long long ns)
 }
 
 /* ------------------------------------------------------------------ */
+/* the server behind the server_queued injector                        */
+/* ------------------------------------------------------------------ */
+
+/*
+ * hb_server shares the hogs' CPU at SCHED_IDLE and does nothing but reply.
+ * Woken while the hogs run, it cannot preempt them, so it waits in the run
+ * queue without ever having run: the CPU is lost to them without a
+ * preemption, which is what the holder of a queued wait has to name.
+ */
+static struct {
+	pthread_mutex_t lock;
+	pthread_cond_t req_cv;
+	pthread_cond_t done_cv;
+	unsigned long req;
+	unsigned long done;
+	bool quit;
+} server = {
+	.lock = PTHREAD_MUTEX_INITIALIZER,
+	.req_cv = PTHREAD_COND_INITIALIZER,
+	.done_cv = PTHREAD_COND_INITIALIZER,
+};
+
+static void *server_thread(void *arg)
+{
+	struct sched_param sp = { 0 };
+
+	(void)arg;
+	prctl(PR_SET_NAME, "hb_server");
+	pin_to(pin_cpu);
+	if (sched_setscheduler(0, SCHED_IDLE, &sp))
+		fprintf(stderr, "sched_setscheduler(SCHED_IDLE): %s\n",
+			strerror(errno));
+
+	pthread_mutex_lock(&server.lock);
+	while (!server.quit) {
+		if (server.done == server.req) {
+			pthread_cond_wait(&server.req_cv, &server.lock);
+			continue;
+		}
+		server.done = server.req;
+		pthread_cond_signal(&server.done_cv);
+	}
+	pthread_mutex_unlock(&server.lock);
+	return NULL;
+}
+
+/* Ask hb_server for a reply and block until it comes. */
+static void ask_server(void)
+{
+	unsigned long seq;
+
+	pthread_mutex_lock(&server.lock);
+	seq = ++server.req;
+	pthread_cond_signal(&server.req_cv);
+	while (!server.quit && server.done != seq)
+		pthread_cond_wait(&server.done_cv, &server.lock);
+	pthread_mutex_unlock(&server.lock);
+}
+
+/* ------------------------------------------------------------------ */
 /* the I/O scratch file                                                */
 /* ------------------------------------------------------------------ */
 
@@ -926,6 +1000,28 @@ static void inject(enum inject_class cls, char *note, size_t notelen)
 		else
 			snprintf(note, notelen, "%zu pages touched in %lld us",
 				 fault_pages, dt / NSEC_PER_USEC);
+		break;
+	}
+	case INJ_SERVER_QUEUED: {
+		/*
+		 * The hogs take the server's CPU, then the root asks the
+		 * server for a reply and waits for it, off that CPU so that
+		 * its own wait is for the server alone.
+		 */
+		cpu_set_t set = root_affinity;
+
+		if (pin_cpu >= 0 && CPU_COUNT(&set) > 1) {
+			CPU_CLR(pin_cpu, &set);
+			if (sched_setaffinity(0, sizeof(set), &set))
+				fprintf(stderr, "sched_setaffinity: %s\n",
+					strerror(errno));
+		}
+		hogs_run(PREEMPT_WINDOW_NS);
+		sleep_ns(QUEUED_LEAD_NS);
+		ask_server();
+		if (sched_setaffinity(0, sizeof(root_affinity), &root_affinity))
+			fprintf(stderr, "sched_setaffinity(restore): %s\n",
+				strerror(errno));
 		break;
 	}
 	case INJ_WORKER_BLOCK:
@@ -1249,8 +1345,8 @@ static enum inject_class parse_class(const char *s)
 
 int main(int argc, char **argv)
 {
-	pthread_t root, worker, feeder_tid, hog[NHOGS];
-	bool have_worker = false, have_feeder = false;
+	pthread_t root, worker, feeder_tid, server_tid, hog[NHOGS];
+	bool have_worker = false, have_feeder = false, have_server = false;
 	char exe[PATH_MAX], dir[PATH_MAX];
 	struct sigaction sa;
 	int nhogs = 0, opt, i, ret = 1;
@@ -1374,6 +1470,11 @@ int main(int argc, char **argv)
 		}
 		nhogs++;
 	}
+	if (pthread_create(&server_tid, NULL, server_thread, NULL)) {
+		perror("pthread_create server");
+		goto out;
+	}
+	have_server = true;
 	if (pthread_create(&root, NULL, root_thread, NULL)) {
 		perror("pthread_create root");
 		goto out;
@@ -1436,6 +1537,11 @@ out:
 	feeder.quit = true;
 	pthread_cond_broadcast(&feeder.req_cv);
 	pthread_mutex_unlock(&feeder.lock);
+	pthread_mutex_lock(&server.lock);
+	server.quit = true;
+	pthread_cond_broadcast(&server.req_cv);
+	pthread_cond_broadcast(&server.done_cv);
+	pthread_mutex_unlock(&server.lock);
 
 	for (i = 0; i < nhogs; i++)
 		pthread_join(hog[i], NULL);
@@ -1443,6 +1549,8 @@ out:
 		pthread_join(worker, NULL);
 	if (have_feeder)
 		pthread_join(feeder_tid, NULL);
+	if (have_server)
+		pthread_join(server_tid, NULL);
 
 	poll_teardown();
 	if (feed_pipe[0] >= 0)

@@ -89,6 +89,7 @@ enum ht_sysclass {
 #define HT_HOP_STALE	(1U << 6)	/* waker's own wait ended before this wait began */
 #define HT_HOP_HIST	(1U << 7)	/* waker's history is shorter than the wait: ns is a lower bound */
 #define HT_HOP_PREEMPTOR (1U << 8)	/* took the root's CPU; not a waker */
+#define HT_HOP_QUEUED	(1U << 9)	/* preempt_*: held the CPU while this one was queued */
 
 /* ht_stall.flags */
 #define HT_STALL_OTHER	(1U << 0)	/* the catch-all group: causes and wakers mixed */
@@ -116,9 +117,9 @@ struct ht_hop {
 	__u32 cause;		/* enum ht_cause: what mostly kept it off-CPU */
 	__u32 flags;		/* HT_HOP_* */
 	__s32 kstack_id;	/* where it last blocked, if blocking dominates */
-	__u32 preempt_pid;	/* who last preempted it during the wait, if anyone */
-	__u32 preempt_tgid;
-	__u32 __pad;
+	__u32 preempt_pid;	/* who last held its CPU during the wait, if anyone: */
+	__u32 preempt_tgid;	/* took it, or held it while this task was queued */
+	__u32 __pad;		/* (HT_HOP_QUEUED) */
 	char preempt_comm[TASK_COMM_LEN];
 };
 

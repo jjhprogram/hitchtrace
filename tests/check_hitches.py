@@ -82,7 +82,9 @@ Subcommands (exit status 0 = pass, 1 = check failed, 2 = usage/IO error):
       by the HT_RESOLVED_<R> bucket if --resolved is given, and
       whose worst stall's hops match --chain in order (substring per hop,
       "*" matches any hop; an interrupt hop also answers to "[hardirq]",
-      "[softirq]", "[irqexit]", an idle waker to "[idle]").
+      "[softirq]", "[irqexit]", an idle waker to "[idle]"; "comm>holder"
+      also asks that the hop name holder as the task that last held its
+      CPU, "comm>holder[queued]" that it held it while the hop was queued).
 
   threads GT.jsonl HITCH.jsonl --class C [--thread COMM]
           [--bucket B | --bucket-any B1,B2,...] [--min-frac F]
@@ -181,7 +183,8 @@ BUCKET_ALIASES = {
 # HT_HOP_* bits, and the label an interrupt hop answers to in --chain.
 HOP_FLAG_BITS = ((1 << 0, "irq"), (1 << 1, "softirq"), (1 << 2, "irqexit"),
                  (1 << 3, "idle"), (1 << 4, "oncpu"), (1 << 5, "trunc"),
-                 (1 << 6, "stale"))
+                 (1 << 6, "stale"), (1 << 7, "hist"), (1 << 8, "preemptor"),
+                 (1 << 9, "queued"))
 HOP_TAGS = (("irq", "[hardirq]"), ("softirq", "[softirq]"),
             ("irqexit", "[irqexit]"), ("idle", "[idle]"))
 # HT_FRAME_* bits.
@@ -326,6 +329,7 @@ class Hop:
     ns: Optional[int] = None
     cause: Optional[str] = None
     flags: Set[str] = field(default_factory=set)
+    holder: str = ""		# who last held its CPU while it was waited for
 
     def labels(self) -> List[str]:
         """Everything this hop answers to in a --chain pattern."""
@@ -340,6 +344,9 @@ class Hop:
         extra = [tag for flag, tag in HOP_TAGS if flag in self.flags]
         if extra:
             who += " " + " ".join(extra)
+        if self.holder:
+            who += " %s %s" % ("queued behind" if "queued" in self.flags
+                               else "preempted by", self.holder)
         return "%s(%s, %s)" % (who, self.cause or "?", _ns(self.ns))
 
 
@@ -575,7 +582,10 @@ def parse_hop(obj, where: str) -> Hop:
     pid = _pick(obj, ("pid", "tid"))
     tgid = _pick(obj, ("tgid", "pid_tgid"))
     comm = _pick(obj, ("comm", "name", "label"))
+    holder = _pick(obj, ("preemptor",))
+    holder = _pick(holder, ("comm",)) if isinstance(holder, dict) else None
     return Hop(comm=comm if isinstance(comm, str) else "",
+               holder=holder if isinstance(holder, str) else "",
                pid=None if pid is None else _as_int(pid, "%s: hop pid" % where),
                tgid=None if tgid is None else _as_int(tgid, "%s: hop tgid" % where),
                ns=None if ns is None else _as_int(ns, "%s: hop ns" % where),
@@ -852,9 +862,15 @@ def match_chain(hops: Sequence[Hop], patterns: Sequence[str]) -> Optional[str]:
     for i, pattern in enumerate(patterns):
         if pattern == "*":
             continue
-        want = pattern.lower()
-        if not any(want in label.lower() for label in hops[i].labels()):
-            return "hop %d is %s, expected %r" % (i, hops[i].describe(), pattern)
+        want, _, holder = pattern.lower().partition(">")
+        queued = holder.endswith("[queued]")
+        if queued:
+            holder = holder[:-len("[queued]")]
+        hop = hops[i]
+        if (not any(want in label.lower() for label in hop.labels())
+                or (holder and holder not in hop.holder.lower())
+                or (queued and "queued" not in hop.flags)):
+            return "hop %d is %s, expected %r" % (i, hop.describe(), pattern)
     return None
 
 
@@ -1429,7 +1445,8 @@ def build_parser() -> argparse.ArgumentParser:
                         "resolution")
     e.add_argument("--chain", default="",
                    help="comma-separated hop comms, direct waker first; "
-                        "substring per hop, '*' matches any hop")
+                        "substring per hop, '*' matches any hop; "
+                        "'comm>holder[queued]' also names who held its CPU")
     e.add_argument("--min-frac", type=float, default=0.5,
                    help="share of the frame's excess the bucket must carry "
                         "(default 0.5)")

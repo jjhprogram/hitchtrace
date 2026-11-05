@@ -142,6 +142,12 @@ read -r -a EXTRA_TRACE_ARGS <<<"${HITCHTRACE_ARGS:-}"
 # worker parks on or to the hrtimer that started the chain, so any of the
 # three answers. In preempt the root is runnable while the pinned hogs hold
 # the CPU, which only the preemptor field names.
+#
+# server_queued is the same CPU lost the other way: hb_server is asleep when
+# the hogs take its CPU, so it is never preempted; woken, it waits in the
+# queue behind them. The root waits on a condvar for its reply, so the chain
+# is root <- hb_server, and the server's hop must name a hog as the task
+# that held its CPU while it was queued.
 CLASS_SPECS=(
 	"sleep|HT_BLOCK_TIMER|||$MIN_FRAMES||-c sleep"
 	"worker_block|HT_BLOCK_FUTEX|inherited|hb_worker,hb_feeder|$MIN_FRAMES|--thread hb_worker --bucket-any HT_BLOCK_TASK,HT_BLOCK_FUTEX,HT_BLOCK_TIMER --min-frac $MIN_FRAC|-c worker_block"
@@ -154,6 +160,7 @@ CLASS_SPECS=(
 	"fault|HT_ONCPU_FAULT|||$MIN_FRAMES||-c fault|--any-size --min-frac 0.30"
 	"present_long|HT_BLOCK_PRESENT|||$MIN_FRAMES||-c present_long"
 	"present_off|HT_BLOCK_TIMER|||$MIN_FRAMES||-c sleep||off"
+	"server_queued|HT_BLOCK_FUTEX|inherited|hb_server>hb_hog[queued]|$MIN_FRAMES||-c server_queued"
 	"quiet_baseline||||||-i 0||paced"
 )
 
