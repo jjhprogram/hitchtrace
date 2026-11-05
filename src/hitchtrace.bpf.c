@@ -150,6 +150,8 @@ struct task_state {
 	__u64 reclaim_ns;
 	__u64 compact_start;
 	__u64 compact_ns;
+	__u64 fault_nested;	/* reclaim and compaction inside the open fault */
+	__u64 reclaim_nested;	/* compaction inside the open reclaim */
 	__u64 snap_fault;	/* their values when this frame opened */
 	__u64 snap_fault_major;
 	__u64 snap_reclaim;
@@ -841,8 +843,10 @@ int BPF_PROG(on_fault_enter, struct vm_area_struct *vma, unsigned long address,
 		return 0;
 	ts = bpf_task_storage_get(&task_states, cur, NULL,
 				  BPF_LOCAL_STORAGE_GET_F_CREATE);
-	if (ts && !ts->fault_start)
+	if (ts && !ts->fault_start) {
 		ts->fault_start = bpf_ktime_get_ns();
+		ts->fault_nested = 0;
+	}
 	return 0;
 }
 
@@ -861,6 +865,12 @@ int BPF_PROG(on_fault_leave, struct vm_area_struct *vma, unsigned long address,
 		return 0;
 	delta = bpf_ktime_get_ns() - ts->fault_start;
 	ts->fault_start = 0;
+	/*
+	 * Making room for the page is reported as reclaim or compaction, not
+	 * as fault time as well: the three are carved out of the same on-CPU
+	 * time one after the other.
+	 */
+	delta -= ts->fault_nested < delta ? ts->fault_nested : delta;
 	if (ret & VM_FAULT_MAJOR)
 		ts->fault_major_ns += delta;
 	else
@@ -877,8 +887,10 @@ static __always_inline int reclaim_enter(void)
 		return 0;
 	ts = bpf_task_storage_get(&task_states, cur, NULL,
 				  BPF_LOCAL_STORAGE_GET_F_CREATE);
-	if (ts && !ts->reclaim_start)
+	if (ts && !ts->reclaim_start) {
 		ts->reclaim_start = bpf_ktime_get_ns();
+		ts->reclaim_nested = 0;
+	}
 	return 0;
 }
 
@@ -891,8 +903,13 @@ static __always_inline int reclaim_leave(void)
 		return 0;
 	ts = bpf_task_storage_get(&task_states, cur, NULL, 0);
 	if (ts && ts->reclaim_start) {
-		ts->reclaim_ns += bpf_ktime_get_ns() - ts->reclaim_start;
+		__u64 delta = bpf_ktime_get_ns() - ts->reclaim_start;
+
 		ts->reclaim_start = 0;
+		if (ts->fault_start)
+			ts->fault_nested += delta;
+		delta -= ts->reclaim_nested < delta ? ts->reclaim_nested : delta;
+		ts->reclaim_ns += delta;
 	}
 	return 0;
 }
@@ -935,8 +952,14 @@ int BPF_PROG(on_compact_end)
 		return 0;
 	ts = bpf_task_storage_get(&task_states, cur, NULL, 0);
 	if (ts && ts->compact_start) {
-		ts->compact_ns += bpf_ktime_get_ns() - ts->compact_start;
+		__u64 delta = bpf_ktime_get_ns() - ts->compact_start;
+
 		ts->compact_start = 0;
+		ts->compact_ns += delta;
+		if (ts->reclaim_start)
+			ts->reclaim_nested += delta;
+		else if (ts->fault_start)
+			ts->fault_nested += delta;
 	}
 	return 0;
 }
