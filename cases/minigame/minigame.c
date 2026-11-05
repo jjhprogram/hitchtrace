@@ -67,13 +67,14 @@
  * usage: minigame [-d SECONDS] [-w WORKERS] [-f FPS] [-n OBJECTS]
  *                 [-t TILES] [-s main|thread -p PACK [-a MB]] [-e FRAMES]
  *                 [-m MB [-g MB] [-H]] [-A MB [-K BLOCKS]] [-b MS]
- *                 [-i SOCKET [-c N]] [-o FRAMELOG] [-h]
+ *                 [-i SOCKET [-c N]] [-o FRAMELOG] [-T TITLE] [-h]
  */
 #define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>
 #include <math.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -105,6 +106,7 @@ static int opt_fps = 60;
 static int opt_objects = 48;
 static int opt_tiles = 24;
 static const char *opt_framelog;
+static const char *opt_title = "minigame";	/* of the window */
 
 enum { STREAM_OFF, STREAM_MAIN, STREAM_THREAD };
 static int opt_stream = STREAM_OFF;
@@ -505,6 +507,8 @@ static void server_calls(void)
 /* ---------------------------------------------------------------- vulkan */
 
 static xcb_connection_t *xcb;
+static xcb_atom_t wm_delete;
+static volatile sig_atomic_t window_closed;	/* the window was closed, or SIGTERM */
 static xcb_window_t window;
 static VkInstance inst;
 static VkPhysicalDevice phys;
@@ -529,6 +533,11 @@ static VkFence fence;
 		die("%s failed: %d", #call, vk_res__);			\
 } while (0)
 
+static void on_term(int sig)
+{
+	window_closed = 1;
+}
+
 static void window_init(void)
 {
 	const xcb_setup_t *setup;
@@ -548,7 +557,22 @@ static void window_init(void)
 			  WIN_W, WIN_H, 0, XCB_WINDOW_CLASS_INPUT_OUTPUT,
 			  screen->root_visual, mask, values);
 	xcb_change_property(xcb, XCB_PROP_MODE_REPLACE, window, XCB_ATOM_WM_NAME,
-			    XCB_ATOM_STRING, 8, 8, "minigame");
+			    XCB_ATOM_STRING, 8, strlen(opt_title), opt_title);
+	/* closing the window ends the game, instead of the window manager killing it */
+	{
+		xcb_intern_atom_cookie_t pc = xcb_intern_atom(xcb, 0, 12, "WM_PROTOCOLS");
+		xcb_intern_atom_cookie_t dc = xcb_intern_atom(xcb, 0, 16, "WM_DELETE_WINDOW");
+		xcb_intern_atom_reply_t *pr = xcb_intern_atom_reply(xcb, pc, NULL);
+		xcb_intern_atom_reply_t *dr = xcb_intern_atom_reply(xcb, dc, NULL);
+
+		if (pr && dr) {
+			wm_delete = dr->atom;
+			xcb_change_property(xcb, XCB_PROP_MODE_REPLACE, window, pr->atom,
+					    XCB_ATOM_ATOM, 32, 1, &wm_delete);
+		}
+		free(pr);
+		free(dr);
+	}
 	xcb_map_window(xcb, window);
 	xcb_flush(xcb);
 }
@@ -557,8 +581,12 @@ static void window_poll(void)
 {
 	xcb_generic_event_t *ev;
 
-	while ((ev = xcb_poll_for_event(xcb)))
+	while ((ev = xcb_poll_for_event(xcb))) {
+		if ((ev->response_type & 0x7f) == XCB_CLIENT_MESSAGE &&
+		    ((xcb_client_message_event_t *)ev)->data.data32[0] == wm_delete)
+			window_closed = 1;
 		free(ev);
+	}
 }
 
 static uint32_t find_memory(uint32_t type_bits, VkMemoryPropertyFlags want)
@@ -840,7 +868,7 @@ static void usage(void)
 		"usage: minigame [-d SECONDS] [-w WORKERS] [-f FPS] [-n OBJECTS]\n"
 		"                [-t TILES] [-s main|thread -p PACK [-a MB]] [-e FRAMES]\n"
 		"                [-m MB [-g MB] [-H]] [-A MB [-K BLOCKS]] [-b MS]\n"
-		"                [-i SOCKET [-c N]] [-o FRAMELOG]\n");
+		"                [-i SOCKET [-c N]] [-o FRAMELOG] [-T TITLE]\n");
 	exit(2);
 }
 
@@ -855,7 +883,7 @@ int main(int argc, char **argv)
 	long i;
 	int c;
 
-	while ((c = getopt(argc, argv, "d:w:f:n:t:s:p:a:e:m:g:HA:K:b:i:c:o:h")) != -1) {
+	while ((c = getopt(argc, argv, "d:w:f:n:t:s:p:a:e:m:g:HA:K:b:i:c:o:T:h")) != -1) {
 		switch (c) {
 		case 'd': opt_duration = atoi(optarg); break;
 		case 'w': opt_workers = atoi(optarg); break;
@@ -863,6 +891,7 @@ int main(int argc, char **argv)
 		case 'n': opt_objects = atoi(optarg); break;
 		case 't': opt_tiles = atoi(optarg); break;
 		case 'o': opt_framelog = optarg; break;
+		case 'T': opt_title = optarg; break;
 		case 'p': opt_pack = optarg; break;
 		case 'a': opt_asset_mb = atoi(optarg); break;
 		case 'e': opt_every = atoi(optarg); break;
@@ -895,6 +924,9 @@ int main(int argc, char **argv)
 		usage();
 
 	pthread_setname_np(pthread_self(), "mg_main");
+	/* end as if the window had closed, so that the frame log gets written */
+	signal(SIGTERM, on_term);
+	signal(SIGINT, on_term);
 	window_init();
 	vulkan_init();
 	fb = calloc((size_t)fb_w * fb_h, 4);
@@ -931,7 +963,7 @@ int main(int argc, char **argv)
 	getrusage(RUSAGE_THREAD, &ru_prev);
 	deadline = now_ns();
 	t_stop = deadline + (uint64_t)opt_duration * NSEC;
-	while (now_ns() < t_stop) {
+	while (now_ns() < t_stop && !window_closed) {
 		/* limiter: an absolute grid, restarted after an overrun */
 		t0 = now_ns();
 		deadline += period;
