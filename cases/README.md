@@ -1,6 +1,6 @@
 # hitchtrace case studies
 
-Each case reproduces the *mechanism* behind a documented Linux gaming stutter (see `../cases.md`)
+Each case reproduces the *mechanism* behind a documented Linux gaming stutter (see `../docs/cases.md`)
 around one unmodified workload, and asks whether a hitchtrace record alone explains the hitch.
 
 ## Setup

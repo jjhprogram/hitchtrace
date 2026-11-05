@@ -245,5 +245,6 @@ src/chaingraph.c       loader, map walking, rendering
 src/syms.{c,h}         kernel and user symbolization
 chaingraph-svg.sh      trace + flamegraph.pl --colors=chain
 tests/                 workload, checker, end-to-end and unit tests
+docs/                  hitchtrace design notes, plan, case catalogue, evaluation status
 libbpf/, FlameGraph/   vendored upstream projects (their own licenses)
 ```
