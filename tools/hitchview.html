@@ -106,12 +106,29 @@ pre { font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(
 [data-tip]:hover, [data-tip]:focus { filter: brightness(1.12); outline: none; }
 .dotsel { cursor: pointer; }
 @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
+[hidden] { display: none !important; }
+/* the reading guide, when the page was made with --notes */
+.notes h3 { font-size: 13px; font-weight: 600; margin: 14px 0 4px; }
+.notes p, .notes li { max-width: 80ch; }
+.notes p { margin: 4px 0 8px; }
+.notes ol, .notes ul { margin: 4px 0 8px; padding-left: 22px; }
+.notes li + li { margin-top: 5px; }
+.notes code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--wash);
+  border-radius: 3px; padding: 0 3px; }
+.notes .fl { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 2px; }
+.notes .fl:focus-visible { outline: 2px solid var(--c-kern); outline-offset: 2px; }
 </style>
 </head>
 <body>
 <main>
   <h1 id="title">hitchview</h1>
   <p class="sub" id="subtitle"></p>
+
+  <section class="card notes" id="notes" aria-labelledby="notes-h" hidden>
+    <h2 id="notes-h">How to read this run</h2>
+    <div id="notes-body"></div>
+  </section>
 
   <section class="card">
     <h2>Every hitch in the run</h2>
@@ -127,7 +144,7 @@ pre { font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(
     </details>
   </section>
 
-  <section class="card">
+  <section class="card" id="frame-card">
     <div class="pick">
       <button id="prev" aria-label="Previous hitch">&larr; previous</button>
       <span class="big" id="f-time"></span>
@@ -671,8 +688,61 @@ function select(i) {
   drawOverview(); drawFrame();
 }
 
+/* The reading guide: plain text with a few marks, always inserted as text. */
+function inlineNotes(parent, text) {
+  const re = /`([^`]+)`|\*\*([^*]+)\*\*|\*([^*]+)\*|\[frame (\d+)\]/g;
+  let last = 0, m;
+  while ((m = re.exec(text))) {
+    if (m.index > last) parent.append(document.createTextNode(text.slice(last, m.index)));
+    if (m[1] != null) parent.append(h("code", { text: m[1] }));
+    else if (m[2] != null) parent.append(h("b", { text: m[2] }));
+    else if (m[3] != null) parent.append(h("i", { text: m[3] }));
+    else {
+      const id = Number(m[4]), i = DATA.records.findIndex((r) => r.frame_id === id);
+      if (i < 0) parent.append(document.createTextNode(`frame ${id}`));
+      else {
+        const b = h("button", { class: "fl", type: "button", text: `frame ${id}` });
+        b.addEventListener("click", () => {
+          select(i);
+          $("frame-card").scrollIntoView({ block: "start" });
+        });
+        parent.append(b);
+      }
+    }
+    last = re.lastIndex;
+  }
+  if (last < text.length) parent.append(document.createTextNode(text.slice(last)));
+}
+
+function renderNotes(src) {
+  const box = clear($("notes-body"));
+  let list = null, item = null, para = null;
+  for (const raw of src.split("\n")) {
+    const line = raw.trim();
+    if (!line) { list = item = para = null; continue; }
+    let m = /^##\s+(.*)$/.exec(line);
+    if (m) {
+      list = item = para = null;
+      const e = h("h3"); inlineNotes(e, m[1]); box.append(e);
+      continue;
+    }
+    const num = /^\d+\.\s+(.*)$/.exec(line), bul = /^-\s+(.*)$/.exec(line);
+    if (num || bul) {
+      const tag = num ? "ol" : "ul";
+      if (!list || list.tagName.toLowerCase() !== tag) { list = h(tag); box.append(list); }
+      item = h("li"); inlineNotes(item, (num || bul)[1]); list.append(item);
+      para = null;
+      continue;
+    }
+    if (item) { item.append(document.createTextNode(" ")); inlineNotes(item, line); continue; }
+    if (para) { para.append(document.createTextNode(" ")); inlineNotes(para, line); continue; }
+    para = h("p"); inlineNotes(para, line); box.append(para);
+  }
+}
+
 function init() {
   const m = DATA.meta;
+  if (m.notes) { renderNotes(m.notes); $("notes").hidden = false; }
   document.title = "hitchview: " + m.title;
   $("title").textContent = m.title;
   $("subtitle").textContent = `${DATA.records.length} frames over a ${fmt(m.budget_ns)} budget` +

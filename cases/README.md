@@ -22,6 +22,7 @@ make && make layer layer-install && make -C cases
 cases/run.sh bgcpu 60 bgcpu-confirm
 python3 cases/analyze_bgcpu.py cases/out/bgcpu-confirm
 tools/hitchview.py cases/out/bgcpu-confirm/hitch.jsonl    # writes hitch.html: one page, every hitch
+cases/make_pages.py                    # one page per case, with its reading guide (cases/pages/)
 ```
 
 `tools/hitchview.py` turns any hitchtrace JSONL file into a self-contained HTML page: every hitch of

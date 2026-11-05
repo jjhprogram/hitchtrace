@@ -12,6 +12,11 @@ is the default; without it the page shows the totals and chains only.
     hitchtrace -p PID -o run.jsonl ...
     tools/hitchview.py run.jsonl                 # writes run.html next to it
     tools/hitchview.py run.jsonl -o view.html --title "bgcpu, 60 s"
+    tools/hitchview.py run.jsonl --notes how-to-read.md    # a reading guide on top
+
+Notes are plain text with a few marks: "## " starts a heading, "1. " a
+numbered step, "- " a bullet, a blank line a new paragraph; `code`, **bold**
+and *italic* inline, and [frame N] becomes a link that opens that frame.
 
 The page needs no network and no other file.
 """
@@ -96,6 +101,7 @@ def main():
     ap.add_argument("-o", "--output", help="HTML file to write (default: next to the input)")
     ap.add_argument("--title", help="page title (default: the input's name)")
     ap.add_argument("--frame", type=int, help="frame id to open on (default: the longest)")
+    ap.add_argument("--notes", help="a reading guide to show above the views (see above)")
     args = ap.parse_args()
 
     header, summary, records = {}, {}, []
@@ -132,6 +138,7 @@ def main():
             "budget_ns": header.get("budget_ns", records[0]["budget_ns"] if records else 0),
             "frames": summary.get("frames"),
             "t0_ns": t0, "t1_ns": t1, "start": start,
+            "notes": open(args.notes).read() if args.notes else None,
         },
         "records": records,
     }
