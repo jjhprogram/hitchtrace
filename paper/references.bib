@@ -1,0 +1,366 @@
+% References for the hitchtrace paper draft.
+%
+% Entries marked VERIFY were assembled from research notes (the design
+% conversation and cases.md) and have not been checked against the primary
+% source. Check author lists, titles, venues, years and URLs before
+% submission; quotes in the text must be checked against the recording or
+% the document, not against a secondary write-up.
+
+% ---------------------------------------------------------------- tracing
+
+@inproceedings{cantrill2004dtrace,
+  author    = {Bryan M. Cantrill and Michael W. Shapiro and Adam H. Leventhal},
+  title     = {Dynamic Instrumentation of Production Systems},
+  booktitle = {USENIX Annual Technical Conference (ATC)},
+  year      = {2004},
+}
+
+@article{desfossez2016latency,
+  author  = {Julien Desfossez and Mathieu Desnoyers and Michel R. Dagenais},
+  title   = {Runtime Latency Detection and Analysis},
+  journal = {Software: Practice and Experience},
+  volume  = {46},
+  number  = {10},
+  year    = {2016},
+}
+
+@inproceedings{zhang2023hindsight,
+  author    = {Lei Zhang and Zhiqiang Xie and Vaastav Anand and Ymir Vigfusson and Jonathan Mace},
+  title     = {The Benefit of Hindsight: Tracing Edge-Cases in Distributed Systems},
+  booktitle = {USENIX Symposium on Networked Systems Design and Implementation (NSDI)},
+  year      = {2023},
+}
+
+@misc{ftracehist,
+  author       = {Tom Zanussi},
+  title        = {Event Histograms},
+  howpublished = {Linux kernel documentation, \url{https://docs.kernel.org/trace/histogram.html}},
+  year         = {2025},
+}
+
+@misc{lttng,
+  key          = {LTTng},
+  title        = {{LTTng}: Linux Trace Toolkit: next generation},
+  howpublished = {\url{https://lttng.org/}},
+  year         = {2025},
+}
+
+@misc{perfetto-triggers,
+  key          = {Perfetto},
+  title        = {Perfetto: Trace configuration -- triggers and ring buffers},
+  howpublished = {\url{https://perfetto.dev/docs/concepts/config}},
+  year         = {2025},
+}
+
+@misc{perfetto-frametimeline,
+  key          = {Perfetto},
+  title        = {Perfetto: Android Jank detection with {FrameTimeline}},
+  howpublished = {\url{https://perfetto.dev/docs/data-sources/frametimeline}},
+  year         = {2025},
+}
+
+@misc{perfetto-critpath,
+  key          = {Perfetto SQL standard library},
+  title        = {Perfetto {SQL} standard library: critical path and thread executing span},
+  howpublished = {\url{https://perfetto.dev/docs/analysis/stdlib-docs}},
+  year         = {2025},
+  note         = {VERIFY: module name and URL},
+}
+
+@misc{systing,
+  author       = {Josef Bacik},
+  title        = {systing},
+  howpublished = {\url{https://github.com/josefbacik/systing}},
+  year         = {2026},
+  note         = {VERIFY: version 1.0 announcement date (Feb.\ 2026)},
+}
+
+@misc{gpuvis,
+  key          = {gpuvis},
+  title        = {gpuvis: {GPU} trace visualizer},
+  howpublished = {\url{https://github.com/mikesart/gpuvis}},
+  year         = {2025},
+}
+
+@misc{rtla,
+  key          = {rtla},
+  title        = {rtla: Real-time Linux Analysis tool},
+  howpublished = {Linux kernel documentation, \url{https://docs.kernel.org/tools/rtla/}},
+  year         = {2025},
+}
+
+% ------------------------------------------------ off-CPU / critical path
+
+@article{giraldeau2016wait,
+  author  = {Francis Giraldeau and Michel Dagenais},
+  title   = {Wait Analysis of Distributed Systems Using Kernel Tracing},
+  journal = {IEEE Transactions on Parallel and Distributed Systems},
+  volume  = {27},
+  number  = {8},
+  year    = {2016},
+}
+
+@inproceedings{zhou2018wperf,
+  author    = {Fang Zhou and Yifan Gan and Sixiang Ma and Yang Wang},
+  title     = {{wPerf}: Generic Off-{CPU} Analysis to Identify Bottleneck Waiting Events},
+  booktitle = {USENIX Symposium on Operating Systems Design and Implementation (OSDI)},
+  year      = {2018},
+}
+
+@misc{gregg-offcpu,
+  author       = {Brendan Gregg},
+  title        = {Off-{CPU} Analysis},
+  howpublished = {\url{https://www.brendangregg.com/offcpuanalysis.html}},
+  year         = {2016},
+}
+
+@misc{gregg-chaingraph,
+  author       = {Brendan Gregg},
+  title        = {Linux {eBPF} Off-Wake and Chain Graph Prototypes},
+  howpublished = {\url{https://www.brendangregg.com/blog/}},
+  year         = {2016},
+  note         = {VERIFY: exact post titles and URLs (off-wake, chain graphs)},
+}
+
+@book{gregg2019bpf,
+  author    = {Brendan Gregg},
+  title     = {{BPF} Performance Tools},
+  publisher = {Addison-Wesley},
+  year      = {2019},
+}
+
+@article{gregg2016flame,
+  author  = {Brendan Gregg},
+  title   = {The Flame Graph},
+  journal = {Communications of the ACM},
+  volume  = {59},
+  number  = {6},
+  year    = {2016},
+}
+
+@misc{perf-offcpu-thresh,
+  key          = {perf},
+  title        = {perf record: off-{CPU} profiling with a threshold},
+  howpublished = {LWN.net, \url{https://lwn.net/Articles/1019765/}},
+  year         = {2025},
+  note         = {VERIFY: article title and author},
+}
+
+@misc{ets-wait-analysis,
+  author       = {Bruce Dawson},
+  title        = {{Xperf} Wait Analysis -- Finding Idle Time},
+  howpublished = {\url{https://randomascii.wordpress.com/}},
+  year         = {2012},
+  note         = {VERIFY: post title, year and URL},
+}
+
+% --------------------------------------------------- accounting per unit
+
+@misc{delayacct,
+  key          = {Delay Accounting},
+  title        = {Delay Accounting},
+  howpublished = {Linux kernel documentation, \url{https://docs.kernel.org/accounting/delay-accounting.html}},
+  year         = {2025},
+}
+
+@misc{psi,
+  key          = {PSI -- Pressure Stall Information},
+  title        = {{PSI} -- Pressure Stall Information},
+  howpublished = {Linux kernel documentation, \url{https://docs.kernel.org/accounting/psi.html}},
+  year         = {2025},
+}
+
+@misc{varmri,
+  author       = {Zhou and others},
+  title        = {Long-term Monitoring of Kernel and Hardware Events to Understand Latency Variance},
+  howpublished = {arXiv:2601.10572},
+  year         = {2026},
+  note         = {VERIFY: full author list and venue},
+}
+
+% ------------------------------------------------------- frame tooling
+
+@misc{nsight,
+  key          = {NVIDIA Nsight Systems User Guide},
+  title        = {{NVIDIA} {Nsight} Systems User Guide},
+  howpublished = {\url{https://docs.nvidia.com/nsight-systems/}},
+  year         = {2025},
+}
+
+@misc{presentmon,
+  key          = {PresentMon},
+  title        = {{PresentMon}},
+  howpublished = {\url{https://github.com/GameTechDev/PresentMon}},
+  year         = {2025},
+}
+
+@misc{mangohud,
+  key          = {MangoHud},
+  title        = {{MangoHud}},
+  howpublished = {\url{https://github.com/flightlessmango/MangoHud}},
+  year         = {2025},
+}
+
+@misc{tracy,
+  key          = {Tracy Profiler},
+  title        = {Tracy Profiler},
+  howpublished = {\url{https://github.com/wolfpld/tracy}},
+  year         = {2025},
+}
+
+@misc{superluminal,
+  key          = {Superluminal Performance},
+  title        = {Superluminal Performance},
+  howpublished = {\url{https://superluminal.eu/}},
+  year         = {2025},
+}
+
+@misc{hwui-mon,
+  author       = {LibXZR},
+  title        = {hwui\_mon},
+  howpublished = {\url{https://blog.xzr.moe/archives/310/}},
+  year         = {2023},
+  note         = {VERIFY},
+}
+
+@misc{frame-analyzer,
+  key          = {frame-analyzer},
+  title        = {frame-analyzer: Android frametime tracking with {eBPF}},
+  howpublished = {\url{https://crates.io/crates/frame-analyzer}},
+  year         = {2025},
+  note         = {VERIFY},
+}
+
+@misc{aosp-blocked-reason,
+  key          = {Android},
+  title        = {Android: Evaluating performance -- \texttt{sched\_blocked\_reason}},
+  howpublished = {\url{https://source.android.com/docs/core/tests/debug/eval_perf}},
+  year         = {2025},
+  note         = {VERIFY: page and wording},
+}
+
+% ------------------------------------------------------ Linux gaming
+
+@misc{lwn-lpc2025-gaming,
+  author       = {Jake Edge},
+  title        = {Gaming on {Linux} at {LPC} 2025},
+  howpublished = {LWN.net, \url{https://lwn.net/Articles/1051430/}},
+  year         = {2026},
+  note         = {VERIFY: title. Cite the session recording and slides for quotes},
+}
+
+@misc{lpc2025-min,
+  author       = {Changwoo Min},
+  title        = {Steps Towards a Gaming-Optimized Scheduler},
+  howpublished = {Linux Plumbers Conference, Gaming on Linux microconference},
+  year         = {2025},
+  note         = {VERIFY: title, recording URL},
+}
+
+@misc{vapormark,
+  key          = {VaporMark},
+  title        = {{VaporMark}},
+  howpublished = {\url{https://github.com/Igalia/vapormark}},
+  year         = {2025},
+}
+
+@misc{scx,
+  key          = {sched_ext schedulers and tools (scx)},
+  title        = {sched\_ext schedulers and tools (\texttt{scx})},
+  howpublished = {\url{https://github.com/sched-ext/scx}},
+  year         = {2026},
+}
+
+@misc{lwn-splitlock,
+  key          = {The search for the correct amount of split-lock misery},
+  title        = {The search for the correct amount of split-lock misery},
+  howpublished = {LWN.net, \url{https://lwn.net/Articles/911219/}},
+  year         = {2022},
+}
+
+@misc{proton,
+  key          = {Proton},
+  title        = {Proton},
+  howpublished = {\url{https://github.com/ValveSoftware/Proton}},
+  year         = {2026},
+}
+
+@misc{dxvk,
+  key          = {DXVK},
+  title        = {{DXVK}},
+  howpublished = {\url{https://github.com/doitsujin/dxvk}},
+  year         = {2026},
+}
+
+@misc{vkd3d-proton,
+  key          = {vkd3d-proton},
+  title        = {vkd3d-proton},
+  howpublished = {\url{https://github.com/HansKristian-Work/vkd3d-proton}},
+  year         = {2026},
+}
+
+@misc{ntsync,
+  key          = {NT synchronization primitive driver},
+  title        = {{NT} synchronization primitive driver},
+  howpublished = {Linux kernel documentation, \url{https://docs.kernel.org/userspace-api/ntsync.html}},
+  year         = {2025},
+}
+
+@misc{vulkan-loader,
+  key          = {Architecture of the Vulkan Loader Interfaces},
+  title        = {Architecture of the {Vulkan} Loader Interfaces},
+  howpublished = {LunarG, \url{https://github.com/KhronosGroup/Vulkan-Loader/blob/main/docs/LoaderInterfaceArchitecture.md}},
+  year         = {2025},
+}
+
+@misc{lavapipe,
+  key          = {Lavapipe},
+  title        = {Lavapipe: {Mesa}'s software {Vulkan} rasterizer},
+  howpublished = {\url{https://docs.mesa3d.org/drivers/llvmpipe.html}},
+  year         = {2025},
+}
+
+% ---------------------------------------------------------------- eBPF
+
+@inproceedings{mccanne1993bpf,
+  author    = {Steven McCanne and Van Jacobson},
+  title     = {The {BSD} Packet Filter: A New Architecture for User-level Packet Capture},
+  booktitle = {USENIX Winter Conference},
+  year      = {1993},
+}
+
+@inproceedings{gershuni2019verifier,
+  author    = {Elazar Gershuni and Nadav Amit and Arie Gurfinkel and Nina Narodytska and Jorge A. Navas and Noam Rinetzky and Leonid Ryzhyk and Mooly Sagiv},
+  title     = {Simple and Precise Static Analysis of Untrusted {Linux} Kernel Extensions},
+  booktitle = {ACM SIGPLAN Conference on Programming Language Design and Implementation (PLDI)},
+  year      = {2019},
+}
+
+@misc{ebpf-docs,
+  key          = {eBPF documentation},
+  title        = {{eBPF} documentation},
+  howpublished = {\url{https://ebpf.io/}},
+  year         = {2025},
+}
+
+@misc{bpf-core,
+  author       = {Andrii Nakryiko},
+  title        = {{BPF} {CO-RE} (Compile Once -- Run Everywhere)},
+  howpublished = {\url{https://nakryiko.com/posts/bpf-portability-and-co-re/}},
+  year         = {2020},
+}
+
+@misc{bpf-task-storage,
+  key          = {BPF map type BPF_MAP_TYPE_TASK_STORAGE},
+  title        = {{BPF} map type \texttt{BPF\_MAP\_TYPE\_TASK\_STORAGE}},
+  howpublished = {Linux kernel documentation, \url{https://docs.kernel.org/bpf/map_types.html}},
+  year         = {2025},
+  note         = {VERIFY: URL},
+}
+
+@misc{bpf-ringbuf,
+  author       = {Andrii Nakryiko},
+  title        = {{BPF} ring buffer},
+  howpublished = {\url{https://nakryiko.com/posts/bpf-ringbuf/}},
+  year         = {2020},
+}
