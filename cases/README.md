@@ -12,6 +12,8 @@ around one unmodified workload, and asks whether a hitchtrace record alone expla
 - **The environment** supplies the cause. `bgload.c` is a background application that wakes
   periodically and burns CPU. It logs every burst, and that log is the ground truth.
   `bgio.c` is its disk counterpart: it reads or writes a scratch file in bursts (case 2b).
+  `squeeze.c` confines the game's threads to one core in bursts (case 7), and `frag.c` leaves the
+  machine's free memory in single pages (case 9).
 - **`run.sh VARIANT [SECONDS] [RUN_NAME]`** runs the game on CPUs 0–3, attaches hitchtrace through the
   Vulkan layer, and writes everything to `out/RUN_NAME/`.
 
@@ -62,6 +64,9 @@ woken, when it ran again, why it waited, and who woke or preempted it.
 | 4 `slack` | the frame limiter's sleep ends late | sees the sleep | 99% | 0% | **that the sleep was late** |
 | 5 `ipc` | calls to a server that cannot get its CPU | 100% | 105% | 8% / 98% | **who had the server's CPU** |
 | 6 `cpuspike` | CPU work in the game (negative control) | "running", 100% | 99% | blames no stall in 91% | where the CPU time went |
+| 7 `squeeze` | the game's threads are confined to one core | 100% | 96% | 100% | **which CPU; that the other cores were idle** |
+| 8 `alloc` | new memory while memory is full | 97%, after a fix | 94% | **not ranked at all** | what was pushed out, and why memory was short |
+| 9 `compact` | huge pages while free memory is in pieces | 100% as "memory" | 78% of the allocation | **not ranked at all** | that the kernel gave up and used small pages |
 
 "Stall time" is a ranking replayed on the same records: a wait on a thread that was itself running
 does not count, and neither does a timer sleep. No case produced a false explanation in its noise
@@ -584,3 +589,208 @@ the signal to switch to a CPU profiler. It cannot say what the thread was runnin
 when a thread leaves the CPU, not while it runs. In the other 9% an unrelated stall of some size
 happened in the same frame.
 
+## Case 7: the game's threads are confined to one core (`squeeze`)
+
+**What it models.** `cases.md` category A, the scheduler reports: threads that are ready to run but
+are kept waiting while cores sit idle, because the scheduler packed them together (A1, A3) or the
+game was handed a wrong affinity mask (the list of cores a thread may run on). A custom scheduler
+cannot be loaded here without root, so the placement is forced from outside: every 1.5 s `squeeze`
+restricts all of the game's threads to CPU 0 for 300 ms, then gives the old masks back. Nothing else
+runs on that core. The game's threads only get in each other's way. Ground truth is `squeeze`'s log.
+
+| The game's own log | Other frames | Frames during a squeeze |
+|---|---|---|
+| Frames | 2,783 | 307 |
+| Over budget | 55 (2%) | 303 (99%) |
+| Job phase, median | 14.1 ms | 39.9 ms |
+
+The game's profiler would show "the job phase took three times as long" and nothing about why.
+
+| From one record | Squeezed frames (303) | Noise (55) |
+|---|---|---|
+| Top group: a wait on a worker that was kept off the CPU | **303 (100%)** | 43 |
+| … by a thread of the game itself | 296 (98%) | 27 |
+| Every preemptor named in the record is the game's own | 286 (94%) | 15 |
+| The worker's time off the CPU / the game's extra job time, median | **96%** | |
+| All threads together ran no more than 1.1 cores' worth | 263 (87%) | **0** |
+| Cores' worth of running per frame, median | 1.00 | 1.93 |
+| Any field saying which CPU, or that other CPUs were idle | **0** | 0 |
+
+```
+hitch frame 540  46.7 ms  (budget 20.8 ms, over by 25.9 ms)  root mg_main
+  blocked   45.7 ms  futex 45.5 | present 0.1
+  resolved   waiting on a running task 14.9 ms, inherited stalls 30.8 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     45.5 ms  futex    blocked in __futex_wait, 2 times, longest 45.5 ms
+              <- mg_worker0        kept off the CPU 30.8 ms, last preempted by mg_worker1
+  threads
+    mg_worker0    oncpu 14.7  runnable 31.1   preempted by mg_main for 7.3 ms
+    mg_worker2    oncpu 15.9  runnable 28.6   preempted by WSI swapchain q for 12.0 ms
+    mg_worker1    oncpu 14.2  runnable 23.3   preempted by mg_worker0 for 9.0 ms
+```
+
+**What the record gives.** Each worker did its usual 15 ms of work and spent twice that waiting for
+a core, pushed aside by the game's own threads. That already rules out the two explanations a
+developer would try first: the work did not get heavier (same on-CPU time as any frame), and no other
+program took the cores (as in `bgcpu`, where the preemptor is `bgload`). The three workers' running
+times add up to the frame's length, so they ran one after another. On the timeline this is plain to
+see: the lanes take turns and never run side by side.
+
+**What it cannot give: the core.** "One at a time" is an inference from the totals. Nothing in the
+record says the threads were all on CPU 0, or that CPUs 1–3 had nothing to do, which is the fact that
+separates a bad placement from a machine that is simply full. The scx #3739 report in `cases.md`
+turned on exactly this: seeing what ran on the one CPU. The fix is small: record the CPU with every
+interval on the timeline, and how many of the process's allowed cores were idle when a thread was
+made to wait. It belongs with the run-queue occupant from case 5.
+
+**The noise frames look similar in kind, not in size.** In 43 of 55 the top group is also a worker
+kept off the CPU, by a sibling or by a desktop thread, for a millisecond or two. The parallelism
+figure is what tells the two apart: 1.0 against 1.9.
+
+## Case 8: new memory while memory is full (`alloc`)
+
+**What it models.** `cases.md` category B again, from the other side. Case 3 was about getting old
+memory back from swap. This is about getting new memory when there is none free: the kernel has to
+push something else out first, and it does that work on the thread that asked (*direct reclaim*). The
+game keeps its 512 MB world, never walked, under the same 420 MB limit, so the cgroup is always
+full. Every 15th frame the main thread allocates and fills 8 MB and keeps the newest 64 such blocks.
+Ground truth is the game's log: how long each allocation took. Without the limit
+(`MEM_MAX=none`, run `alloc-nolimit`) it is 3.5–4.0 ms every time, for 2,048 page faults.
+
+| The game's own log | Allocations at normal speed | Slow allocations (over 2× the usual) |
+|---|---|---|
+| Frames | 113 | 112 |
+| Allocation time, median | 4.4 ms | 13.6 ms (90th percentile 32 ms) |
+| Over budget | 81 | 112 |
+
+**This case found an accounting bug.** The first run's records read like this:
+
+```
+hitch frame 1484  79.3 ms   oncpu 64.4 ms  (fault 62.0, reclaim 2.4)
+```
+
+and across all 191 records the root averaged 10.9 ms of "fault" against 1.7 ms of "reclaim". That
+was wrong. Reclaim happens *inside* the page fault that needs the page. hitchtrace timed the fault
+from entry to exit, reclaim included, took that out of the running time first, and then had almost
+nothing left to label as reclaim. The fix: a fault's time no longer includes reclaim or compaction
+that ran inside it. The same frame shape afterwards:
+
+```
+hitch frame 1604  29.5 ms  (budget 20.8 ms, over by 8.6 ms)  root mg_main
+  oncpu     14.5 ms  (fault 2.4, reclaim 9.5)
+  blocked   14.2 ms  futex 13.0 | timer 1.1 | present 0.1
+  stalls     off-CPU time by cause and by who ended it, largest first
+     13.0 ms  futex    blocked in __futex_wait
+              <- mg_worker1        was running (waiting for work) 0.1 ms
+```
+
+Fault time is now the same 2.3 ms in every allocation, slow or fast, which is what 2,048 faults cost
+with no pressure. Everything above that is reclaim. The 12 hitchbench classes still pass.
+
+| From one record, after the fix | Slow allocations (112) | Noise (128) |
+|---|---|---|
+| Reclaim is ≥ half the overrun | **109 (97%)** | 28 |
+| Reclaim time / the allocation's extra time, median | **94%** | |
+| Fault time, median | 2.3 ms | 1.9 ms |
+| Any stall group is about memory | 1 | 0 |
+| The top-ranked group is about memory | **0** | 0 |
+| Anything says what was reclaimed, or why memory was short | 0 | 0 |
+
+The 28 noise records with reclaim are allocations just under the 2× line: a millisecond of reclaim in
+a frame a millisecond over.
+
+**What the record gives.** "The main thread spent 9.5 ms freeing memory before it could have its
+own." Amount right to within 6%, on the right thread, separated from the ordinary cost of the faults.
+That answers the folklore question in `cases.md` for this frame: the stall was reclaim, not
+swap-in and not compaction.
+
+**What it does not do: rank it.** The stall list is built from time *off* the CPU. Reclaim here is
+time *on* the CPU, in the kernel, so it is not a group, has no stack, and is not on the timeline. The
+list is headed by the ordinary 13 ms wait for the workers in every one of the 112 records, and the
+explanation sits in the bucket line above it. A reader who goes straight to the top-ranked stall is
+sent the wrong way. In-kernel running time needs to be a rankable entry of its own, with the kernel
+stack that was running.
+
+**Nor why memory was short.** The record cannot see the cgroup limit, what was pushed out (here the
+unwalked world, to swap), or that it was written to disk. The workers' lines show the knock-on
+effect: across the run they did 175 ms of reclaim of their own and waited 64 ms on swap-ins for pages
+of theirs that had been pushed out.
+
+## Case 9: huge pages while free memory is in pieces (`compact`)
+
+**What it models.** `cases.md` B2, the contradictory advice about transparent huge pages (2 MB pages
+the kernel hands out in place of 512 small ones). A huge page needs 2 MB of free memory in one
+piece. If the free memory is scattered, the kernel can move used pages together to make a piece
+(*compaction*), again on the thread that asked. `frag` takes nearly all free memory one small page at
+a time and gives every other page back, so that about 1.5 GB is free and almost none of it is
+contiguous. The game then grows by 24 MB of huge pages (`MADV_HUGEPAGE`) every 15th frame and frees
+nothing. This is not confined to a cgroup: compaction is a property of the whole machine's memory.
+
+**Compaction alone could not be made to stall the game.** With free memory in pieces but plentiful,
+8 MB of huge pages took 1.0 ms, the same as with free memory whole (1.1 ms). The kernel's counters
+show why: it never compacted on the game's thread (`compact_stall` 0), because its background thread
+(`kcompactd`) had moved 125,000 pages and kept whole pieces ready. At three times the rate the
+allocations stayed flat as well, at about 3 ms for 24 MB. Stalls began only when the free memory ran
+out altogether, about 15 s into the run, and from then on the machine was short of memory as well as
+fragmented. The run is kept short (27 s) for that reason.
+Changing how eagerly the kernel compacts, which is what the advice in `cases.md` is about, needs
+root.
+
+| The game's own log | Allocations at normal speed | Slow allocations |
+|---|---|---|
+| Frames | 57 | 42 |
+| Allocation time, median | 3.1 ms | 19.7 ms |
+| Page faults, median | 12 (all huge pages) | 6,144 in 40 of 42 (small pages for part or all) |
+
+Over the run the kernel counted 1,473 compactions on a thread that was waiting for the result, 1,369
+of which failed, and 440 huge-page requests that fell back to small pages.
+
+| From one record | Slow allocations (42) | Noise (53) |
+|---|---|---|
+| Memory (faults + reclaim + compaction) is ≥ half the overrun | **42 (100%)** | 15 (normal allocations) |
+| Compaction + reclaim is ≥ half the overrun | 23 (55%) | 0 |
+| Compaction is the larger of the two | 16 (38%) | 0 |
+| Faults + reclaim + compaction / the allocation's time, median | 78% | |
+| The top-ranked group is about memory | **0** | 0 |
+
+Two records, one where the kernel got most of its huge pages and one where it got none (the fault
+counts are the game's own):
+
+```
+hitch frame 1514  47.8 ms  (budget 20.8 ms, over by 27.0 ms)  root mg_main      [1,034 faults]
+  oncpu     33.7 ms  (fault 4.3, reclaim 5.8, compact 22.1)
+
+hitch frame 1244  29.3 ms  (budget 20.8 ms, over by 8.5 ms)   root mg_main      [6,144 faults]
+  oncpu     13.5 ms  (fault 6.7, reclaim 0.9, compact 0.3)
+```
+
+**What the record gives.** The split is real and it is the useful part. When the kernel does make
+its huge pages, the extra time is compaction, 15–22 ms in the frames where it mostly succeeded. When
+compaction fails, the kernel hands out small pages instead and the cost moves to faults: 6,144 of
+them where 12 would have done, about 7 ms in the fault handler and another 5 ms getting in and out of
+it. Later in the run, as memory gets shorter still, reclaim grows to 10–28 ms on top. The record
+shows which of the three a given frame paid for. It tells a developer that asking for huge pages
+cost these frames more than not asking would have.
+
+**What it cannot give.** That the compaction *failed*, and that the faults were for small pages
+standing in for huge ones. The game's own fault counter shows it; the record has the time but not the
+count or the outcome. The kernel reports the outcome where hitchtrace already listens (the end of a
+compaction carries its result). And the cost of entering and leaving 6,144 faults lands in plain
+"running", because the fault timer covers only the kernel's handler.
+
+As in case 8 none of this is ranked: the list is headed by the wait for the workers.
+
+**Sample size.** 42 frames from one short run, on a machine pushed to the edge of its memory. The
+split between compaction and reclaim will differ on other machines; the point here is that the record
+separates them.
+
+## What could not be reproduced on this machine
+
+- **A real scheduler bug** (A1–A4): loading a sched_ext scheduler needs root. `squeeze` reproduces
+  the symptom, not a scheduler.
+- **Wine's synchronisation paths** (D1): Wine is not installed, and ntsync needs a kernel module
+  loaded. `ipc` stands in for the wineserver round trip only.
+- **Split locks**: the VM does not expose split-lock detection.
+- **Firmware stalls** (F1) and **anything inside a GPU** (D2, D3, E1): there is no firmware to stall
+  and no GPU; rendering is in software.
+- **A sustained compaction stall** (B2): see case 9.

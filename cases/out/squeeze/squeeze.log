@@ -1,0 +1,2 @@
+squeeze pid=4078 onto cpus 0, 300 ms every 1500 ms
+squeeze: 38 bursts

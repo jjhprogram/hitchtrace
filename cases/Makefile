@@ -2,7 +2,7 @@
 #
 # Workloads for the hitchtrace case studies.
 #
-#   make -C cases        build ../build/cases/{minigame,bgload,bgio,ipcserver,slack.so}
+#   make -C cases        build ../build/cases/{minigame,bgload,bgio,ipcserver,squeeze,frag,slack.so}
 #
 # -fno-omit-frame-pointer so `hitchtrace -U` can walk the game's user stacks.
 
@@ -12,7 +12,7 @@ CFLAGS  := -g -O2 -Wall -Wextra -Wno-unused-parameter -fno-omit-frame-pointer
 
 .PHONY: all clean
 all: $(OUTPUT)/minigame $(OUTPUT)/bgload $(OUTPUT)/bgio $(OUTPUT)/ipcserver \
-     $(OUTPUT)/slack.so
+     $(OUTPUT)/squeeze $(OUTPUT)/frag $(OUTPUT)/slack.so
 
 $(OUTPUT):
 	mkdir -p $@
@@ -28,6 +28,12 @@ $(OUTPUT)/bgio: bgio.c | $(OUTPUT)
 
 $(OUTPUT)/ipcserver: ipcserver.c | $(OUTPUT)
 	$(CC) $(CFLAGS) $< -o $@ -lpthread
+
+$(OUTPUT)/squeeze: squeeze.c | $(OUTPUT)
+	$(CC) $(CFLAGS) $< -o $@
+
+$(OUTPUT)/frag: frag.c | $(OUTPUT)
+	$(CC) $(CFLAGS) $< -o $@
 
 $(OUTPUT)/slack.so: slack.c | $(OUTPUT)
 	$(CC) $(CFLAGS) -fPIC -shared $< -o $@ -ldl

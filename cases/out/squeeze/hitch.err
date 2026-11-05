@@ -1,0 +1,3 @@
+Tracing frames of PID 4078 (marker hitch_frame_mark, budget 20.8 ms)... for 60 seconds, or hit Ctrl-C to end.
+stats: frames=3137 hitches=358 emitted=358 ringbuf-full=0 stalls=13551 resolved=3384 unresolved=6460 storage-fail=0 stack-err=0 slots-full=0
+3137 frames, 358 hitches (11.4%), 358 records

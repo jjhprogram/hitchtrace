@@ -46,7 +46,7 @@
  * for assets that are not in the page cache, which is every asset the first
  * time, without needing root to drop caches between runs.
  *
- * Three more things a game does, each off unless asked for. The first two
+ * Four more things a game does, each off unless asked for. The first three
  * happen on the same frames as an asset load, one frame in every -e:
  *
  *	-m MB [-g MB] [-H]	keep a world of MB megabytes in memory and
@@ -54,6 +54,10 @@
  *		area whose data has not been used for a while. -H asks for
  *		transparent huge pages for it. Under a memory limit the walk
  *		faults pages back in from swap.
+ *	-A MB [-K BLOCKS] [-H]	allocate and fill MB megabytes of new memory
+ *		on those frames and keep the newest BLOCKS such blocks, as a
+ *		game does with the data of the areas it has visited. When
+ *		memory is short, room has to be made before the frame goes on.
  *	-b MS	burn MS milliseconds of CPU on the main thread on those
  *		frames: a shader compile, a script, a spike of the game's own.
  *	-i SOCKET [-c N]	make N blocking request/reply calls per frame to
@@ -62,8 +66,8 @@
  *
  * usage: minigame [-d SECONDS] [-w WORKERS] [-f FPS] [-n OBJECTS]
  *                 [-t TILES] [-s main|thread -p PACK [-a MB]] [-e FRAMES]
- *                 [-m MB [-g MB] [-H]] [-b MS] [-i SOCKET [-c N]]
- *                 [-o FRAMELOG] [-h]
+ *                 [-m MB [-g MB] [-H]] [-A MB [-K BLOCKS]] [-b MS]
+ *                 [-i SOCKET [-c N]] [-o FRAMELOG] [-h]
  */
 #define _GNU_SOURCE
 #include <errno.h>
@@ -108,6 +112,7 @@ static const char *opt_pack;
 static int opt_asset_mb = 8;
 static int opt_every = 20;
 static int opt_world_mb, opt_touch_mb = 16, opt_burn_ms, opt_calls = 30;
+static int opt_alloc_mb, opt_keep = 64;
 static bool opt_thp;
 static const char *opt_sock;
 
@@ -420,6 +425,37 @@ static void world_touch(void)
 	}
 	world_pos = (world_pos + n) % world_bytes;
 	world_sum = sum;
+}
+
+/* ------------------------------------------------------ memory that grows */
+
+#define MAX_KEEP 1024
+static unsigned char *blocks[MAX_KEEP];
+static size_t block_next;
+static uint64_t alloc_free_ns;	/* of the last alloc_step(): letting go of the old block */
+
+/*
+ * A new block, every page of it written, in place of the oldest one kept.
+ * The new one comes first: a game has the next area's data before it lets
+ * go of the last one's.
+ */
+static void alloc_step(void)
+{
+	size_t n = (size_t)opt_alloc_mb << 20, k;
+	unsigned char **slot = &blocks[block_next++ % opt_keep];
+	unsigned char *p;
+
+	p = mmap(NULL, n, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	if (p == MAP_FAILED)
+		die("cannot allocate %d MB: %s", opt_alloc_mb, strerror(errno));
+	madvise(p, n, opt_thp ? MADV_HUGEPAGE : MADV_NOHUGEPAGE);
+	for (k = 0; k < n; k += 4096)
+		memcpy(p + k, &k, sizeof(k));
+	alloc_free_ns = now_ns();
+	if (*slot)
+		munmap(*slot, n);
+	*slot = p;
+	alloc_free_ns = now_ns() - alloc_free_ns;
 }
 
 /* Burn @ms of this thread's CPU time, however long that takes on the wall. */
@@ -792,7 +828,7 @@ struct frame_log {
 	uint64_t frame_ns, present_ns, limiter_ns, sim_ns, asset_ns, jobs_ns,
 		 upload_ns;
 	uint64_t late_ns;	/* the limiter's sleep ended this long after it asked */
-	uint64_t calls_ns, touch_ns, burn_ns;
+	uint64_t calls_ns, touch_ns, burn_ns, alloc_ns, free_ns;
 	long majflt, minflt;	/* the main thread's page faults in the frame */
 	bool asset;		/* this frame loaded one */
 	bool step;		/* this is one frame in every -e */
@@ -803,8 +839,8 @@ static void usage(void)
 	fprintf(stderr,
 		"usage: minigame [-d SECONDS] [-w WORKERS] [-f FPS] [-n OBJECTS]\n"
 		"                [-t TILES] [-s main|thread -p PACK [-a MB]] [-e FRAMES]\n"
-		"                [-m MB [-g MB] [-H]] [-b MS] [-i SOCKET [-c N]]\n"
-		"                [-o FRAMELOG]\n");
+		"                [-m MB [-g MB] [-H]] [-A MB [-K BLOCKS]] [-b MS]\n"
+		"                [-i SOCKET [-c N]] [-o FRAMELOG]\n");
 	exit(2);
 }
 
@@ -819,7 +855,7 @@ int main(int argc, char **argv)
 	long i;
 	int c;
 
-	while ((c = getopt(argc, argv, "d:w:f:n:t:s:p:a:e:m:g:Hb:i:c:o:h")) != -1) {
+	while ((c = getopt(argc, argv, "d:w:f:n:t:s:p:a:e:m:g:HA:K:b:i:c:o:h")) != -1) {
 		switch (c) {
 		case 'd': opt_duration = atoi(optarg); break;
 		case 'w': opt_workers = atoi(optarg); break;
@@ -833,6 +869,8 @@ int main(int argc, char **argv)
 		case 'm': opt_world_mb = atoi(optarg); break;
 		case 'g': opt_touch_mb = atoi(optarg); break;
 		case 'H': opt_thp = true; break;
+		case 'A': opt_alloc_mb = atoi(optarg); break;
+		case 'K': opt_keep = atoi(optarg); break;
 		case 'b': opt_burn_ms = atoi(optarg); break;
 		case 'i': opt_sock = optarg; break;
 		case 'c': opt_calls = atoi(optarg); break;
@@ -852,7 +890,8 @@ int main(int argc, char **argv)
 	    opt_tiles < 1 || opt_tiles > MAX_TILES || opt_duration < 1 ||
 	    (opt_stream != STREAM_OFF) != (opt_pack != NULL) ||
 	    opt_asset_mb < 1 || opt_every < 1 || opt_world_mb < 0 ||
-	    opt_touch_mb < 1 || opt_burn_ms < 0 || opt_calls < 1)
+	    opt_touch_mb < 0 || opt_burn_ms < 0 || opt_calls < 1 ||
+	    opt_alloc_mb < 0 || opt_keep < 1 || opt_keep > MAX_KEEP)
 		usage();
 
 	pthread_setname_np(pthread_self(), "mg_main");
@@ -924,7 +963,7 @@ int main(int argc, char **argv)
 			asset_step();
 		t1 = now_ns();
 		cur.asset_ns = t1 - t0;
-		if (cur.step && opt_world_mb)
+		if (cur.step && opt_world_mb && opt_touch_mb)
 			world_touch();
 		t0 = now_ns();
 		cur.touch_ns = t0 - t1;
@@ -932,7 +971,13 @@ int main(int argc, char **argv)
 			burn_cpu(opt_burn_ms);
 		t1 = now_ns();
 		cur.burn_ns = t1 - t0;
-		t0 = t1;
+		cur.free_ns = 0;
+		if (cur.step && opt_alloc_mb) {
+			alloc_step();
+			cur.free_ns = alloc_free_ns;
+		}
+		t0 = now_ns();
+		cur.alloc_ns = t0 - t1 - cur.free_ns;
 
 		run_jobs();
 		t1 = now_ns();
@@ -985,7 +1030,8 @@ int main(int argc, char **argv)
 				"\"asset\":%d,\"asset_us\":%llu,\"jobs_us\":%llu,"
 				"\"upload_us\":%llu,\"step\":%d,\"late_us\":%llu,"
 				"\"calls_us\":%llu,\"touch_us\":%llu,\"burn_us\":%llu,"
-				"\"majflt\":%ld,\"minflt\":%ld}\n", k,
+				"\"alloc_us\":%llu,\"free_us\":%llu,\"majflt\":%ld,"
+				"\"minflt\":%ld}\n", k,
 				(unsigned long long)log[k].t_end_ns,
 				(unsigned long long)log[k].frame_ns / 1000,
 				(unsigned long long)log[k].present_ns / 1000,
@@ -1000,6 +1046,8 @@ int main(int argc, char **argv)
 				(unsigned long long)log[k].calls_ns / 1000,
 				(unsigned long long)log[k].touch_ns / 1000,
 				(unsigned long long)log[k].burn_ns / 1000,
+				(unsigned long long)log[k].alloc_ns / 1000,
+				(unsigned long long)log[k].free_ns / 1000,
 				log[k].majflt, log[k].minflt);
 		fclose(f);
 	}

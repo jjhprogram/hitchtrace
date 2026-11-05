@@ -172,7 +172,7 @@ const DATA = /*DATA*/null;
 /* What the time was spent on, in stacking order. `run` is not a series. */
 const CATS = [
   { id: "run",   label: "running: the game's own work", keys: ["oncpu"] },
-  { id: "kern",  label: "running in the kernel (page faults, reclaim)",
+  { id: "kern",  label: "running in the kernel (page faults, reclaim, compaction)",
     keys: ["oncpu_fault", "oncpu_fault_major", "oncpu_reclaim", "oncpu_compact"] },
   { id: "sched", label: "ready, but waiting for a CPU", keys: ["runnable", "runqueue"] },
   { id: "lock",  label: "waiting on a lock (futex)", keys: ["block_futex"] },
@@ -183,6 +183,18 @@ const CATS = [
 ];
 const SHORT = { run: "running", kern: "kernel", sched: "waiting for a CPU", lock: "lock",
   io: "disk I/O", sleep: "timer sleep", disp: "display/GPU", other: "other wait" };
+/* What the in-kernel running time was, where the record says. */
+const KERN_PARTS = [
+  ["oncpu_reclaim", "freeing memory to make room (reclaim)"],
+  ["oncpu_compact", "moving memory to make a huge page (compaction)"],
+  ["oncpu_fault", "page faults"],
+  ["oncpu_fault_major", "page faults that had to read from disk"],
+];
+function kernParts(cause) {
+  return KERN_PARTS.map(([k, name]) => ({ ns: cause[k] || 0, name }))
+    .filter((p) => p.ns).sort((a, b) => b.ns - a.ns);
+}
+const kernTip = (cause) => kernParts(cause).map((p) => `${fmt(p.ns)} ${p.name}`);
 const CAT_OF = {};
 for (const c of CATS) for (const k of c.keys) CAT_OF[k] = c.id;
 const catLabel = (id) => CATS.find((c) => c.id === id).label;
@@ -512,7 +524,8 @@ function drawFrame() {
   const segs = CATS.map((c) => {
     const ns = c.keys.reduce((a, k) => a + (r.cause_ns[k] || 0), 0);
     return { cat: c.id, ns, label: `${SHORT[c.id]} ${ms(ns).toFixed(1)}`,
-             tip: [`${fmt(ns)} ${c.label}`, `${(100 * ns / r.frame_ns).toFixed(0)}% of the frame`] };
+             tip: [`${fmt(ns)} ${c.label}`, ...(c.id === "kern" ? kernTip(r.cause_ns) : []),
+                   `${(100 * ns / r.frame_ns).toFixed(0)}% of the frame`] };
   });
   const svg = stack(plot, W + 70, x, segs, { top: 16, thick: 20, height: 78, gridTicks: grid,
     budget: budgetMs, endLabel: fmt(r.frame_ns) });
@@ -591,7 +604,8 @@ function drawFrame() {
     const p = h("div");
     const tsegs = CATS.map((c) => {
       const ns = c.keys.reduce((a, k) => a + (t.cause_ns[k] || 0), 0);
-      return { cat: c.id, ns, tip: [`${fmt(ns)} ${c.label}`, who(t.comm, t.tid)] };
+      return { cat: c.id, ns, tip: [`${fmt(ns)} ${c.label}`,
+        ...(c.id === "kern" ? kernTip(t.cause_ns) : []), who(t.comm, t.tid)] };
     });
     if (t.open_ns) tsegs.push({ fill: "var(--c-open)", ns: t.open_ns,
       tip: [`${fmt(t.open_ns)} still waiting when the frame ended`, who(t.comm, t.tid)] });
@@ -619,6 +633,10 @@ function drawTables(r) {
     const ns = c.keys.reduce((a, k) => a + (r.cause_ns[k] || 0), 0);
     if (ns) b1.append(h("tr", {}, h("td", { text: c.label }), h("td", { class: "n", text: ms(ns).toFixed(2) }),
       h("td", { class: "n", text: (100 * ns / r.frame_ns).toFixed(0) + "%" })));
+    if (ns && c.id === "kern")
+      for (const part of kernParts(r.cause_ns))
+        b1.append(h("tr", {}, h("td", { text: "of that: " + part.name }),
+          h("td", { class: "n", text: ms(part.ns).toFixed(2) }), h("td")));
   }
   b1.append(h("tr", {}, h("td", { text: "of the waits: the waited-for thread was itself stalled" }),
     h("td", { class: "n", text: ms(r.cause_ns.resolved_inherited || 0).toFixed(2) }), h("td")));

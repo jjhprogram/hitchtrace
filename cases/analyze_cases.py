@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
-"""Score a `cases/run.sh mem|memthp|slack|ipc|cpuspike|iodisk` run.
+"""Score a `cases/run.sh mem|memthp|slack|ipc|cpuspike|iodisk|squeeze|alloc|compact` run.
 
 Does a hitchtrace record alone explain the hitch? Each over-budget record is
 set against ground truth that does not come from hitchtrace, and sorted into
@@ -24,6 +24,18 @@ good tool answers the case's questions yes on the first and no on the second.
                 bgio was reading from the same limited disk (its log). Does
                 the record show the wait on the streamer, that the streamer
                 was on I/O, and does anything in it name bgio?
+  squeeze       affected: the game's threads were confined to one CPU (the
+                squeezer's log). Does the record show the workers kept off
+                the CPU by each other, and that the process ran one thread at
+                a time?
+  alloc         affected: the frame allocated new memory with the cgroup at
+                its limit, and the allocation took over twice as long as one
+                that needs no room made (the game's log). Does the record put
+                the extra time on reclaim, as distinct from the page faults
+                any allocation costs?
+  compact       affected: the same test of a frame that asked for huge pages
+                while the machine's free memory was in single pages. Does the
+                record separate compaction from reclaim and from the faults?
 
 Rankings other than the record's own (by total) are replayed on the same
 records: the old rule (longest single wait), and "stall time" (a wait on a
@@ -117,7 +129,7 @@ def main():
     variant = manifest["variant"]
     budget_us = hdr["budget_ns"] / 1e3
     bursts = (load(f"{run}/bursts.jsonl")
-              if variant in ("slack", "ipc", "iodisk") else [])
+              if variant in ("slack", "ipc", "iodisk", "squeeze") else [])
 
     def overlap(s, e):
         return sum(max(0, min(e, b["end_ns"]) - max(s, b["start_ns"])) for b in bursts)
@@ -127,10 +139,19 @@ def main():
     win = [f for f in frames
            if f["t_end_ns"] - f["frame_us"] * 1000 > lo and f["t_end_ns"] < hi]
 
+    # what an allocation costs when no room has to be made: the quickest
+    # tenth of this run's (a MEM_MAX=none run gives the same figure)
+    alloc_usual = 0
+    if variant in ("alloc", "compact"):
+        fast = sorted(f["alloc_us"] for f in win if f["step"])
+        alloc_usual = med(fast[:max(1, len(fast) // 10)])
+
     def affected(f):
+        if variant in ("alloc", "compact"):
+            return bool(f["step"]) and f["alloc_us"] > 2 * alloc_usual
         hit = overlap(f["t_end_ns"] - f["frame_us"] * 1000,
                       f["t_end_ns"]) >= MIN_OVERLAP_NS
-        if variant in ("slack", "ipc"):
+        if variant in ("slack", "ipc", "squeeze"):
             return hit
         if variant == "iodisk":
             return bool(f["asset"]) and hit
@@ -140,7 +161,8 @@ def main():
     quiet = [f for f in win if not affected(f)]
     phase = {"mem": "touch_us", "memthp": "touch_us", "slack": "late_us",
              "ipc": "calls_us", "cpuspike": "burn_us",
-             "iodisk": "asset_us"}[variant]
+             "iodisk": "asset_us", "squeeze": "jobs_us",
+             "alloc": "alloc_us", "compact": "alloc_us"}[variant]
     print(f"run {run} ({variant}): {len(win)} frames traced")
     print("\nThe game's own log (frames.jsonl), median per frame:")
     for name, fs in (("other frames", quiet), ("affected frames", aff)):
@@ -173,6 +195,19 @@ def main():
             print(f"    load {name:11}{len(ids):>4} loads: same frame {row[0]:.1f} ms, next "
                   f"{row[1]:.1f}, the one after {row[2]:.1f}; next frame over budget {pct(late, len(ids))}")
     usual = med(f[phase] for f in quiet) * 1000		# ns, a usual frame's worth
+    if variant in ("alloc", "compact"):
+        usual = alloc_usual * 1000
+        calm = [f for f in quiet if f["step"]]
+        over = sum(f["frame_us"] > budget_us for f in calm)
+        print(f"  of the others, allocations at normal speed: {len(calm)} frames, "
+              f"{pct(over, len(calm))} over budget, alloc "
+              f"{med(f['alloc_us'] for f in calm) / 1e3:.1f} ms")
+        print(f"  an allocation that needed no room made: {usual / 1e6:.1f} ms; "
+              f"{med(f['minflt'] for f in calm):.0f} minor faults")
+        if variant == "compact":
+            small = sum(f["minflt"] > 2 * med(f["minflt"] for f in calm) for f in aff)
+            print(f"  slow allocations that got small pages for some of it "
+                  f"(more faults): {pct(small, len(aff))}")
 
     by_end = sorted(win, key=lambda f: f["t_end_ns"])
     groups = {"affected": [], "noise": []}
@@ -258,6 +293,50 @@ def main():
                 yes("anything in the record names bgio", names(r, "bgio"))
                 if on_io and game_ns:
                     amounts.append(h0["ns"] / game_ns)
+            elif variant in ("alloc", "compact"):
+                extra = game_ns - usual
+                kernel = c["oncpu_reclaim"] + c["oncpu_compact"]
+                yes("memory (faults + reclaim + compaction) is >= half the overrun",
+                    kernel + c["oncpu_fault"] + c["oncpu_fault_major"] >= 0.5 * excess)
+                if variant == "compact":
+                    yes("compaction + reclaim is >= half the overrun", kernel >= 0.5 * excess)
+                    yes("compaction is the larger of the two",
+                        c["oncpu_compact"] > c["oncpu_reclaim"])
+                    yes("compaction is >= half the overrun",
+                        c["oncpu_compact"] >= 0.5 * excess)
+                mem_group = top and (top["cause"].startswith("oncpu") or is_fault_io(top))
+                yes("reclaim is >= half the overrun", c["oncpu_reclaim"] >= 0.5 * excess)
+                yes("fault time is >= half the overrun", c["oncpu_fault"] >= 0.5 * excess)
+                yes("any stall group is about memory", any(
+                    s["cause"].startswith("oncpu") or is_fault_io(s) for s in r["stalls"]))
+                yes("the top-ranked group is about memory", mem_group)
+                yes("anything says what was reclaimed, or why memory was short", False)
+                extra_ms.append(c["oncpu_fault"] / 1e6)
+                if extra > 1e6:
+                    amounts.append(kernel / extra)
+            elif variant == "squeeze":
+                own = lambda p: bool(p) and p["tgid"] == hdr["pid"]
+                workers = [t for t in r["threads"] if t["comm"].startswith("mg_worker")]
+                queued = max((t["cause_ns"]["runnable"] + t["cause_ns"]["runqueue"]
+                              for t in workers), default=0)
+                h0 = top["hops"][0] if top and top["hops"] else None
+                kept = bool(h0) and h0["comm"].startswith("mg_worker") \
+                    and h0["cause"] == "runnable"
+                lines = [t["preemptor"] for t in r["threads"] if t.get("preemptor")]
+                ran = sum(t["cause_ns"]["oncpu"] for t in r["threads"])
+                yes("some worker waited for a CPU >= half the overrun", queued >= 0.5 * excess)
+                yes("top group: a wait on a worker that was kept off the CPU", kept)
+                yes("... by a thread of the game itself", kept and own(h0.get("preemptor")))
+                yes("every preemptor named in the record is the game's own",
+                    lines and all(own(p) for p in lines))
+                yes("another process named as a preemptor", any(not own(p) for p in lines))
+                yes("all threads together ran <= 1.1 CPUs' worth",
+                    ran <= 1.1 * r["frame_ns"])
+                yes("any field saying which CPU, or that other CPUs were idle",
+                    False)
+                counts.append(ran / r["frame_ns"])
+                if kept and game_ns > usual:
+                    amounts.append(h0["sched_ns"] / (game_ns - usual))
             elif variant == "cpuspike":
                 run_extra = c["oncpu"] - usual_c.get("oncpu", 0)
                 st_top = stall_time(top_st) if top_st else 0
@@ -280,12 +359,19 @@ def main():
                     "slack": "timer group / the game's own limiter time",
                     "ipc": "server group's inherited time / the game's extra call time",
                     "cpuspike": "extra running time / the game's own burn time",
-                    "iodisk": "the streamer's I/O in the chain / the game's own load time"}[variant]
+                    "iodisk": "the streamer's I/O in the chain / the game's own load time",
+                    "squeeze": "the worker's time off the CPU / the game's extra job time",
+                    "alloc": "reclaim time / the allocation's extra time",
+                    "compact": "compaction + reclaim / the allocation's extra time"}[variant]
             print(f"    {what + ':':62}median {100 * med(amounts):.0f}%")
-        if counts:
+        if counts and variant == "squeeze":
+            what = "CPUs' worth the game's threads ran, per frame:"
+            print(f"    {what:62}median {med(counts):.2f}")
+        elif counts:
             print(f"    {'waits in that group:':62}median {med(counts):.0f}")
         if extra_ms:
-            print(f"    {'timer group, median:':62}{med(extra_ms):.1f} ms")
+            what = "timer group, median:" if variant == "slack" else "fault time, median:"
+            print(f"    {what:62}{med(extra_ms):.1f} ms")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,1849 @@
+hitch frame 203  22.7 ms  (budget 20.8 ms, over by 1.9 ms, 1177% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.5 ms   runqueue 0.2 ms
+  blocked   22.1 ms  futex 21.5 | timer 0.3 | present 0.2
+  resolved   waiting on a running task 11.2 ms, inherited stalls 10.5 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     21.5 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        kept off the CPU 10.5 ms, last preempted by mg_worker2/6753
+      0.7 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.5  runqueue 0.2  blocked 22.1 futex 21.5 | timer 0.3 | present 0.2
+    mg_worker1/6752               oncpu 11.0  runnable 7.4  runqueue 3.1  blocked 0.8 futex (still blocked at frame end 0.3 ms)   largest 3.9 ms in __futex_wait   preempted by mg_worker2/6753 for 3.4 ms
+    mg_worker2/6753               oncpu 11.0  runnable 9.7  runqueue 0.1  blocked 0.8 futex (still blocked at frame end 1.1 ms)   preempted by kworker/0:0/6586 for 4.0 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.6 futex (still blocked at frame end 21.0 ms)   largest 1.7 ms in __futex_wait
+    mg_worker0/6751               oncpu 19.8  runqueue 0.2  blocked 0.7 futex (still blocked at frame end 2.0 ms)   largest 0.9 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 1.0  runqueue 0.1  blocked 0.5 futex 0.4 | poll 0.1 (still blocked at frame end 21.1 ms)   largest 0.4 ms in __futex_wait
+    mg_main/6739                  oncpu 0.3  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 22.3 ms)   largest 0.1 ms in __futex_wait
+  4 stalls this frame, 19 off-CPU intervals of the process logged
+
+hitch frame 239  21.4 ms  (budget 20.8 ms, over by 0.6 ms, 3458% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      2.9 ms  (fault 2.5)   runqueue 0.1 ms
+  blocked   18.4 ms  futex 17.2 | timer 1.1 | present 0.1
+  resolved   waiting on a running task 13.9 ms, inherited stalls 3.4 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     17.2 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        kept off the CPU 3.4 ms, last preempted by KMS thread/1987
+      1.1 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.2 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 2.9 (fault 2.5)  runqueue 0.1  blocked 18.4 futex 17.2 | timer 1.1 | present 0.1
+    mg_worker2/6753               oncpu 13.8  runnable 0.5  runqueue 2.9  blocked 4.0 futex (still blocked at frame end 0.2 ms)   largest 6.9 ms in __futex_wait   preempted by KMS thread/1987 for 0.4 ms
+    mg_worker1/6752               oncpu 14.2  runqueue 2.8  blocked 4.0 futex (still blocked at frame end 0.4 ms)   largest 6.8 ms in __futex_wait
+    mg_worker0/6751               oncpu 16.3  runqueue 0.8  blocked 4.0 futex (still blocked at frame end 0.3 ms)   largest 4.8 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.6 futex (still blocked at frame end 20.8 ms)   largest 0.6 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.3 futex 0.2 | poll 0.0 (still blocked at frame end 20.8 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 21.2 ms)   largest 0.0 ms in __futex_wait
+  4 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 258  23.0 ms  (budget 20.8 ms, over by 2.2 ms, 963% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.5 ms   runnable 0.2 ms   runqueue 0.3 ms
+  blocked   22.1 ms  futex 20.1 | timer 0.7 | present 1.3
+  resolved   waiting on a running task 19.9 ms, inherited stalls 1.4 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     20.1 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        kept off the CPU 0.3 ms
+      1.3 ms  present  blocked in __futex_wait, 2 times, longest 1.2 ms
+              <- mg_main/6739           kept off the CPU 1.1 ms
+      0.7 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.5 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.5  runnable 0.2  runqueue 0.3  blocked 22.1 futex 20.1 | timer 0.7 | present 1.3   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker2/6753               oncpu 10.4  runnable 9.1  runqueue 0.1  blocked 2.6 futex (still blocked at frame end 0.8 ms)   preempted by mg_worker0/6751 for 6.0 ms
+    mg_worker0/6751               oncpu 9.9  runnable 5.1  runqueue 3.8  blocked 2.6 futex (still blocked at frame end 1.7 ms)   largest 6.4 ms in __futex_wait   preempted by mg_worker2/6753 for 3.0 ms
+    mg_worker1/6752               oncpu 19.8  runqueue 0.3  blocked 2.6 futex (still blocked at frame end 0.3 ms)   largest 3.0 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.2  blocked 2.4 futex (still blocked at frame end 20.5 ms)   largest 2.6 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.6  runqueue 0.2  blocked 1.7 futex (still blocked at frame end 20.6 ms)   largest 1.6 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 1.2  blocked 0.0 futex (still blocked at frame end 21.6 ms)   largest 1.1 ms in __futex_wait
+  6 stalls this frame, 20 off-CPU intervals of the process logged
+
+hitch frame 281  22.4 ms  (budget 20.8 ms, over by 1.6 ms, 1369% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.4 ms   runqueue 0.1 ms
+  blocked   21.8 ms  futex 20.2 | timer 1.5 | present 0.2
+  resolved   waiting on a running task 11.3 ms, inherited stalls 9.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     20.1 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        kept off the CPU 9.0 ms, last preempted by mg_worker2/6753
+      1.5 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.4 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.4  runqueue 0.1  blocked 21.8 futex 20.2 | timer 1.5 | present 0.2
+    mg_worker2/6753               oncpu 9.6  runnable 7.0  runqueue 2.9  blocked 2.1 futex (still blocked at frame end 0.8 ms)   largest 5.0 ms in __futex_wait   preempted by mg_worker0/6751 for 3.0 ms
+    mg_worker0/6751               oncpu 11.1  runnable 9.0  runqueue 0.0  blocked 2.0 futex (still blocked at frame end 0.2 ms)   preempted by mg_worker2/6753 for 3.0 ms
+    mg_worker1/6752               oncpu 18.3  runnable 0.3  runqueue 0.0  blocked 2.0 futex (still blocked at frame end 1.7 ms)   largest 2.1 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 2.3 futex (still blocked at frame end 20.1 ms)   largest 2.3 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.5  runqueue 1.5  blocked 0.4 futex 0.4 | poll 0.0 (still blocked at frame end 20.1 ms)   largest 1.8 ms in __futex_wait
+    mg_main/6739                  oncpu 0.3  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 22.1 ms)   largest 0.1 ms in __futex_wait
+  5 stalls this frame, 22 off-CPU intervals of the process logged
+
+hitch frame 284  24.0 ms  (budget 20.8 ms, over by 3.2 ms, 738% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      3.9 ms  (fault 3.4)   runnable 0.1 ms   runqueue 0.1 ms
+  blocked   19.8 ms  futex 19.6 | present 0.2
+  resolved   waiting on a running task 19.8 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     19.6 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        was running (waiting for work) 0.0 ms
+      0.5 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 3.9 (fault 3.4)  runnable 0.1  runqueue 0.1  blocked 19.8 futex 19.6 | present 0.2   preempted by claude-desktop/3070 for 0.1 ms
+    mg_main/6739                  oncpu 0.3  runqueue 0.1  blocked 23.6 futex (still blocked at frame end 23.6 ms)   largest 23.6 ms in __futex_wait
+    mg_worker1/6752               oncpu 10.2  runnable 6.0  runqueue 3.0  blocked 4.1 futex (still blocked at frame end 0.8 ms)   largest 4.1 ms in __futex_wait   preempted by mg_worker2/6753 for 3.0 ms
+    mg_worker2/6753               oncpu 10.3  runnable 8.1  runqueue 0.0  blocked 4.1 futex (still blocked at frame end 1.5 ms)   largest 4.1 ms in __futex_wait   preempted by mg_worker1/6752 for 3.9 ms
+    mg_worker0/6751               oncpu 19.6  runqueue 0.1  blocked 4.1 futex (still blocked at frame end 0.2 ms)   largest 4.1 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 0.8 futex (still blocked at frame end 23.1 ms)   largest 0.9 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.1  blocked 0.4 futex 0.4 | poll 0.0 (still blocked at frame end 23.1 ms)   largest 0.4 ms in __futex_wait
+  4 stalls this frame, 19 off-CPU intervals of the process logged
+
+hitch frame 289  23.3 ms  (budget 20.8 ms, over by 2.5 ms, 884% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.9 ms   runqueue 0.1 ms
+  blocked   22.3 ms  futex 19.7 | timer 2.4 | present 0.2
+  resolved   waiting on a running task 12.9 ms, inherited stalls 7.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     19.7 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        kept off the CPU 7.1 ms, last preempted by mg_worker2/6753
+      2.4 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.4 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.9  runqueue 0.1  blocked 22.3 futex 19.7 | timer 2.4 | present 0.2
+    mg_worker2/6753               oncpu 10.9  runnable 5.4  runqueue 3.2  blocked 2.9 futex (still blocked at frame end 1.0 ms)   largest 6.1 ms in __futex_wait   preempted by mg_worker0/6751 for 3.0 ms
+    mg_worker0/6751               oncpu 12.7  runnable 7.1  runqueue 0.1  blocked 2.8 futex (still blocked at frame end 0.7 ms)   preempted by mg_worker2/6753 for 4.0 ms
+    mg_worker1/6752               oncpu 18.8  runnable 0.0  runqueue 0.0  blocked 2.9 futex (still blocked at frame end 1.6 ms)   largest 2.9 ms in __futex_wait   preempted by kworker/2:1/95 for 0.0 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 1.7 futex (still blocked at frame end 21.6 ms)   largest 1.7 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 1.3  runqueue 0.0  blocked 0.4 futex (still blocked at frame end 21.7 ms)   largest 0.4 ms in __futex_wait
+    mg_main/6739                  oncpu 0.3  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 23.0 ms)   largest 0.1 ms in __futex_wait
+  4 stalls this frame, 19 off-CPU intervals of the process logged
+
+hitch frame 341  23.8 ms  (budget 20.8 ms, over by 3.0 ms, 778% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.4 ms   runnable 0.0 ms   runqueue 0.1 ms
+  blocked   23.3 ms  futex 20.0 | timer 3.1 | present 0.3
+  resolved   waiting on a running task 12.0 ms, inherited stalls 8.3 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     20.0 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        kept off the CPU 8.3 ms, last preempted by KMS thread/1987
+      3.1 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.4 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.4  runnable 0.0  runqueue 0.1  blocked 23.3 futex 20.0 | timer 3.1 | present 0.3   preempted by mg_main/6739 for 0.0 ms
+    mg_worker0/6751               oncpu 11.8  runnable 4.9  runqueue 3.4  blocked 3.5 futex (still blocked at frame end 0.2 ms)   largest 3.6 ms in __futex_wait   preempted by mg_worker1/6752 for 3.0 ms
+    mg_worker1/6752               oncpu 11.4  runnable 7.1  runqueue 0.0  blocked 3.6 futex (still blocked at frame end 1.6 ms)   preempted by mg_worker0/6751 for 4.0 ms
+    mg_worker2/6753               oncpu 19.6  runqueue 0.0  blocked 3.6 futex (still blocked at frame end 0.6 ms)   largest 3.6 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 1.4 futex (still blocked at frame end 22.4 ms)   largest 1.4 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.6  blocked 0.4 futex 0.4 | poll 0.0 (still blocked at frame end 22.4 ms)   largest 1.0 ms in __futex_wait
+    mg_main/6739                  oncpu 0.3  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 23.4 ms)   largest 0.0 ms in __futex_wait
+  5 stalls this frame, 20 off-CPU intervals of the process logged
+
+hitch frame 347  21.7 ms  (budget 20.8 ms, over by 0.9 ms, 2338% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.5 ms   runqueue 0.2 ms
+  blocked   21.0 ms  futex 20.3 | timer 0.3 | present 0.4
+  resolved   waiting on a running task 10.6 ms, inherited stalls 10.2 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     20.3 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        kept off the CPU 10.2 ms, last preempted by mg_worker2/6753
+      0.9 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.5  runqueue 0.2  blocked 21.0 futex 20.3 | timer 0.3 | present 0.4
+    mg_main/6739                  oncpu 0.5  runqueue 0.1  blocked 21.2 futex   largest 21.2 ms in __futex_wait
+    mg_worker1/6752               oncpu 10.1  runnable 6.8  runqueue 3.4  blocked 1.0 futex (still blocked at frame end 0.4 ms)   largest 4.4 ms in __futex_wait   preempted by mg_worker2/6753 for 3.0 ms
+    mg_worker2/6753               oncpu 10.2  runnable 10.1  runqueue 0.0  blocked 1.0 futex (still blocked at frame end 0.5 ms)   preempted by mg_worker1/6752 for 4.0 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.0 futex (still blocked at frame end 20.6 ms)   largest 1.1 ms in __futex_wait
+    mg_worker0/6751               oncpu 19.6  runqueue 0.0  blocked 1.0 futex (still blocked at frame end 1.1 ms)   largest 1.0 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.6 futex 0.6 | poll 0.0 (still blocked at frame end 20.7 ms)   largest 0.6 ms in __futex_wait
+  5 stalls this frame, 20 off-CPU intervals of the process logged
+
+hitch frame 374  21.0 ms  (budget 20.8 ms, over by 0.2 ms, 9401% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      3.4 ms  (fault 2.9)   runqueue 0.8 ms
+  blocked   16.9 ms  futex 13.5 | timer 3.1 | present 0.3
+  resolved   waiting on a running task 13.7 ms, inherited stalls 0.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     13.5 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      3.1 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.7 ms  runqueue waiting for a CPU, 2 times, longest 0.5 ms
+      0.4 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 3.4 (fault 2.9)  runqueue 0.8  blocked 16.9 futex 13.5 | timer 3.1 | present 0.3
+    mg_worker2/6753               oncpu 12.4  runnable 0.1  runqueue 0.0  blocked 7.0 futex (still blocked at frame end 1.5 ms)   largest 7.0 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker0/6751               oncpu 12.3  runqueue 0.1  blocked 7.1 futex (still blocked at frame end 1.6 ms)   largest 7.1 ms in __futex_wait
+    mg_worker1/6752               oncpu 13.5  runqueue 0.0  blocked 7.1 futex (still blocked at frame end 0.5 ms)   largest 7.1 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.2  blocked 0.7 futex (still blocked at frame end 20.1 ms)   largest 0.9 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.4 futex 0.4 | poll 0.0 (still blocked at frame end 20.3 ms)   largest 0.4 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.2  blocked 0.0 futex (still blocked at frame end 20.6 ms)   largest 0.1 ms in __futex_wait
+  4 stalls this frame, 15 off-CPU intervals of the process logged
+
+hitch frame 391  21.4 ms  (budget 20.8 ms, over by 0.5 ms, 3905% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.4 ms   runqueue 0.2 ms
+  blocked   20.8 ms  futex 18.6 | timer 1.9 | present 0.2
+  resolved   waiting on a running task 18.8 ms, inherited stalls 0.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     18.6 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.1 ms
+      1.9 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.4 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.4  runqueue 0.2  blocked 20.8 futex 18.6 | timer 1.9 | present 0.2
+    mg_main/6739                  oncpu 0.3  runqueue 0.1  blocked 21.0 futex   largest 21.0 ms in __futex_wait
+    mg_worker0/6751               oncpu 7.7  runnable 6.0  runqueue 3.5  blocked 2.4 futex (still blocked at frame end 1.7 ms)   largest 6.0 ms in __futex_wait   preempted by mg_worker2/6753 for 3.0 ms
+    mg_worker2/6753               oncpu 10.7  runnable 7.7  runqueue 0.1  blocked 2.4 futex (still blocked at frame end 0.5 ms)   preempted by mg_worker0/6751 for 4.0 ms
+    mg_worker1/6752               oncpu 18.6  runqueue 0.1  blocked 2.4 futex (still blocked at frame end 0.2 ms)   largest 2.5 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.3  blocked 0.7 futex (still blocked at frame end 20.3 ms)   largest 1.0 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.2  runqueue 0.1  blocked 0.4 futex 0.4 | poll 0.0 (still blocked at frame end 20.6 ms)   largest 0.4 ms in __futex_wait
+  4 stalls this frame, 19 off-CPU intervals of the process logged
+
+hitch frame 554  21.4 ms  (budget 20.8 ms, over by 0.6 ms, 3682% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      3.3 ms  (fault 2.9)   runqueue 0.1 ms
+  blocked   18.0 ms  futex 14.3 | timer 3.5 | present 0.2
+  resolved   waiting on a running task 14.4 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     14.3 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      3.5 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.2 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 3.3 (fault 2.9)  runqueue 0.1  blocked 18.0 futex 14.3 | timer 3.5 | present 0.2
+    mg_worker0/6751               oncpu 12.6  runnable 0.2  runqueue 0.0  blocked 6.8 futex (still blocked at frame end 1.8 ms)   largest 6.9 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker2/6753               oncpu 12.9  runqueue 0.1  blocked 6.9 futex (still blocked at frame end 1.6 ms)   largest 6.9 ms in __futex_wait
+    mg_worker1/6752               oncpu 14.3  runqueue 0.1  blocked 6.8 futex (still blocked at frame end 0.2 ms)   largest 6.9 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.8 futex (still blocked at frame end 20.5 ms)   largest 0.8 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.2  runnable 0.3  runqueue 0.0  blocked 0.2 futex 0.2 | poll 0.0 (still blocked at frame end 20.6 ms)   preempted by Xwayland/2670 for 0.3 ms
+    mg_main/6739                  oncpu 0.2  runnable 0.2  runqueue 0.0 (still blocked at frame end 21.0 ms)   preempted by mg_main/6737 for 0.2 ms
+  6 stalls this frame, 23 off-CPU intervals of the process logged
+
+hitch frame 569  21.0 ms  (budget 20.8 ms, over by 0.1 ms, 14652% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      3.4 ms  (fault 2.8)   runqueue 0.2 ms
+  blocked   17.4 ms  futex 14.1 | timer 3.0 | present 0.3
+  resolved   waiting on a running task 14.3 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     14.1 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        was running (waiting for work) 0.0 ms
+      3.0 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.5 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 3.4 (fault 2.8)  runqueue 0.2  blocked 17.4 futex 14.1 | timer 3.0 | present 0.3
+    mg_worker1/6752               oncpu 12.6  runnable 0.4  runqueue 0.1  blocked 6.6 futex (still blocked at frame end 1.3 ms)   largest 6.7 ms in __futex_wait   preempted by KMS thread/1987 for 0.3 ms
+    mg_worker0/6751               oncpu 12.9  runqueue 0.1  blocked 6.6 futex (still blocked at frame end 1.4 ms)   largest 6.7 ms in __futex_wait
+    mg_worker2/6753               oncpu 14.1  runqueue 0.1  blocked 6.6 futex (still blocked at frame end 0.2 ms)   largest 6.7 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 1.2 futex (still blocked at frame end 19.7 ms)   largest 1.2 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.2  blocked 0.6 futex 0.5 | poll 0.1 (still blocked at frame end 19.8 ms)   largest 0.7 ms in __futex_wait
+    mg_main/6739                  oncpu 0.3  runqueue 0.2  blocked 0.1 futex (still blocked at frame end 20.5 ms)   largest 0.2 ms in __futex_wait
+  4 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 629  21.4 ms  (budget 20.8 ms, over by 0.6 ms, 3401% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      3.1 ms  (fault 2.7)   runqueue 0.1 ms
+  blocked   18.2 ms  futex 16.7 | timer 1.3 | present 0.2
+  resolved   waiting on a running task 16.5 ms, inherited stalls 0.3 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     16.7 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        kept off the CPU 0.3 ms, last preempted by KMS thread/1987
+      1.3 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 3.1 (fault 2.7)  runqueue 0.1  blocked 18.2 futex 16.7 | timer 1.3 | present 0.2
+    mg_worker2/6753               oncpu 16.4  runnable 0.3  runqueue 0.1  blocked 4.5 futex (still blocked at frame end 0.2 ms)   largest 4.6 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker0/6751               oncpu 16.3  runqueue 0.1  blocked 4.5 futex (still blocked at frame end 0.6 ms)   largest 4.5 ms in __futex_wait
+    mg_worker1/6752               oncpu 16.2  runqueue 0.1  blocked 4.4 futex (still blocked at frame end 0.7 ms)   largest 4.5 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.7 futex (still blocked at frame end 20.7 ms)   largest 0.7 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.3 futex 0.3 | poll 0.0 (still blocked at frame end 20.8 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 21.2 ms)   largest 0.0 ms in __futex_wait
+  4 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 659  20.9 ms  (budget 20.8 ms, over by 0.1 ms, 17609% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      4.3 ms  (fault 3.7)   runnable 0.0 ms   runqueue 0.2 ms
+  blocked   16.5 ms  futex 14.9 | timer 0.7 | present 0.9
+  resolved   waiting on a running task 15.8 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     14.6 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        was running (waiting for work) 0.0 ms
+      0.9 ms  present  blocked in __futex_wait
+              <- mg_main/6739           was running (waiting for work) 0.0 ms
+      0.7 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.5 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 4.3 (fault 3.7)  runnable 0.0  runqueue 0.2  blocked 16.5 futex 14.9 | timer 0.7 | present 0.9   preempted by mg_main/6739 for 0.0 ms
+    mg_worker1/6752               oncpu 12.9  runnable 0.2  runqueue 0.1  blocked 6.0 futex (still blocked at frame end 1.7 ms)   largest 6.1 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker2/6753               oncpu 14.6  runqueue 0.0  blocked 6.0 futex (still blocked at frame end 0.3 ms)   largest 6.0 ms in __futex_wait
+    mg_worker0/6751               oncpu 12.9  runqueue 0.0  blocked 6.0 futex (still blocked at frame end 2.0 ms)   largest 6.0 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 2.1 futex (still blocked at frame end 18.8 ms)   largest 2.2 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.8  runnable 0.1  runqueue 0.1  blocked 1.1 futex 1.0 | poll 0.1 (still blocked at frame end 18.7 ms)   largest 1.1 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_main/6739                  oncpu 0.9  runqueue 0.0  blocked 0.1 futex (still blocked at frame end 20.0 ms)   largest 0.0 ms in __futex_wait
+  6 stalls this frame, 19 off-CPU intervals of the process logged
+
+hitch frame 674  24.8 ms  (budget 20.8 ms, over by 4.0 ms, 606% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      4.4 ms  (fault 3.6)   runqueue 0.2 ms
+  blocked   20.3 ms  futex 18.8 | timer 1.4 | present 0.1
+  resolved   waiting on a running task 11.6 ms, inherited stalls 7.3 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     18.8 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        kept off the CPU 7.3 ms, last preempted by KMS thread/1987
+      1.4 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.2 ms  in 1 smaller group
+  threads
+    mg_main/6737          (root)  oncpu 4.4 (fault 3.6)  runqueue 0.2  blocked 20.3 futex 18.8 | timer 1.4 | present 0.1
+    mg_main/6739                  oncpu 0.2  runqueue 0.1  blocked 24.6 futex   largest 24.6 ms in __futex_wait
+    mg_worker0/6751               oncpu 9.7  runnable 7.4  runqueue 0.1  blocked 5.7 futex (still blocked at frame end 1.9 ms)   largest 5.8 ms in __futex_wait   preempted by mg_worker2/6753 for 4.0 ms
+    mg_worker2/6753               oncpu 11.6  runnable 4.0  runqueue 3.3  blocked 5.7 futex (still blocked at frame end 0.2 ms)   largest 9.1 ms in __futex_wait   preempted by mg_worker0/6751 for 2.8 ms
+    mg_worker1/6752               oncpu 17.4  runqueue 0.1  blocked 5.7 futex (still blocked at frame end 1.7 ms)   largest 5.7 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.0 futex (still blocked at frame end 23.7 ms)   largest 1.1 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.2  blocked 0.5 futex 0.3 | poll 0.3 (still blocked at frame end 23.7 ms)   largest 0.3 ms in __futex_wait
+  4 stalls this frame, 21 off-CPU intervals of the process logged
+
+hitch frame 689  22.4 ms  (budget 20.8 ms, over by 1.5 ms, 1424% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      2.7 ms  (fault 2.3)   runqueue 0.1 ms
+  blocked   19.5 ms  futex 17.5 | timer 1.9 | present 0.1
+  resolved   waiting on a running task 17.3 ms, inherited stalls 0.3 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     17.5 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        kept off the CPU 0.3 ms, last preempted by KMS thread/1987
+      1.9 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 2.7 (fault 2.3)  runqueue 0.1  blocked 19.5 futex 17.5 | timer 1.9 | present 0.1
+    mg_worker2/6753               oncpu 17.2  runnable 0.3  runqueue 0.1  blocked 4.6 futex (still blocked at frame end 0.3 ms)   largest 4.6 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker1/6752               oncpu 16.6  runqueue 0.1  blocked 4.6 futex (still blocked at frame end 1.1 ms)   largest 4.7 ms in __futex_wait
+    mg_worker0/6751               oncpu 16.4  runqueue 0.1  blocked 4.5 futex (still blocked at frame end 1.4 ms)   largest 4.6 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.7 futex (still blocked at frame end 21.6 ms)   largest 0.7 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.1  blocked 0.3 futex 0.2 | poll 0.0 (still blocked at frame end 21.7 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 22.1 ms)   largest 0.0 ms in __futex_wait
+  4 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 734  21.3 ms  (budget 20.8 ms, over by 0.5 ms, 4350% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      3.6 ms  (fault 3.1)   runqueue 1.8 ms
+  blocked   16.0 ms  futex 13.5 | timer 2.4 | present 0.1
+  resolved   waiting on a running task 13.6 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     13.5 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      2.4 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      1.7 ms  runqueue waiting for a CPU, 2 times, longest 0.9 ms
+      0.2 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 3.6 (fault 3.1)  runqueue 1.8  blocked 16.0 futex 13.5 | timer 2.4 | present 0.1
+    mg_worker1/6752               oncpu 13.5  runqueue 0.1  blocked 6.7 futex (still blocked at frame end 1.1 ms)   largest 6.8 ms in __futex_wait
+    mg_worker2/6753               oncpu 12.9  runnable 0.0  runqueue 0.1  blocked 6.7 futex (still blocked at frame end 1.6 ms)   largest 6.7 ms in __futex_wait   preempted by rtkit-daemon/1212 for 0.0 ms
+    mg_worker0/6751               oncpu 12.7  runqueue 0.0  blocked 6.7 futex (still blocked at frame end 1.9 ms)   largest 6.8 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 0.5 futex (still blocked at frame end 20.7 ms)   largest 0.6 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.2 futex 0.2 | poll 0.0 (still blocked at frame end 20.7 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 21.1 ms)   largest 0.1 ms in __futex_wait
+  4 stalls this frame, 12 off-CPU intervals of the process logged
+
+hitch frame 824  22.0 ms  (budget 20.8 ms, over by 1.1 ms, 1855% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      2.8 ms  (fault 2.2)   runqueue 0.2 ms
+  blocked   19.0 ms  futex 15.9 | timer 2.9 | present 0.2
+  resolved   waiting on a running task 16.0 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     15.9 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        was running (waiting for work) 0.0 ms
+      2.9 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.4 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 2.8 (fault 2.2)  runqueue 0.2  blocked 19.0 futex 15.9 | timer 2.9 | present 0.2
+    mg_worker0/6751               oncpu 15.9  runqueue 0.1  blocked 5.7 futex (still blocked at frame end 0.3 ms)   largest 5.8 ms in __futex_wait
+    mg_worker2/6753               oncpu 15.6  runqueue 0.1  blocked 5.7 futex (still blocked at frame end 0.6 ms)   largest 5.8 ms in __futex_wait
+    mg_worker1/6752               oncpu 15.6  runqueue 0.1  blocked 5.7 futex (still blocked at frame end 0.6 ms)   largest 5.7 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 0.7 futex (still blocked at frame end 21.2 ms)   largest 0.8 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.3 futex 0.3 | poll 0.0 (still blocked at frame end 21.2 ms)   largest 0.4 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 21.7 ms)   largest 0.0 ms in __futex_wait
+  4 stalls this frame, 12 off-CPU intervals of the process logged
+
+hitch frame 839  21.3 ms  (budget 20.8 ms, over by 0.5 ms, 4461% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      3.4 ms  (fault 3.0)   runnable 1.2 ms   runqueue 0.1 ms
+  blocked   16.6 ms  futex 15.0 | timer 1.4 | present 0.2
+  resolved   waiting on a running task 15.2 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     15.0 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      1.4 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      1.1 ms  runnable preempted
+              <- mg_worker1/6752        held the CPU
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 3.4 (fault 3.0)  runnable 1.2  runqueue 0.1  blocked 16.6 futex 15.0 | timer 1.4 | present 0.2   preempted by mg_worker1/6752 for 1.1 ms
+    mg_worker0/6751               oncpu 14.3  runqueue 1.1  blocked 4.9 futex (still blocked at frame end 1.0 ms)   largest 6.0 ms in __futex_wait
+    mg_worker2/6753               oncpu 14.7  runqueue 0.3  blocked 4.9 futex (still blocked at frame end 1.3 ms)   largest 5.2 ms in __futex_wait
+    mg_worker1/6752               oncpu 16.2  runqueue 0.0  blocked 4.9 futex (still blocked at frame end 0.2 ms)   largest 4.9 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 0.7 futex (still blocked at frame end 20.6 ms)   largest 0.7 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.3 futex 0.3 | poll 0.0 (still blocked at frame end 20.6 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 21.0 ms)   largest 0.1 ms in __futex_wait
+  6 stalls this frame, 15 off-CPU intervals of the process logged
+
+hitch frame 854  21.8 ms  (budget 20.8 ms, over by 1.0 ms, 2141% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      4.1 ms  (fault 3.5)   runqueue 0.3 ms
+  blocked   17.5 ms  futex 14.4 | timer 2.8 | present 0.2
+  resolved   waiting on a running task 14.3 ms, inherited stalls 0.3 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     14.4 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        kept off the CPU 0.3 ms, last preempted by KMS thread/1987
+      2.8 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.5 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 4.1 (fault 3.5)  runqueue 0.3  blocked 17.5 futex 14.4 | timer 2.8 | present 0.2
+    mg_worker1/6752               oncpu 14.1  runnable 0.3  runqueue 0.1  blocked 7.1 futex (still blocked at frame end 0.2 ms)   largest 7.2 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker2/6753               oncpu 12.9  runqueue 0.1  blocked 7.1 futex (still blocked at frame end 1.6 ms)   largest 7.3 ms in __futex_wait
+    mg_worker0/6751               oncpu 13.7  runqueue 0.1  blocked 7.1 futex (still blocked at frame end 0.9 ms)   largest 7.2 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 1.5 futex (still blocked at frame end 20.2 ms)   largest 1.6 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.6  runqueue 0.3  blocked 0.7 futex 0.5 | poll 0.2 (still blocked at frame end 20.2 ms)   largest 0.5 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runnable 0.1  runqueue 0.1  blocked 0.2 futex (still blocked at frame end 21.3 ms)   largest 0.2 ms in __futex_wait   preempted by mg_main/6737 for 0.0 ms
+  5 stalls this frame, 19 off-CPU intervals of the process logged
+
+hitch frame 944  21.6 ms  (budget 20.8 ms, over by 0.8 ms, 2694% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      3.4 ms  (fault 2.9)   runqueue 0.1 ms
+  blocked   18.0 ms  futex 14.3 | timer 3.4 | present 0.3
+  resolved   waiting on a running task 14.5 ms, inherited stalls 0.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     14.3 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        was running (waiting for work) 0.0 ms
+      3.4 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.4 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 3.4 (fault 2.9)  runqueue 0.1  blocked 18.0 futex 14.3 | timer 3.4 | present 0.3
+    mg_worker1/6752               oncpu 12.5  runnable 1.6  runqueue 0.1  blocked 7.0 futex (still blocked at frame end 0.4 ms)   largest 7.1 ms in __futex_wait   preempted by llvmpipe-8/2002 for 1.6 ms
+    mg_worker2/6753               oncpu 13.1  runnable 0.2  runqueue 0.1  blocked 6.9 futex (still blocked at frame end 1.2 ms)   largest 7.0 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker0/6751               oncpu 14.3  runqueue 0.1  blocked 7.0 futex (still blocked at frame end 0.2 ms)   largest 7.1 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 0.8 futex (still blocked at frame end 20.7 ms)   largest 0.9 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.0  blocked 0.4 futex (still blocked at frame end 20.8 ms)   largest 0.4 ms in __futex_wait
+    mg_main/6739                  oncpu 0.3  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 21.2 ms)   largest 0.1 ms in __futex_wait
+  4 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 959  21.0 ms  (budget 20.8 ms, over by 0.1 ms, 15048% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      3.1 ms  (fault 2.6)   runqueue 0.1 ms
+  blocked   17.7 ms  futex 14.8 | timer 2.8 | present 0.2
+  resolved   waiting on a running task 14.6 ms, inherited stalls 0.3 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     14.8 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        kept off the CPU 0.3 ms, last preempted by KMS thread/1987
+      2.8 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 3.1 (fault 2.6)  runqueue 0.1  blocked 17.7 futex 14.8 | timer 2.8 | present 0.2
+    mg_worker0/6751               oncpu 14.5  runnable 0.3  runqueue 0.1  blocked 5.9 futex (still blocked at frame end 0.2 ms)   largest 6.0 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker2/6753               oncpu 13.6  runqueue 0.1  blocked 5.9 futex (still blocked at frame end 1.4 ms)   largest 6.0 ms in __futex_wait
+    mg_worker1/6752               oncpu 13.5  runqueue 0.1  blocked 5.9 futex (still blocked at frame end 1.5 ms)   largest 6.0 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.8 futex (still blocked at frame end 20.2 ms)   largest 0.8 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.5  runqueue 0.0  blocked 0.3 futex (still blocked at frame end 20.2 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 20.7 ms)   largest 0.0 ms in __futex_wait
+  4 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 989  22.5 ms  (budget 20.8 ms, over by 1.7 ms, 1284% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      8.8 ms  (fault 3.3, reclaim 5.0)   runqueue 0.1 ms
+  blocked   13.6 ms  futex 13.3 | timer 0.1 | present 0.2
+  resolved   waiting on a running task 13.3 ms, inherited stalls 0.2 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     13.3 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        kept off the CPU 0.2 ms
+      0.4 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 8.8 (fault 3.3, reclaim 5.0)  runqueue 0.1  blocked 13.6 futex 13.3 | timer 0.1 | present 0.2
+    mg_worker0/6751               oncpu 13.2  runqueue 0.2  blocked 9.0 futex (still blocked at frame end 0.2 ms)   largest 9.2 ms in __futex_wait
+    mg_worker2/6753               oncpu 12.9  runnable 0.1  runqueue 0.1  blocked 8.9 futex (still blocked at frame end 0.5 ms)   largest 9.0 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker1/6752               oncpu 13.2  runqueue 0.1  blocked 9.0 futex (still blocked at frame end 0.3 ms)   largest 9.0 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.8 futex (still blocked at frame end 21.6 ms)   largest 0.9 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.1  blocked 0.4 futex 0.3 | poll 0.1 (still blocked at frame end 21.7 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 22.2 ms)   largest 0.1 ms in __futex_wait
+  4 stalls this frame, 13 off-CPU intervals of the process logged
+
+hitch frame 993  23.4 ms  (budget 20.8 ms, over by 2.5 ms, 900% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.5 ms   runqueue 0.2 ms
+  blocked   22.7 ms  futex 19.5 | timer 3.0 | present 0.2
+  resolved   waiting on a running task 19.5 ms, inherited stalls 0.2 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     19.5 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        kept off the CPU 0.2 ms, last preempted by KMS thread/1987
+      3.0 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.5  runqueue 0.2  blocked 22.7 futex 19.5 | timer 3.0 | present 0.2
+    mg_worker2/6753               oncpu 9.4  runnable 6.5  runqueue 3.0  blocked 3.4 futex (still blocked at frame end 1.1 ms)   largest 3.4 ms in __futex_wait   preempted by mg_worker1/6752 for 3.0 ms
+    mg_worker1/6752               oncpu 9.4  runnable 9.0  runqueue 0.1  blocked 3.5 futex (still blocked at frame end 1.4 ms)   largest 3.5 ms in __futex_wait   preempted by mg_worker2/6753 for 3.0 ms
+    mg_worker0/6751               oncpu 19.4  runnable 0.2  runqueue 0.1  blocked 3.4 futex (still blocked at frame end 0.3 ms)   largest 3.5 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 2.3 futex (still blocked at frame end 21.0 ms)   largest 2.4 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.5  runnable 0.2  runqueue 0.2  blocked 1.5 futex 0.2 | poll 1.3 (still blocked at frame end 21.1 ms)   largest 1.2 ms in poll_schedule_timeout.constprop.0   preempted by KMS thread/1987 for 0.2 ms
+    mg_main/6739                  oncpu 0.2  runnable 0.1  runqueue 0.0 (still blocked at frame end 23.0 ms)   preempted by mg_main/6737 for 0.1 ms
+  6 stalls this frame, 29 off-CPU intervals of the process logged
+
+hitch frame 1019  26.0 ms  (budget 20.8 ms, over by 5.1 ms, 493% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      7.6 ms  (fault 2.2, reclaim 0.6, compact 4.3)   runqueue 0.2 ms
+  blocked   18.2 ms  futex 15.1 | timer 2.9 | present 0.2
+  resolved   waiting on a running task 15.3 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     15.1 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        was running (waiting for work) 0.0 ms
+      2.9 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 7.6 (fault 2.2, reclaim 0.6, compact 4.3)  runqueue 0.2  blocked 18.2 futex 15.1 | timer 2.9 | present 0.2
+    mg_worker1/6752               oncpu 11.8  runnable 0.1  runqueue 1.7  blocked 10.5 futex (still blocked at frame end 1.8 ms)   largest 12.2 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker2/6753               oncpu 12.9  runqueue 1.3  blocked 10.5 futex (still blocked at frame end 1.3 ms)   largest 11.8 ms in __futex_wait
+    mg_worker0/6751               oncpu 15.2  runqueue 0.0  blocked 10.5 futex (still blocked at frame end 0.2 ms)   largest 10.6 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.8 futex (still blocked at frame end 25.1 ms)   largest 0.9 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.4 futex 0.3 | poll 0.0 (still blocked at frame end 25.1 ms)   largest 0.4 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 25.7 ms)   largest 0.1 ms in __futex_wait
+  4 stalls this frame, 15 off-CPU intervals of the process logged
+
+hitch frame 1042  22.5 ms  (budget 20.8 ms, over by 1.7 ms, 1317% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.5 ms   runqueue 1.2 ms
+  blocked   20.8 ms  futex 19.7 | timer 0.8 | present 0.2
+  resolved   waiting on a running task 11.7 ms, inherited stalls 8.3 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     19.7 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        kept off the CPU 8.3 ms, last preempted by mg_worker2/6753
+      1.1 ms  runqueue waiting for a CPU, 2 times, longest 1.1 ms
+      0.8 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.5  runqueue 1.2  blocked 20.8 futex 19.7 | timer 0.8 | present 0.2
+    mg_main/6739                  oncpu 0.3  runqueue 0.1  blocked 22.1 futex   largest 22.1 ms in __futex_wait
+    mg_worker2/6753               oncpu 9.6  runnable 5.9  runqueue 3.7  blocked 2.4 futex (still blocked at frame end 0.9 ms)   largest 3.7 ms in __futex_wait   preempted by mg_worker1/6752 for 3.0 ms
+    mg_worker1/6752               oncpu 11.4  runnable 8.3  runqueue 0.1  blocked 2.4 futex (still blocked at frame end 0.3 ms)   preempted by mg_worker2/6753 for 4.0 ms
+    mg_worker0/6751               oncpu 18.9  runqueue 0.0  blocked 2.4 futex (still blocked at frame end 1.2 ms)   largest 2.4 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.7 futex (still blocked at frame end 21.7 ms)   largest 0.8 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.4 futex 0.4 | poll 0.0 (still blocked at frame end 21.7 ms)   largest 0.4 ms in __futex_wait
+  4 stalls this frame, 20 off-CPU intervals of the process logged
+
+hitch frame 1049  27.6 ms  (budget 20.8 ms, over by 6.8 ms, 386% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     10.0 ms  (fault 3.6, reclaim 2.4, compact 2.9)   runnable 0.0 ms   runqueue 0.1 ms
+  blocked   17.5 ms  futex 14.3 | timer 2.9 | present 0.3
+  resolved   waiting on a running task 14.6 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     14.3 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        was running (waiting for work) 0.0 ms
+      2.9 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.4 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 10.0 (fault 3.6, reclaim 2.4, compact 2.9)  runnable 0.0  runqueue 0.1  blocked 17.5 futex 14.3 | timer 2.9 | present 0.3   preempted by kworker/1:2/218 for 0.0 ms
+    mg_worker2/6753               oncpu 13.0  runnable 0.2  runqueue 0.0  blocked 13.0 futex (still blocked at frame end 1.4 ms)   largest 13.1 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker1/6752               oncpu 12.7  runqueue 0.1  blocked 13.0 futex (still blocked at frame end 1.8 ms)   largest 13.1 ms in __futex_wait
+    mg_worker0/6751               oncpu 14.4  runqueue 0.1  blocked 13.0 futex (still blocked at frame end 0.2 ms)   largest 13.1 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.5 futex (still blocked at frame end 26.1 ms)   largest 1.5 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.5  runqueue 0.4  blocked 0.6 futex 0.4 | poll 0.2 (still blocked at frame end 26.1 ms)   largest 0.5 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 27.3 ms)   largest 0.1 ms in __futex_wait
+  5 stalls this frame, 16 off-CPU intervals of the process logged
+
+hitch frame 1064  35.2 ms  (budget 20.8 ms, over by 14.3 ms, 226% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     18.2 ms  (fault 4.4, reclaim 8.0, compact 3.0)   runqueue 0.1 ms
+  blocked   16.9 ms  futex 14.1 | timer 2.7 | present 0.1
+  resolved   waiting on a running task 14.2 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     14.1 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      2.7 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.2 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 18.2 (fault 4.4, reclaim 8.0, compact 3.0)  runqueue 0.1  blocked 16.9 futex 14.1 | timer 2.7 | present 0.1
+    mg_worker0/6751               oncpu 13.4  runnable 0.2  runqueue 0.1  blocked 20.8 futex (still blocked at frame end 0.6 ms)   largest 20.9 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker2/6753               oncpu 13.1  runqueue 0.1  blocked 20.8 futex (still blocked at frame end 1.2 ms)   largest 20.9 ms in __futex_wait
+    mg_worker1/6752               oncpu 14.1  runqueue 0.1  blocked 20.8 futex (still blocked at frame end 0.2 ms)   largest 20.9 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.5 futex (still blocked at frame end 34.6 ms)   largest 0.6 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.2 futex 0.2 | poll 0.0 (still blocked at frame end 34.6 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 34.9 ms)   largest 0.1 ms in __futex_wait
+  4 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 1079  29.7 ms  (budget 20.8 ms, over by 8.8 ms, 274% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     13.1 ms  (fault 6.1, reclaim 0.9, compact 0.7)   runqueue 0.1 ms
+  blocked   16.5 ms  futex 13.6 | timer 2.8 | present 0.1
+  resolved   waiting on a running task 13.7 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     13.6 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        was running (waiting for work) 0.0 ms
+      2.8 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.2 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 13.1 (fault 6.1, reclaim 0.9, compact 0.7)  runqueue 0.1  blocked 16.5 futex 13.6 | timer 2.8 | present 0.1
+    mg_main/6739                  oncpu 0.2  runqueue 0.1  blocked 29.4 futex (still blocked at frame end 29.5 ms)   largest 0.0 ms in __futex_wait
+    mg_worker2/6753               oncpu 13.3  runnable 0.2  runqueue 0.0  blocked 15.8 futex (still blocked at frame end 0.3 ms)   largest 15.9 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker0/6751               oncpu 13.6  runqueue 0.1  blocked 15.8 futex (still blocked at frame end 0.2 ms)   largest 15.9 ms in __futex_wait
+    mg_worker1/6752               oncpu 13.5  runqueue 0.1  blocked 15.8 futex (still blocked at frame end 0.4 ms)   largest 15.8 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 0.5 futex (still blocked at frame end 29.1 ms)   largest 0.6 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.2 futex 0.2 | poll 0.0 (still blocked at frame end 29.1 ms)   largest 0.3 ms in __futex_wait
+  4 stalls this frame, 15 off-CPU intervals of the process logged
+
+hitch frame 1109  35.1 ms  (budget 20.8 ms, over by 14.3 ms, 213% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     18.6 ms  (fault 5.6, reclaim 1.3, compact 7.2)   runqueue 0.1 ms
+  blocked   16.3 ms  futex 16.1 | present 0.2
+  resolved   waiting on a running task 16.3 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     15.8 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      0.7 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 18.6 (fault 5.6, reclaim 1.3, compact 7.2)  runqueue 0.1  blocked 16.3 futex 16.1 | present 0.2
+    mg_worker2/6753               oncpu 15.0  runnable 0.4  runqueue 0.1  blocked 18.9 futex (still blocked at frame end 0.7 ms)   largest 18.9 ms in __futex_wait   preempted by KMS thread/1987 for 0.3 ms
+    mg_worker0/6751               oncpu 15.5  runqueue 0.1  blocked 18.9 futex (still blocked at frame end 0.6 ms)   largest 19.0 ms in __futex_wait
+    mg_worker1/6752               oncpu 15.8  runqueue 0.1  blocked 18.9 futex (still blocked at frame end 0.3 ms)   largest 19.0 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.8 futex (still blocked at frame end 34.3 ms)   largest 0.8 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.0  blocked 0.3 futex (still blocked at frame end 34.3 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.3  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 34.8 ms)   largest 0.0 ms in __futex_wait
+  4 stalls this frame, 15 off-CPU intervals of the process logged
+
+hitch frame 1124  29.1 ms  (budget 20.8 ms, over by 8.2 ms, 282% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     15.3 ms  (fault 7.4, reclaim 1.6, compact 0.6)   runqueue 0.1 ms
+  blocked   13.7 ms  futex 13.6 | present 0.1
+  resolved   waiting on a running task 13.7 ms, inherited stalls 0.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     13.6 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.1 ms
+      0.2 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 15.3 (fault 7.4, reclaim 1.6, compact 0.6)  runqueue 0.1  blocked 13.7 futex 13.6 | present 0.1
+    mg_main/6739                  oncpu 0.2  runqueue 0.1  blocked 28.8 futex   largest 28.8 ms in __futex_wait
+    mg_worker2/6753               oncpu 13.3  runnable 0.1  runqueue 0.1  blocked 15.1 futex (still blocked at frame end 0.4 ms)   largest 15.1 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker1/6752               oncpu 13.6  runqueue 0.1  blocked 15.1 futex (still blocked at frame end 0.3 ms)   largest 15.2 ms in __futex_wait
+    mg_worker0/6751               oncpu 13.1  runqueue 0.0  blocked 15.1 futex (still blocked at frame end 0.8 ms)   largest 15.2 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 0.7 futex (still blocked at frame end 28.2 ms)   largest 0.8 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.1  blocked 0.3 futex 0.3 | poll 0.0 (still blocked at frame end 28.3 ms)   largest 0.3 ms in __futex_wait
+  3 stalls this frame, 16 off-CPU intervals of the process logged
+
+hitch frame 1139  32.7 ms  (budget 20.8 ms, over by 11.8 ms, 227% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     16.5 ms  (fault 7.0, reclaim 1.1, compact 2.8)   runqueue 0.2 ms
+  blocked   16.0 ms  futex 13.5 | timer 2.3 | present 0.2
+  resolved   waiting on a running task 13.4 ms, inherited stalls 0.3 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     13.5 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        kept off the CPU 0.3 ms, last preempted by KMS thread/1987
+      2.3 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.4 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 16.5 (fault 7.0, reclaim 1.1, compact 2.8)  runqueue 0.2  blocked 16.0 futex 13.5 | timer 2.3 | present 0.2
+    mg_worker0/6751               oncpu 13.3  runnable 0.2  runqueue 0.0  blocked 18.8 futex (still blocked at frame end 0.3 ms)   largest 18.8 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker2/6753               oncpu 13.0  runqueue 0.0  blocked 18.8 futex (still blocked at frame end 0.9 ms)   largest 18.8 ms in __futex_wait
+    mg_worker1/6752               oncpu 12.8  runqueue 0.1  blocked 18.8 futex (still blocked at frame end 1.0 ms)   largest 18.8 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.0 futex (still blocked at frame end 31.6 ms)   largest 1.1 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.6  runqueue 0.1  blocked 0.4 futex (still blocked at frame end 31.6 ms)   largest 0.4 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 32.4 ms)   largest 0.0 ms in __futex_wait
+  4 stalls this frame, 13 off-CPU intervals of the process logged
+
+hitch frame 1154  38.6 ms  (budget 20.8 ms, over by 17.7 ms, 178% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     21.0 ms  (fault 10.7, reclaim 2.4, compact 1.0)   runnable 0.0 ms   runqueue 0.1 ms
+  blocked   17.4 ms  futex 16.6 | timer 0.7 | present 0.1
+  resolved   waiting on a running task 16.0 ms, inherited stalls 0.7 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     16.6 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        kept off the CPU 0.7 ms, last preempted by KMS thread/1987
+      0.9 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 21.0 (fault 10.7, reclaim 2.4, compact 1.0)  runnable 0.0  runqueue 0.1  blocked 17.4 futex 16.6 | timer 0.7 | present 0.1   preempted by migration/1/48 for 0.0 ms
+    mg_worker2/6753               oncpu 15.9  runnable 0.4  runqueue 0.5  blocked 21.5 futex (still blocked at frame end 0.3 ms)   largest 22.0 ms in __futex_wait   preempted by KMS thread/1987 for 0.3 ms
+    mg_worker1/6752               oncpu 15.1  runqueue 0.1  blocked 21.6 futex (still blocked at frame end 1.8 ms)   largest 21.7 ms in __futex_wait
+    mg_worker0/6751               oncpu 16.3  runnable 0.0  runqueue 0.1  blocked 21.5 futex (still blocked at frame end 0.6 ms)   largest 21.6 ms in __futex_wait   preempted by kworker/2:1/95 for 0.0 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.8 futex (still blocked at frame end 37.8 ms)   largest 0.8 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.1  blocked 0.3 futex 0.2 | poll 0.1 (still blocked at frame end 37.8 ms)   largest 0.2 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 38.4 ms)   largest 0.1 ms in __futex_wait
+  5 stalls this frame, 15 off-CPU intervals of the process logged
+
+hitch frame 1158  21.4 ms  (budget 20.8 ms, over by 0.5 ms, 3666% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      1.5 ms   runqueue 0.4 ms
+  blocked   19.5 ms  futex 19.2 | present 0.3
+  resolved   waiting on a running task 19.4 ms, inherited stalls 0.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     19.2 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.1 ms
+      0.7 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 1.5  runqueue 0.4  blocked 19.5 futex 19.2 | present 0.3
+    mg_main/6739                  oncpu 0.4  runqueue 0.2  blocked 20.7 futex   largest 20.7 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 2.3 futex (still blocked at frame end 19.0 ms)   largest 2.3 ms in __futex_wait
+    mg_worker0/6751               oncpu 15.8  runqueue 1.0  blocked 0.8 futex (still blocked at frame end 3.8 ms)   largest 1.8 ms in __futex_wait
+    mg_worker2/6753               oncpu 18.9  runqueue 0.1  blocked 0.8 futex (still blocked at frame end 1.6 ms)   largest 0.9 ms in __futex_wait
+    mg_worker1/6752               oncpu 19.2  runqueue 0.2  blocked 0.7 futex (still blocked at frame end 1.3 ms)   largest 0.9 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 1.6  runqueue 0.2  blocked 0.6 futex (still blocked at frame end 19.0 ms)   largest 0.8 ms in __futex_wait
+  3 stalls this frame, 11 off-CPU intervals of the process logged
+
+hitch frame 1160  24.8 ms  (budget 20.8 ms, over by 3.9 ms, 584% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      1.2 ms   runqueue 0.2 ms
+  blocked   23.3 ms  futex 22.8 | present 0.5
+  resolved   waiting on a running task 23.3 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     22.8 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        was running (waiting for work) 0.0 ms
+      0.7 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 1.2  runqueue 0.2  blocked 23.3 futex 22.8 | present 0.5
+    mg_main/6739                  oncpu 0.6  runqueue 0.2  blocked 24.0 futex   largest 24.0 ms in __futex_wait
+    mg_worker1/6752               oncpu 13.3  runnable 3.8  runqueue 3.7  blocked 0.8 futex (still blocked at frame end 3.1 ms)   largest 4.5 ms in __futex_wait   preempted by mg_worker2/6753 for 3.0 ms
+    mg_worker2/6753               oncpu 12.9  runnable 6.9  runqueue 0.1  blocked 0.8 futex (still blocked at frame end 4.0 ms)   preempted by mg_worker1/6752 for 3.9 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.6 futex (still blocked at frame end 23.1 ms)   largest 1.6 ms in __futex_wait
+    mg_worker0/6751               oncpu 22.8  runqueue 0.1  blocked 0.7 futex (still blocked at frame end 1.1 ms)   largest 0.8 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.9  runqueue 0.0  blocked 0.7 futex (still blocked at frame end 23.1 ms)   largest 0.7 ms in __futex_wait
+  3 stalls this frame, 16 off-CPU intervals of the process logged
+
+hitch frame 1164  21.1 ms  (budget 20.8 ms, over by 0.3 ms, 6613% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.9 ms   runqueue 0.2 ms
+  blocked   20.1 ms  futex 19.9 | present 0.2
+  resolved   waiting on a running task 14.8 ms, inherited stalls 5.3 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     19.9 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        kept off the CPU 5.3 ms, last preempted by mg_worker1/6752
+      0.4 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.9  runqueue 0.2  blocked 20.1 futex 19.9 | present 0.2
+    mg_worker1/6752               oncpu 12.8  runnable 2.9  runqueue 3.2  blocked 0.6 futex (still blocked at frame end 1.6 ms)   largest 3.8 ms in __futex_wait   preempted by mg_worker0/6751 for 2.9 ms
+    mg_worker0/6751               oncpu 14.7  runnable 5.2  runqueue 0.1  blocked 0.6 futex (still blocked at frame end 0.6 ms)   preempted by mg_worker1/6752 for 4.1 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 1.8 futex (still blocked at frame end 19.3 ms)   largest 1.8 ms in __futex_wait
+    mg_worker2/6753               oncpu 19.5  runqueue 0.1  blocked 0.5 futex (still blocked at frame end 1.1 ms)   largest 0.6 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 1.3  runnable 0.0  runqueue 0.1  blocked 0.4 futex (still blocked at frame end 19.3 ms)   largest 0.5 ms in __futex_wait   preempted by WSI swapchain e/6750 for 0.0 ms
+    mg_main/6739                  oncpu 0.3  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 20.7 ms)   largest 0.1 ms in __futex_wait
+  3 stalls this frame, 16 off-CPU intervals of the process logged
+
+hitch frame 1169  42.0 ms  (budget 20.8 ms, over by 21.1 ms, 161% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     23.1 ms  (fault 9.8, reclaim 3.5, compact 2.5)   runnable 0.8 ms   runqueue 0.2 ms
+  blocked   17.8 ms  futex 17.2 | present 0.6
+  resolved   waiting on a running task 17.8 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     17.2 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        was running (waiting for work) 0.0 ms
+      1.6 ms  in 4 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 23.1 (fault 9.8, reclaim 3.5, compact 2.5)  runnable 0.8  runqueue 0.2  blocked 17.8 futex 17.2 | present 0.6   preempted by KMS thread/1987 for 0.5 ms
+    mg_main/6739                  oncpu 0.7  runqueue 0.2  blocked 41.1 futex   largest 41.1 ms in __futex_wait
+    mg_worker0/6751               oncpu 15.4  runqueue 0.1  blocked 24.2 futex (still blocked at frame end 2.4 ms)   largest 24.2 ms in __futex_wait
+    mg_worker2/6753               oncpu 17.3  runqueue 0.1  blocked 24.1 futex (still blocked at frame end 0.4 ms)   largest 24.2 ms in __futex_wait
+    mg_worker1/6752               oncpu 14.2  runqueue 0.1  blocked 24.1 futex (still blocked at frame end 3.6 ms)   largest 24.2 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.9 futex (still blocked at frame end 40.0 ms)   largest 2.0 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.6  runqueue 0.2  blocked 1.2 futex 0.9 | poll 0.3 (still blocked at frame end 40.0 ms)   largest 1.0 ms in __futex_wait
+  6 stalls this frame, 17 off-CPU intervals of the process logged
+
+hitch frame 1184  31.1 ms  (budget 20.8 ms, over by 10.3 ms, 243% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     14.6 ms  (fault 7.1, reclaim 1.6)   runnable 0.4 ms   runqueue 0.2 ms
+  blocked   15.9 ms  futex 13.9 | timer 1.9 | present 0.2
+  resolved   waiting on a running task 14.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     13.9 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        was running (waiting for work) 0.0 ms
+      1.9 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.7 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 14.6 (fault 7.1, reclaim 1.6)  runnable 0.4  runqueue 0.2  blocked 15.9 futex 13.9 | timer 1.9 | present 0.2   preempted by KMS thread/1987 for 0.3 ms
+    mg_worker0/6751               oncpu 13.4  runqueue 0.1  blocked 16.8 futex (still blocked at frame end 0.8 ms)   largest 16.9 ms in __futex_wait
+    mg_worker1/6752               oncpu 13.2  runqueue 0.0  blocked 16.9 futex (still blocked at frame end 1.0 ms)   largest 16.9 ms in __futex_wait
+    mg_worker2/6753               oncpu 13.9  runqueue 0.0  blocked 16.8 futex (still blocked at frame end 0.3 ms)   largest 16.9 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 1.0 futex (still blocked at frame end 30.1 ms)   largest 1.0 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.5  runqueue 0.1  blocked 0.5 futex (still blocked at frame end 30.1 ms)   largest 0.5 ms in __futex_wait
+    mg_main/6739                  oncpu 0.3  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 30.7 ms)   largest 0.0 ms in __futex_wait
+  6 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 1199  37.1 ms  (budget 20.8 ms, over by 16.3 ms, 187% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     19.9 ms  (fault 9.0, reclaim 1.2, compact 3.3)   runqueue 0.2 ms
+  blocked   17.0 ms  futex 14.8 | timer 2.0 | present 0.2
+  resolved   waiting on a running task 14.9 ms, inherited stalls 0.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     14.8 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        was running (waiting for work) 0.1 ms
+      2.0 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.4 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 19.9 (fault 9.0, reclaim 1.2, compact 3.3)  runqueue 0.2  blocked 17.0 futex 14.8 | timer 2.0 | present 0.2
+    mg_worker2/6753               oncpu 14.7  runnable 0.1  runqueue 0.0  blocked 22.1 futex (still blocked at frame end 0.2 ms)   largest 22.1 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker1/6752               oncpu 13.8  runqueue 0.1  blocked 22.1 futex (still blocked at frame end 1.2 ms)   largest 22.1 ms in __futex_wait
+    mg_worker0/6751               oncpu 13.9  runqueue 0.1  blocked 22.0 futex (still blocked at frame end 1.1 ms)   largest 22.1 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 1.0 futex (still blocked at frame end 36.1 ms)   largest 1.0 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.3  blocked 0.4 futex 0.4 | poll 0.0 (still blocked at frame end 36.1 ms)   largest 0.7 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 36.7 ms)   largest 0.1 ms in __futex_wait
+  4 stalls this frame, 13 off-CPU intervals of the process logged
+
+hitch frame 1201  20.9 ms  (budget 20.8 ms, over by 0.1 ms, 32985% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.7 ms   runqueue 0.3 ms
+  blocked   19.9 ms  futex 19.8 | present 0.1
+  resolved   waiting on a running task 19.5 ms, inherited stalls 0.4 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     19.8 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        kept off the CPU 0.4 ms, last preempted by KMS thread/1987
+      0.4 ms  in 1 smaller group
+  threads
+    mg_main/6737          (root)  oncpu 0.7  runqueue 0.3  blocked 19.9 futex 19.8 | present 0.1
+    WSI swapchain e/6750          oncpu 0.1  runqueue 1.0  blocked 1.3 futex (still blocked at frame end 18.5 ms)   largest 2.3 ms in __futex_wait
+    mg_worker2/6753               oncpu 19.4  runnable 0.5  runqueue 0.0  blocked 0.6 futex (still blocked at frame end 0.4 ms)   largest 0.7 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker0/6751               oncpu 18.2  runqueue 0.3  blocked 0.6 futex (still blocked at frame end 1.8 ms)   largest 0.9 ms in __futex_wait
+    mg_worker1/6752               oncpu 19.0  runqueue 0.1  blocked 0.6 futex (still blocked at frame end 1.2 ms)   largest 0.7 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.6  runqueue 0.1  blocked 0.5 futex 0.5 | poll 0.1 (still blocked at frame end 19.6 ms)   largest 0.5 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.1  blocked 0.1 futex (still blocked at frame end 20.5 ms)   largest 0.1 ms in __futex_wait
+  3 stalls this frame, 15 off-CPU intervals of the process logged
+
+hitch frame 1203  22.1 ms  (budget 20.8 ms, over by 1.2 ms, 1702% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.3 ms   runnable 0.0 ms   runqueue 0.0 ms
+  blocked   21.7 ms  futex 20.9 | present 0.8
+  resolved   waiting on a running task 21.0 ms, inherited stalls 0.7 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     20.9 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        was running (waiting for work) 0.0 ms
+      0.8 ms  present  blocked in __futex_wait
+              <- mg_main/6739           kept off the CPU 0.6 ms
+      0.1 ms  in 1 smaller group
+  threads
+    mg_main/6737          (root)  oncpu 0.3  runnable 0.0  runqueue 0.0  blocked 21.7 futex 20.9 | present 0.8   preempted by mg_main/6739 for 0.0 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.7  blocked 4.9 futex (still blocked at frame end 16.4 ms)   largest 5.6 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.9  runqueue 0.3  blocked 3.6 futex 0.9 | poll 2.8 (still blocked at frame end 17.2 ms)   largest 2.8 ms in poll_schedule_timeout.constprop.0
+    mg_worker0/6751               oncpu 16.8  runnable 0.3  runqueue 2.3  blocked 0.9 futex (still blocked at frame end 1.8 ms)   largest 3.2 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker1/6752               oncpu 17.5  runqueue 2.3  blocked 0.9 futex (still blocked at frame end 1.3 ms)   largest 3.2 ms in __futex_wait
+    mg_worker2/6753               oncpu 20.9  runnable 0.0  runqueue 0.0  blocked 0.9 futex (still blocked at frame end 0.3 ms)   largest 0.9 ms in __futex_wait   preempted by WSI swapchain e/6750 for 0.0 ms
+    mg_main/6739                  oncpu 0.2  runqueue 0.7  blocked 0.0 futex (still blocked at frame end 21.2 ms)   largest 0.7 ms in __futex_wait
+  4 stalls this frame, 17 off-CPU intervals of the process logged
+
+hitch frame 1211  21.2 ms  (budget 20.8 ms, over by 0.4 ms, 5230% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.4 ms   runqueue 0.2 ms
+  blocked   20.6 ms  futex 20.2 | present 0.5
+  resolved   waiting on a running task 20.1 ms, inherited stalls 0.5 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     20.2 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        kept off the CPU 0.5 ms, last preempted by KMS thread/1987
+      0.6 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.4  runqueue 0.2  blocked 20.6 futex 20.2 | present 0.5
+    mg_worker2/6753               oncpu 14.9  runnable 1.9  runqueue 3.4  blocked 0.8 futex (still blocked at frame end 0.3 ms)   largest 4.2 ms in __futex_wait   preempted by mg_worker1/6752 for 1.9 ms
+    mg_worker1/6752               oncpu 15.9  runnable 4.0  runqueue 0.1  blocked 0.8 futex (still blocked at frame end 0.5 ms)   preempted by mg_worker2/6753 for 4.0 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.4 futex (still blocked at frame end 19.7 ms)   largest 1.5 ms in __futex_wait
+    mg_worker0/6751               oncpu 19.7  runnable 0.4  runqueue 0.1  blocked 0.7 futex (still blocked at frame end 0.2 ms)   largest 0.8 ms in __futex_wait   preempted by KMS thread/1987 for 0.3 ms
+    WSI swapchain q/6749          oncpu 0.7  runqueue 0.1  blocked 0.7 futex (still blocked at frame end 19.7 ms)   largest 0.8 ms in __futex_wait
+    mg_main/6739                  oncpu 0.5  runqueue 0.2  blocked 0.0 futex (still blocked at frame end 20.6 ms)   largest 0.1 ms in __futex_wait
+  3 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 1214  33.2 ms  (budget 20.8 ms, over by 12.3 ms, 219% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     18.1 ms  (fault 7.8, reclaim 1.4, compact 3.0)   runqueue 0.2 ms
+  blocked   14.8 ms  futex 14.7 | present 0.2
+  resolved   waiting on a running task 14.7 ms, inherited stalls 0.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     14.7 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        was running (waiting for work) 0.1 ms
+      0.4 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 18.1 (fault 7.8, reclaim 1.4, compact 3.0)  runqueue 0.2  blocked 14.8 futex 14.7 | present 0.2
+    mg_worker2/6753               oncpu 13.7  runnable 0.2  runqueue 0.1  blocked 18.2 futex (still blocked at frame end 0.9 ms)   largest 18.3 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker0/6751               oncpu 14.6  runqueue 0.1  blocked 18.2 futex (still blocked at frame end 0.2 ms)   largest 18.4 ms in __futex_wait
+    mg_worker1/6752               oncpu 13.6  runqueue 0.0  blocked 18.2 futex (still blocked at frame end 1.3 ms)   largest 18.2 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 1.0 futex (still blocked at frame end 32.1 ms)   largest 1.1 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.6  runqueue 0.1  blocked 0.4 futex (still blocked at frame end 32.1 ms)   largest 0.5 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.1  blocked 0.1 futex (still blocked at frame end 32.8 ms)   largest 0.2 ms in __futex_wait
+  3 stalls this frame, 12 off-CPU intervals of the process logged
+
+hitch frame 1229  31.8 ms  (budget 20.8 ms, over by 11.0 ms, 233% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     14.3 ms  (fault 7.3, reclaim 0.8, compact 0.0)   runqueue 0.1 ms
+  blocked   17.4 ms  futex 15.5 | timer 1.8 | present 0.1
+  resolved   waiting on a running task 15.3 ms, inherited stalls 0.3 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     15.5 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        kept off the CPU 0.3 ms, last preempted by KMS thread/1987
+      1.8 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 14.3 (fault 7.3, reclaim 0.8, compact 0.0)  runqueue 0.1  blocked 17.4 futex 15.5 | timer 1.8 | present 0.1
+    mg_main/6739                  oncpu 0.2  runqueue 0.1  blocked 31.5 futex   largest 31.6 ms in __futex_wait
+    mg_worker0/6751               oncpu 15.2  runnable 0.3  runqueue 0.1  blocked 15.9 futex (still blocked at frame end 0.3 ms)   largest 16.0 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker1/6752               oncpu 14.2  runqueue 0.1  blocked 16.0 futex (still blocked at frame end 1.6 ms)   largest 16.0 ms in __futex_wait
+    mg_worker2/6753               oncpu 14.9  runqueue 0.1  blocked 15.9 futex (still blocked at frame end 1.0 ms)   largest 16.0 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 0.6 futex (still blocked at frame end 31.1 ms)   largest 0.7 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.3 futex 0.2 | poll 0.1 (still blocked at frame end 31.2 ms)   largest 0.3 ms in __futex_wait
+  4 stalls this frame, 16 off-CPU intervals of the process logged
+
+hitch frame 1244  29.3 ms  (budget 20.8 ms, over by 8.5 ms, 278% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     13.5 ms  (fault 6.7, reclaim 0.9, compact 0.3)   runnable 0.2 ms   runqueue 0.1 ms
+  blocked   15.5 ms  futex 13.9 | timer 1.4 | present 0.1
+  resolved   waiting on a running task 14.0 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     13.9 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      1.4 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.4 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 13.5 (fault 6.7, reclaim 0.9, compact 0.3)  runnable 0.2  runqueue 0.1  blocked 15.5 futex 13.9 | timer 1.4 | present 0.1   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker0/6751               oncpu 13.4  runqueue 0.1  blocked 15.1 futex (still blocked at frame end 0.7 ms)   largest 15.2 ms in __futex_wait
+    mg_worker2/6753               oncpu 12.6  runqueue 0.1  blocked 15.1 futex (still blocked at frame end 1.6 ms)   largest 15.2 ms in __futex_wait
+    mg_worker1/6752               oncpu 13.9  runqueue 0.1  blocked 15.1 futex (still blocked at frame end 0.2 ms)   largest 15.1 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 1.0 futex (still blocked at frame end 28.3 ms)   largest 1.0 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.3  blocked 0.3 futex 0.3 | poll 0.1 (still blocked at frame end 28.3 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 29.0 ms)   largest 0.1 ms in __futex_wait
+  5 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 1259  30.3 ms  (budget 20.8 ms, over by 9.4 ms, 259% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     13.6 ms  (fault 6.9, reclaim 1.0)   runnable 0.3 ms   runqueue 0.2 ms
+  blocked   16.2 ms  futex 15.2 | timer 0.8 | present 0.2
+  resolved   waiting on a running task 15.4 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     15.2 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      1.4 ms  in 5 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 13.6 (fault 6.9, reclaim 1.0)  runnable 0.3  runqueue 0.2  blocked 16.2 futex 15.2 | timer 0.8 | present 0.2   preempted by KMS thread/1987 for 0.2 ms
+    mg_main/6739                  oncpu 0.3  runqueue 0.1  blocked 29.9 futex   largest 29.9 ms in __futex_wait
+    mg_worker2/6753               oncpu 13.6  runnable 0.0  runqueue 0.1  blocked 14.6 futex (still blocked at frame end 1.9 ms)   largest 14.7 ms in __futex_wait   preempted by kworker/0:0/6586 for 0.0 ms
+    mg_worker1/6752               oncpu 15.2  runnable 0.0  runqueue 0.1  blocked 14.6 futex (still blocked at frame end 0.3 ms)   largest 14.7 ms in __futex_wait   preempted by kworker/1:2/218 for 0.0 ms
+    mg_worker0/6751               oncpu 13.7  runqueue 0.1  blocked 14.6 futex (still blocked at frame end 1.9 ms)   largest 14.7 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.1 futex (still blocked at frame end 29.1 ms)   largest 1.2 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.6  runqueue 0.1  blocked 0.4 futex 0.3 | poll 0.0 (still blocked at frame end 29.1 ms)   largest 0.4 ms in __futex_wait
+  6 stalls this frame, 16 off-CPU intervals of the process logged
+
+hitch frame 1274  32.2 ms  (budget 20.8 ms, over by 11.3 ms, 233% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     12.8 ms  (fault 6.5, reclaim 0.5, compact 0.2)   runnable 2.2 ms   runqueue 0.1 ms
+  blocked   17.0 ms  futex 14.1 | timer 2.7 | present 0.2
+  resolved   waiting on a running task 13.7 ms, inherited stalls 0.6 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     14.1 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        kept off the CPU 0.6 ms, last preempted by KMS thread/1987
+      2.7 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      2.2 ms  runnable preempted
+              <- kswapd0/111            held the CPU
+      0.4 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 12.8 (fault 6.5, reclaim 0.5, compact 0.2)  runnable 2.2  runqueue 0.1  blocked 17.0 futex 14.1 | timer 2.7 | present 0.2   preempted by kswapd0/111 for 2.2 ms
+    mg_worker1/6752               oncpu 13.5  runnable 0.2  runqueue 0.4  blocked 17.7 futex (still blocked at frame end 0.3 ms)   largest 18.1 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker0/6751               oncpu 13.8  runqueue 0.1  blocked 17.7 futex (still blocked at frame end 0.5 ms)   largest 17.8 ms in __futex_wait
+    mg_worker2/6753               oncpu 13.0  runqueue 0.1  blocked 17.7 futex (still blocked at frame end 1.4 ms)   largest 17.8 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 0.9 futex (still blocked at frame end 31.2 ms)   largest 0.9 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.5  runqueue 0.0  blocked 0.4 futex (still blocked at frame end 31.3 ms)   largest 0.4 ms in __futex_wait
+    mg_main/6739                  oncpu 0.3  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 31.8 ms)   largest 0.0 ms in __futex_wait
+  6 stalls this frame, 15 off-CPU intervals of the process logged
+
+hitch frame 1275  22.5 ms  (budget 20.8 ms, over by 1.7 ms, 1306% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.4 ms   runqueue 0.1 ms
+  blocked   22.0 ms  futex 21.6 | present 0.4
+  resolved   waiting on a running task 10.4 ms, inherited stalls 11.6 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     21.6 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        kept off the CPU 11.4 ms, last preempted by mg_worker0/6751
+      0.5 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.4  runqueue 0.1  blocked 22.0 futex 21.6 | present 0.4
+    mg_worker1/6752               oncpu 10.2  runnable 8.2  runqueue 3.3  blocked 0.6 futex (still blocked at frame end 0.2 ms)   largest 3.9 ms in __futex_wait   preempted by KMS thread/1987 for 3.2 ms
+    mg_worker0/6751               oncpu 11.0  runnable 10.4  runqueue 0.1  blocked 0.6 futex (still blocked at frame end 0.4 ms)   preempted by mg_worker1/6752 for 4.0 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 1.0 futex (still blocked at frame end 21.5 ms)   largest 1.0 ms in __futex_wait
+    mg_worker2/6753               oncpu 21.4  runqueue 0.1  blocked 0.6 futex (still blocked at frame end 0.5 ms)   largest 0.6 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.1  blocked 0.6 futex 0.5 | poll 0.0 (still blocked at frame end 21.5 ms)   largest 0.6 ms in __futex_wait
+    mg_main/6739                  oncpu 0.3  runqueue 0.2  blocked 0.0 futex (still blocked at frame end 22.0 ms)   largest 0.1 ms in __futex_wait
+  3 stalls this frame, 19 off-CPU intervals of the process logged
+
+hitch frame 1289  33.7 ms  (budget 20.8 ms, over by 12.8 ms, 216% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     13.6 ms  (fault 7.0, reclaim 0.7)   runqueue 0.2 ms
+  blocked   20.0 ms  futex 17.9 | timer 1.9 | present 0.1
+  resolved   waiting on a running task 17.6 ms, inherited stalls 0.4 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     17.9 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        kept off the CPU 0.4 ms, last preempted by KMS thread/1987
+      1.9 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 13.6 (fault 7.0, reclaim 0.7)  runqueue 0.2  blocked 20.0 futex 17.9 | timer 1.9 | present 0.1
+    mg_worker2/6753               oncpu 13.6  runqueue 2.9  blocked 15.5 futex (still blocked at frame end 1.7 ms)   largest 18.4 ms in __futex_wait
+    mg_worker0/6751               oncpu 15.7  runnable 1.1  runqueue 0.1  blocked 15.4 futex (still blocked at frame end 1.4 ms)   largest 15.5 ms in __futex_wait   preempted by mg_worker2/6753 for 1.1 ms
+    mg_worker1/6752               oncpu 17.5  runnable 0.4  runqueue 0.1  blocked 15.5 futex (still blocked at frame end 0.3 ms)   largest 15.5 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 0.6 futex (still blocked at frame end 33.0 ms)   largest 0.7 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.0  blocked 0.3 futex (still blocked at frame end 33.1 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 33.4 ms)   largest 0.1 ms in __futex_wait
+  4 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 1302  24.2 ms  (budget 20.8 ms, over by 3.4 ms, 682% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.9 ms   runqueue 0.2 ms
+  blocked   23.1 ms  futex 22.7 | present 0.3
+  resolved   waiting on a running task 13.0 ms, inherited stalls 10.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     22.7 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        kept off the CPU 10.1 ms, last preempted by mg_worker1/6752
+      0.6 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.9  runqueue 0.2  blocked 23.1 futex 22.7 | present 0.3
+    mg_worker0/6751               oncpu 12.7  runnable 7.2  runqueue 2.8  blocked 0.6 futex (still blocked at frame end 0.8 ms)   largest 3.5 ms in __futex_wait   preempted by mg_worker1/6752 for 3.0 ms
+    mg_worker1/6752               oncpu 13.3  runnable 9.0  runqueue 0.0  blocked 0.6 futex (still blocked at frame end 1.3 ms)   preempted by mg_worker0/6751 for 3.0 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 1.2 futex (still blocked at frame end 23.0 ms)   largest 1.2 ms in __futex_wait
+    mg_worker2/6753               oncpu 21.0  runnable 0.4  runqueue 0.1  blocked 0.6 futex (still blocked at frame end 2.2 ms)   largest 0.7 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    WSI swapchain q/6749          oncpu 0.7  runqueue 0.1  blocked 0.5 futex (still blocked at frame end 22.9 ms)   largest 0.6 ms in __futex_wait
+    mg_main/6739                  oncpu 0.4  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 23.7 ms)   largest 0.1 ms in __futex_wait
+  3 stalls this frame, 21 off-CPU intervals of the process logged
+
+hitch frame 1304  36.2 ms  (budget 20.8 ms, over by 15.3 ms, 198% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     21.6 ms  (fault 7.4, reclaim 0.9, compact 7.5)   runqueue 0.1 ms
+  blocked   14.5 ms  futex 14.3 | present 0.2
+  resolved   waiting on a running task 14.1 ms, inherited stalls 0.3 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     14.3 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        kept off the CPU 0.3 ms
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 21.6 (fault 7.4, reclaim 0.9, compact 7.5)  runqueue 0.1  blocked 14.5 futex 14.3 | present 0.2
+    mg_worker2/6753               oncpu 14.0  runqueue 0.3  blocked 21.6 futex (still blocked at frame end 0.3 ms)   largest 21.9 ms in __futex_wait
+    mg_worker1/6752               oncpu 12.7  runnable 0.2  runqueue 0.1  blocked 21.5 futex (still blocked at frame end 1.7 ms)   largest 21.6 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker0/6751               oncpu 13.4  runnable 0.0  runqueue 0.0  blocked 21.5 futex (still blocked at frame end 1.1 ms)   largest 21.6 ms in __futex_wait   preempted by kworker/2:1/95 for 0.0 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.0 futex (still blocked at frame end 35.2 ms)   largest 1.0 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.2  blocked 0.4 futex 0.3 | poll 0.1 (still blocked at frame end 35.2 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 35.9 ms)   largest 0.1 ms in __futex_wait
+  3 stalls this frame, 19 off-CPU intervals of the process logged
+
+hitch frame 1315  22.3 ms  (budget 20.8 ms, over by 1.5 ms, 1429% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.4 ms   runqueue 0.1 ms
+  blocked   21.8 ms  futex 21.5 | present 0.3
+  resolved   waiting on a running task 19.6 ms, inherited stalls 2.2 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     21.5 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        kept off the CPU 2.1 ms, last preempted by mg_worker0/6751
+      0.4 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.4  runqueue 0.1  blocked 21.8 futex 21.5 | present 0.3
+    mg_worker0/6751               oncpu 16.0  runnable 0.2  runqueue 3.0  blocked 0.5 futex (still blocked at frame end 2.6 ms)   largest 3.5 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker1/6752               oncpu 19.5  runnable 2.0  runqueue 0.1  blocked 0.5 futex (still blocked at frame end 0.3 ms)   preempted by mg_worker0/6751 for 2.0 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.8 futex (still blocked at frame end 21.5 ms)   largest 0.9 ms in __futex_wait
+    mg_worker2/6753               oncpu 19.2  runqueue 0.1  blocked 0.5 futex (still blocked at frame end 2.6 ms)   largest 0.6 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.4 futex 0.4 | poll 0.0 (still blocked at frame end 21.5 ms)   largest 0.4 ms in __futex_wait
+    mg_main/6739                  oncpu 0.3  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 22.0 ms)   largest 0.1 ms in __futex_wait
+  3 stalls this frame, 15 off-CPU intervals of the process logged
+
+hitch frame 1316  22.6 ms  (budget 20.8 ms, over by 1.7 ms, 1247% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.6 ms   runqueue 0.2 ms
+  blocked   21.7 ms  futex 21.4 | present 0.3
+  resolved   waiting on a running task 20.1 ms, inherited stalls 1.6 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     21.4 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        kept off the CPU 1.6 ms, last preempted by claude/3362
+      0.5 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.6  runqueue 0.2  blocked 21.7 futex 21.4 | present 0.3
+    mg_worker0/6751               oncpu 19.9  runnable 0.1  runqueue 1.5  blocked 0.7 futex (still blocked at frame end 0.4 ms)   largest 2.3 ms in __futex_wait   preempted by claude/3362 for 0.1 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 1.3 futex (still blocked at frame end 21.2 ms)   largest 1.3 ms in __futex_wait
+    mg_worker2/6753               oncpu 19.5  runnable 0.4  runqueue 0.0  blocked 0.7 futex (still blocked at frame end 2.0 ms)   largest 0.8 ms in __futex_wait   preempted by KMS thread/1987 for 0.3 ms
+    mg_worker1/6752               oncpu 19.7  runqueue 0.0  blocked 0.7 futex (still blocked at frame end 2.2 ms)   largest 0.7 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.6  runqueue 0.1  blocked 0.6 futex (still blocked at frame end 21.2 ms)   largest 0.7 ms in __futex_wait
+    mg_main/6739                  oncpu 0.4  runqueue 0.2  blocked 0.0 futex (still blocked at frame end 22.0 ms)   largest 0.2 ms in __futex_wait
+  3 stalls this frame, 12 off-CPU intervals of the process logged
+
+hitch frame 1317  22.9 ms  (budget 20.8 ms, over by 2.1 ms, 1050% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.6 ms   runqueue 0.2 ms
+  blocked   22.1 ms  futex 22.0 | present 0.2
+  resolved   waiting on a running task 21.5 ms, inherited stalls 0.6 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     22.0 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        kept off the CPU 0.6 ms, last preempted by KMS thread/1987
+      0.4 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.6  runqueue 0.2  blocked 22.1 futex 22.0 | present 0.2
+    mg_main/6739                  oncpu 0.3  runqueue 0.1  blocked 22.5 futex   largest 22.5 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.4 futex (still blocked at frame end 21.5 ms)   largest 1.4 ms in __futex_wait
+    mg_worker0/6751               oncpu 20.5  runqueue 0.8  blocked 0.7 futex (still blocked at frame end 1.0 ms)   largest 1.4 ms in __futex_wait
+    mg_worker1/6752               oncpu 21.4  runnable 0.6  runqueue 0.1  blocked 0.6 futex (still blocked at frame end 0.3 ms)   largest 0.7 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker2/6753               oncpu 20.5  runqueue 0.1  blocked 0.6 futex (still blocked at frame end 1.8 ms)   largest 0.7 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.9  runqueue 0.1  blocked 0.5 futex (still blocked at frame end 21.5 ms)   largest 0.6 ms in __futex_wait
+  3 stalls this frame, 13 off-CPU intervals of the process logged
+
+hitch frame 1318  29.4 ms  (budget 20.8 ms, over by 8.6 ms, 333% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.8 ms   runqueue 0.2 ms
+  blocked   28.4 ms  futex 28.3 | present 0.1
+  resolved   waiting on a running task 28.4 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     28.3 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.8  runqueue 0.2  blocked 28.4 futex 28.3 | present 0.1
+    mg_main/6739                  oncpu 0.2  runqueue 0.1  blocked 29.1 futex   largest 29.1 ms in __futex_wait
+    mg_worker2/6753               oncpu 24.4  runqueue 3.3  blocked 0.5 futex (still blocked at frame end 1.2 ms)   largest 3.3 ms in __futex_wait
+    mg_worker0/6751               oncpu 26.7  runnable 0.6  runqueue 0.1  blocked 0.5 futex (still blocked at frame end 1.6 ms)   largest 0.5 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.0 futex (still blocked at frame end 28.3 ms)   largest 1.1 ms in __futex_wait
+    mg_worker1/6752               oncpu 28.4  runqueue 0.1  blocked 0.5 futex (still blocked at frame end 0.5 ms)   largest 0.5 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.6  runqueue 0.1  blocked 0.3 futex (still blocked at frame end 28.4 ms)   largest 0.4 ms in __futex_wait
+  3 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 1319  49.7 ms  (budget 20.8 ms, over by 28.8 ms, 141% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     27.8 ms  (fault 13.6, reclaim 5.4)   runnable 0.6 ms   runqueue 0.2 ms
+  blocked   21.1 ms  futex 20.8 | present 0.3
+  resolved   waiting on a running task 21.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     20.8 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      1.1 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 27.8 (fault 13.6, reclaim 5.4)  runnable 0.6  runqueue 0.2  blocked 21.1 futex 20.8 | present 0.3   preempted by kworker/2:1/95 for 0.2 ms
+    mg_main/6739                  oncpu 0.5  runqueue 0.1  blocked 49.1 futex   largest 49.1 ms in __futex_wait
+    mg_worker0/6751               oncpu 20.0  runnable 0.3  runqueue 0.2  blocked 28.2 futex (still blocked at frame end 0.9 ms)   largest 28.3 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker1/6752               oncpu 20.8  runqueue 0.1  blocked 28.3 futex (still blocked at frame end 0.4 ms)   largest 28.3 ms in __futex_wait
+    mg_worker2/6753               oncpu 19.6  runqueue 0.1  blocked 28.2 futex (still blocked at frame end 1.7 ms)   largest 28.3 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.2 futex (still blocked at frame end 48.4 ms)   largest 1.2 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.5  runqueue 0.1  blocked 0.6 futex 0.6 | poll 0.0 (still blocked at frame end 48.5 ms)   largest 0.6 ms in __futex_wait
+  7 stalls this frame, 21 off-CPU intervals of the process logged
+
+hitch frame 1320  22.7 ms  (budget 20.8 ms, over by 1.9 ms, 1158% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.6 ms   runqueue 0.2 ms
+  blocked   21.9 ms  futex 21.7 | present 0.2
+  resolved   waiting on a running task 19.9 ms, inherited stalls 2.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     21.7 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        kept off the CPU 2.0 ms
+      0.4 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.6  runqueue 0.2  blocked 21.9 futex 21.7 | present 0.2
+    mg_main/6739                  oncpu 0.4  runqueue 0.1  blocked 22.2 futex   largest 22.2 ms in __futex_wait
+    mg_worker1/6752               oncpu 19.8  runqueue 2.0  blocked 0.6 futex (still blocked at frame end 0.3 ms)   largest 2.6 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.5 futex (still blocked at frame end 21.2 ms)   largest 1.5 ms in __futex_wait
+    mg_worker0/6751               oncpu 20.4  runnable 0.3  runqueue 0.0  blocked 0.6 futex (still blocked at frame end 1.3 ms)   largest 0.6 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    WSI swapchain q/6749          oncpu 0.7  runqueue 0.3  blocked 0.6 futex 0.5 | poll 0.0 (still blocked at frame end 21.2 ms)   largest 0.7 ms in __futex_wait
+    mg_worker2/6753               oncpu 21.2  runqueue 0.0  blocked 0.6 futex (still blocked at frame end 0.9 ms)   largest 0.6 ms in __futex_wait
+  3 stalls this frame, 13 off-CPU intervals of the process logged
+
+hitch frame 1324  21.3 ms  (budget 20.8 ms, over by 0.5 ms, 4026% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.8 ms   runqueue 0.2 ms
+  blocked   20.3 ms  futex 20.2 | present 0.1
+  resolved   waiting on a running task 20.1 ms, inherited stalls 0.2 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     20.2 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        kept off the CPU 0.2 ms, last preempted by KMS thread/1987
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.8  runqueue 0.2  blocked 20.3 futex 20.2 | present 0.1
+    mg_main/6739                  oncpu 0.2  runqueue 0.1  blocked 21.0 futex   largest 21.1 ms in __futex_wait
+    mg_worker1/6752               oncpu 18.3  runqueue 1.8  blocked 0.5 futex (still blocked at frame end 0.7 ms)   largest 2.3 ms in __futex_wait
+    mg_worker0/6751               oncpu 19.4  runnable 0.2  runqueue 0.7  blocked 0.5 futex (still blocked at frame end 0.6 ms)   largest 1.2 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.2  blocked 1.2 futex (still blocked at frame end 20.0 ms)   largest 1.4 ms in __futex_wait
+    mg_worker2/6753               oncpu 19.8  runqueue 0.0  blocked 0.5 futex (still blocked at frame end 1.0 ms)   largest 0.5 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.7  runqueue 0.0  blocked 0.4 futex (still blocked at frame end 20.1 ms)   largest 0.5 ms in __futex_wait
+  3 stalls this frame, 13 off-CPU intervals of the process logged
+
+hitch frame 1334  47.8 ms  (budget 20.8 ms, over by 27.0 ms, 168% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     31.0 ms  (fault 3.9, reclaim 9.4, compact 15.5)   runnable 0.3 ms   runqueue 0.4 ms
+  blocked   16.1 ms  futex 13.6 | timer 2.4 | present 0.1
+  resolved   waiting on a running task 13.5 ms, inherited stalls 0.2 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     13.6 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        kept off the CPU 0.2 ms, last preempted by Compositor/3076
+      2.4 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.8 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 31.0 (fault 3.9, reclaim 9.4, compact 15.5)  runnable 0.3  runqueue 0.4  blocked 16.1 futex 13.6 | timer 2.4 | present 0.1   preempted by kworker/1:2/218 for 0.1 ms
+    mg_worker1/6752               oncpu 13.4  runnable 0.2  runqueue 0.1  blocked 33.8 futex (still blocked at frame end 0.4 ms)   largest 33.9 ms in __futex_wait   preempted by Compositor/3076 for 0.1 ms
+    mg_worker0/6751               oncpu 12.7  runnable 0.1  runqueue 0.1  blocked 33.8 futex (still blocked at frame end 1.1 ms)   largest 33.8 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker2/6753               oncpu 13.1  runnable 0.0  runqueue 0.0  blocked 33.8 futex (still blocked at frame end 0.9 ms)   largest 33.8 ms in __futex_wait   preempted by llvmpipe-6/2000 for 0.0 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 0.8 futex (still blocked at frame end 46.9 ms)   largest 0.9 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.5 futex 0.4 | poll 0.0 (still blocked at frame end 47.0 ms)   largest 0.5 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.1 futex (still blocked at frame end 47.4 ms)   largest 0.2 ms in __futex_wait
+  12 stalls this frame, 26 off-CPU intervals of the process logged
+
+hitch frame 1349  57.5 ms  (budget 20.8 ms, over by 36.7 ms, 141% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     41.5 ms  (fault 9.1, reclaim 24.0, compact 2.4)   runqueue 0.0 ms
+  blocked   16.0 ms  futex 16.0 | present 0.0
+  resolved   waiting on a running task 16.0 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     16.0 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        was running (waiting for work) 0.0 ms
+      0.1 ms  in 1 smaller group
+  threads
+    mg_main/6737          (root)  oncpu 41.5 (fault 9.1, reclaim 24.0, compact 2.4)  runqueue 0.0  blocked 16.0 futex 16.0 | present 0.0
+    mg_worker1/6752               oncpu 15.3  runnable 0.3  runqueue 0.1  blocked 41.2 futex (still blocked at frame end 0.6 ms)   largest 41.3 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker0/6751               oncpu 14.5  runqueue 0.1  blocked 41.2 futex (still blocked at frame end 1.8 ms)   largest 41.3 ms in __futex_wait
+    mg_worker2/6753               oncpu 16.0  runqueue 0.1  blocked 41.2 futex (still blocked at frame end 0.2 ms)   largest 41.3 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.6 futex (still blocked at frame end 55.8 ms)   largest 1.7 ms in __futex_wait
+    mg_main/6739                  oncpu 0.0  runnable 1.1  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 56.3 ms)   preempted by mg_main/6737 for 1.1 ms
+    WSI swapchain q/6749          oncpu 0.7  runqueue 0.9  blocked 0.1 futex (still blocked at frame end 55.8 ms)   largest 1.0 ms in __futex_wait
+  3 stalls this frame, 13 off-CPU intervals of the process logged
+
+hitch frame 1357  21.4 ms  (budget 20.8 ms, over by 0.6 ms, 3509% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.5 ms   runqueue 0.1 ms
+  blocked   20.8 ms  futex 20.6 | present 0.2
+  resolved   waiting on a running task 20.8 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     20.6 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.5  runqueue 0.1  blocked 20.8 futex 20.6 | present 0.2
+    mg_main/6739                  oncpu 0.3  runqueue 0.1  blocked 21.1 futex   largest 21.1 ms in __futex_wait
+    mg_worker2/6753               oncpu 11.3  runnable 5.1  runqueue 3.4  blocked 0.4 futex (still blocked at frame end 1.2 ms)   largest 3.8 ms in __futex_wait   preempted by mg_worker0/6751 for 3.0 ms
+    mg_worker0/6751               oncpu 11.8  runnable 7.0  runqueue 0.0  blocked 0.4 futex (still blocked at frame end 2.2 ms)   preempted by mg_worker2/6753 for 4.0 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.9 futex (still blocked at frame end 20.5 ms)   largest 0.9 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.1  blocked 0.3 futex (still blocked at frame end 20.6 ms)   largest 0.4 ms in __futex_wait
+    mg_worker1/6752               oncpu 20.7  runqueue 0.0  blocked 0.4 futex (still blocked at frame end 0.3 ms)   largest 0.4 ms in __futex_wait
+  3 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 1364  37.2 ms  (budget 20.8 ms, over by 16.4 ms, 183% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     17.9 ms  (fault 7.1, reclaim 3.7, compact 0.2)   runnable 0.2 ms   runqueue 0.2 ms
+  blocked   18.9 ms  futex 17.2 | timer 1.4 | present 0.3
+  resolved   waiting on a running task 17.2 ms, inherited stalls 0.3 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     17.2 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        kept off the CPU 0.3 ms, last preempted by KMS thread/1987
+      1.4 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.7 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 17.9 (fault 7.1, reclaim 3.7, compact 0.2)  runnable 0.2  runqueue 0.2  blocked 18.9 futex 17.2 | timer 1.4 | present 0.3   preempted by kworker/2:1/95 for 0.1 ms
+    mg_main/6739                  oncpu 0.3  runqueue 0.1  blocked 36.7 futex   largest 36.7 ms in __futex_wait
+    mg_worker2/6753               oncpu 16.9  runnable 0.3  runqueue 0.1  blocked 18.7 futex (still blocked at frame end 1.2 ms)   largest 18.7 ms in __futex_wait   preempted by KMS thread/1987 for 0.3 ms
+    mg_worker0/6751               oncpu 15.0  runnable 0.0  runqueue 0.1  blocked 18.7 futex (still blocked at frame end 3.3 ms)   largest 18.8 ms in __futex_wait   preempted by kworker/1:2/218 for 0.0 ms
+    mg_worker1/6752               oncpu 16.1  runnable 0.0  runqueue 0.0  blocked 18.7 futex (still blocked at frame end 2.3 ms)   largest 18.8 ms in __futex_wait   preempted by kworker/0:0/6586 for 0.0 ms
+    WSI swapchain e/6750          oncpu 0.1  runqueue 0.0  blocked 1.1 futex (still blocked at frame end 36.0 ms)   largest 1.1 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.6  runqueue 0.1  blocked 0.4 futex (still blocked at frame end 36.1 ms)   largest 0.5 ms in __futex_wait
+  8 stalls this frame, 21 off-CPU intervals of the process logged
+
+hitch frame 1367  25.8 ms  (budget 20.8 ms, over by 5.0 ms, 492% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.8 ms   runqueue 0.3 ms
+  blocked   24.7 ms  futex 24.4 | present 0.3
+  resolved   waiting on a running task 20.6 ms, inherited stalls 4.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     24.4 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        kept off the CPU 4.1 ms, last preempted by mg_worker1/6752
+      0.6 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.8  runqueue 0.3  blocked 24.7 futex 24.4 | present 0.3
+    mg_worker1/6752               oncpu 16.8  runnable 2.0  runqueue 3.6  blocked 0.7 futex (still blocked at frame end 2.7 ms)   largest 4.3 ms in __futex_wait   preempted by mg_worker0/6751 for 2.0 ms
+    mg_worker0/6751               oncpu 20.4  runnable 4.1  runqueue 0.0  blocked 0.7 futex (still blocked at frame end 0.6 ms)   preempted by mg_worker1/6752 for 4.1 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 1.8  blocked 1.8 futex (still blocked at frame end 22.2 ms)   largest 3.6 ms in __futex_wait
+    mg_worker2/6753               oncpu 22.7  runnable 0.9  runqueue 0.1  blocked 0.7 futex (still blocked at frame end 1.5 ms)   largest 0.8 ms in __futex_wait   preempted by KMS thread/1987 for 0.4 ms
+    WSI swapchain q/6749          oncpu 1.1  runqueue 0.1  blocked 0.6 futex 0.6 | poll 0.0 (still blocked at frame end 24.0 ms)   largest 0.7 ms in __futex_wait
+    mg_main/6739                  oncpu 0.5  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 25.3 ms)   largest 0.1 ms in __futex_wait
+  3 stalls this frame, 17 off-CPU intervals of the process logged
+
+hitch frame 1368  22.1 ms  (budget 20.8 ms, over by 1.3 ms, 1626% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.8 ms   runqueue 0.3 ms
+  blocked   21.0 ms  futex 20.7 | present 0.3
+  resolved   waiting on a running task 20.2 ms, inherited stalls 0.8 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     20.7 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        kept off the CPU 0.8 ms
+      0.6 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.8  runqueue 0.3  blocked 21.0 futex 20.7 | present 0.3
+    mg_worker0/6751               oncpu 20.0  runqueue 0.8  blocked 0.8 futex (still blocked at frame end 0.6 ms)   largest 1.6 ms in __futex_wait
+    mg_worker2/6753               oncpu 18.5  runnable 0.7  runqueue 0.1  blocked 0.7 futex (still blocked at frame end 2.0 ms)   largest 0.8 ms in __futex_wait   preempted by KMS thread/1987 for 0.3 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.2 futex (still blocked at frame end 20.8 ms)   largest 1.3 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.1  blocked 0.7 futex 0.6 | poll 0.1 (still blocked at frame end 20.9 ms)   largest 0.6 ms in __futex_wait
+    mg_worker1/6752               oncpu 18.1  runqueue 0.1  blocked 0.7 futex (still blocked at frame end 3.2 ms)   largest 0.8 ms in __futex_wait
+    mg_main/6739                  oncpu 0.4  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 21.6 ms)   largest 0.1 ms in __futex_wait
+  3 stalls this frame, 13 off-CPU intervals of the process logged
+
+hitch frame 1369  25.1 ms  (budget 20.8 ms, over by 4.3 ms, 562% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.9 ms   runqueue 0.2 ms
+  blocked   24.0 ms  futex 23.7 | present 0.3
+  resolved   waiting on a running task 24.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     23.7 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        was running (waiting for work) 0.0 ms
+      0.5 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.9  runqueue 0.2  blocked 24.0 futex 23.7 | present 0.3
+    mg_worker2/6753               oncpu 17.6  runnable 0.7  runqueue 3.5  blocked 0.9 futex (still blocked at frame end 2.4 ms)   largest 3.4 ms in __futex_wait   preempted by KMS thread/1987 for 0.6 ms
+    mg_worker1/6752               oncpu 19.1  runnable 3.1  runqueue 0.1  blocked 0.9 futex (still blocked at frame end 2.0 ms)   preempted by mg_worker2/6753 for 3.1 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 2.4 futex (still blocked at frame end 22.6 ms)   largest 2.4 ms in __futex_wait
+    mg_worker0/6751               oncpu 23.8  runqueue 0.1  blocked 0.9 futex (still blocked at frame end 0.4 ms)   largest 1.0 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 1.6  runqueue 0.1  blocked 0.7 futex (still blocked at frame end 22.7 ms)   largest 0.8 ms in __futex_wait
+    mg_main/6739                  oncpu 0.5  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 24.5 ms)   largest 0.1 ms in __futex_wait
+  3 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 1376  25.2 ms  (budget 20.8 ms, over by 4.4 ms, 536% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      1.4 ms   runqueue 0.2 ms
+  blocked   23.7 ms  futex 23.4 | present 0.3
+  resolved   waiting on a running task 20.7 ms, inherited stalls 3.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     23.4 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        kept off the CPU 3.0 ms, last preempted by KMS thread/1987
+      0.5 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 1.4  runqueue 0.2  blocked 23.7 futex 23.4 | present 0.3
+    mg_main/6739                  oncpu 0.3  runqueue 0.3  blocked 24.5 futex   largest 24.5 ms in __futex_wait
+    mg_worker0/6751               oncpu 16.3  runnable 2.1  runqueue 3.4  blocked 0.7 futex (still blocked at frame end 2.8 ms)   largest 4.0 ms in __futex_wait   preempted by mg_worker2/6753 for 2.1 ms
+    mg_worker2/6753               oncpu 17.9  runnable 4.0  runqueue 0.1  blocked 0.6 futex (still blocked at frame end 2.6 ms)   preempted by mg_worker0/6751 for 4.0 ms
+    mg_worker1/6752               oncpu 20.4  runnable 0.3  runqueue 2.7  blocked 0.7 futex (still blocked at frame end 1.1 ms)   largest 3.4 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.3 futex (still blocked at frame end 23.8 ms)   largest 1.4 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.8  runqueue 0.1  blocked 0.5 futex (still blocked at frame end 23.8 ms)   largest 0.6 ms in __futex_wait
+  3 stalls this frame, 16 off-CPU intervals of the process logged
+
+hitch frame 1377  24.4 ms  (budget 20.8 ms, over by 3.5 ms, 660% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.9 ms   runqueue 0.2 ms
+  blocked   23.3 ms  futex 23.1 | present 0.2
+  resolved   waiting on a running task 12.9 ms, inherited stalls 10.4 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     23.1 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        kept off the CPU 10.4 ms, last preempted by mg_worker2/6753
+      0.4 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.9  runqueue 0.2  blocked 23.3 futex 23.1 | present 0.2
+    mg_main/6739                  oncpu 0.5  runqueue 0.1  blocked 23.8 futex   largest 23.8 ms in __futex_wait
+    mg_worker2/6753               oncpu 10.1  runnable 12.2  runqueue 0.1  blocked 0.7 futex (still blocked at frame end 1.3 ms)   preempted by mg_worker1/6752 for 4.1 ms
+    mg_worker1/6752               oncpu 12.7  runnable 7.4  runqueue 3.0  blocked 0.8 futex (still blocked at frame end 0.5 ms)   largest 3.8 ms in __futex_wait   preempted by mg_worker2/6753 for 3.0 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 2.0 futex (still blocked at frame end 22.3 ms)   largest 2.0 ms in __futex_wait
+    mg_worker0/6751               oncpu 21.6  runqueue 0.3  blocked 0.7 futex (still blocked at frame end 1.8 ms)   largest 0.7 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 1.4  runqueue 0.1  blocked 0.6 futex (still blocked at frame end 22.3 ms)   largest 0.7 ms in __futex_wait
+  3 stalls this frame, 20 off-CPU intervals of the process logged
+
+hitch frame 1379  34.0 ms  (budget 20.8 ms, over by 13.1 ms, 210% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     17.9 ms  (fault 10.6, reclaim 1.1, compact 0.0)   runqueue 0.1 ms
+  blocked   15.9 ms  futex 15.7 | present 0.1
+  resolved   waiting on a running task 15.9 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     15.7 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        was running (waiting for work) 0.0 ms
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 17.9 (fault 10.6, reclaim 1.1, compact 0.0)  runqueue 0.1  blocked 15.9 futex 15.7 | present 0.1
+    mg_worker1/6752               oncpu 14.2  runnable 0.3  runqueue 0.1  blocked 17.8 futex (still blocked at frame end 1.6 ms)   largest 17.8 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker0/6751               oncpu 13.2  runqueue 0.0  blocked 17.8 futex (still blocked at frame end 2.9 ms)   largest 17.8 ms in __futex_wait
+    mg_worker2/6753               oncpu 15.8  runqueue 0.0  blocked 17.8 futex (still blocked at frame end 0.4 ms)   largest 17.8 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 0.8 futex (still blocked at frame end 33.0 ms)   largest 0.9 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.1  blocked 0.4 futex (still blocked at frame end 33.1 ms)   largest 0.4 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.1  blocked 0.1 futex (still blocked at frame end 33.6 ms)   largest 0.1 ms in __futex_wait
+  3 stalls this frame, 13 off-CPU intervals of the process logged
+
+hitch frame 1394  34.8 ms  (budget 20.8 ms, over by 14.0 ms, 204% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     15.1 ms  (fault 8.0, reclaim 0.6, compact 0.4)   runqueue 0.2 ms
+  blocked   19.5 ms  futex 17.3 | timer 2.1 | present 0.2
+  resolved   waiting on a running task 16.9 ms, inherited stalls 0.5 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     17.3 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        kept off the CPU 0.5 ms, last preempted by KMS thread/1987
+      2.1 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.4 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 15.1 (fault 8.0, reclaim 0.6, compact 0.4)  runqueue 0.2  blocked 19.5 futex 17.3 | timer 2.1 | present 0.2
+    mg_worker2/6753               oncpu 16.8  runnable 0.5  runqueue 0.1  blocked 16.8 futex (still blocked at frame end 0.6 ms)   largest 16.9 ms in __futex_wait   preempted by KMS thread/1987 for 0.4 ms
+    mg_worker0/6751               oncpu 16.8  runqueue 0.0  blocked 16.9 futex (still blocked at frame end 1.1 ms)   largest 16.9 ms in __futex_wait
+    mg_worker1/6752               oncpu 17.1  runqueue 0.1  blocked 16.8 futex (still blocked at frame end 0.9 ms)   largest 16.9 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.9 futex (still blocked at frame end 33.9 ms)   largest 0.9 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.5 futex 0.4 | poll 0.1 (still blocked at frame end 33.9 ms)   largest 0.4 ms in __futex_wait
+    mg_main/6739                  oncpu 0.3  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 34.5 ms)   largest 0.0 ms in __futex_wait
+  4 stalls this frame, 15 off-CPU intervals of the process logged
+
+hitch frame 1397  23.0 ms  (budget 20.8 ms, over by 2.1 ms, 1055% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.4 ms   runqueue 0.2 ms
+  blocked   22.4 ms  futex 21.5 | timer 0.7 | present 0.1
+  resolved   waiting on a running task 21.6 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     21.5 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        was running (waiting for work) 0.0 ms
+      0.7 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.4  runqueue 0.2  blocked 22.4 futex 21.5 | timer 0.7 | present 0.1
+    mg_worker2/6753               oncpu 19.8  runnable 0.3  runqueue 0.1  blocked 1.1 futex (still blocked at frame end 1.8 ms)   largest 1.1 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker1/6752               oncpu 19.5  runqueue 0.1  blocked 1.1 futex (still blocked at frame end 2.3 ms)   largest 1.2 ms in __futex_wait
+    mg_worker0/6751               oncpu 21.5  runqueue 0.1  blocked 1.1 futex (still blocked at frame end 0.3 ms)   largest 1.1 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.6 futex (still blocked at frame end 22.3 ms)   largest 0.7 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.3 futex 0.3 | poll 0.0 (still blocked at frame end 22.3 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 22.7 ms)   largest 0.1 ms in __futex_wait
+  4 stalls this frame, 15 off-CPU intervals of the process logged
+
+hitch frame 1402  22.4 ms  (budget 20.8 ms, over by 1.5 ms, 1416% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.4 ms   runqueue 0.1 ms
+  blocked   21.8 ms  futex 21.7 | present 0.2
+  resolved   waiting on a running task 21.8 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     21.7 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.4  runqueue 0.1  blocked 21.8 futex 21.7 | present 0.2
+    mg_worker2/6753               oncpu 20.4  runnable 1.3  runqueue 0.0  blocked 0.4 futex (still blocked at frame end 0.3 ms)   preempted by mg_worker0/6751 for 1.3 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 0.8 futex (still blocked at frame end 21.5 ms)   largest 0.9 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.1  blocked 0.4 futex 0.3 | poll 0.0 (still blocked at frame end 21.5 ms)   largest 0.3 ms in __futex_wait
+    mg_worker1/6752               oncpu 21.7  runqueue 0.1  blocked 0.4 futex (still blocked at frame end 0.3 ms)   largest 0.4 ms in __futex_wait
+    mg_worker0/6751               oncpu 20.6  runqueue 0.0  blocked 0.4 futex (still blocked at frame end 1.3 ms)   largest 0.4 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 22.1 ms)   largest 0.1 ms in __futex_wait
+  3 stalls this frame, 13 off-CPU intervals of the process logged
+
+hitch frame 1409  68.9 ms  (budget 20.8 ms, over by 48.0 ms, 128% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     46.5 ms  (fault 11.0, reclaim 28.6, compact 0.0)   runnable 1.3 ms   runqueue 1.5 ms
+  blocked   19.5 ms  futex 18.7 | timer 0.5 | present 0.3
+  resolved   waiting on a running task 18.9 ms, inherited stalls 0.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     18.7 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        kept off the CPU 0.1 ms
+      3.6 ms  in 6 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 46.5 (fault 11.0, reclaim 28.6, compact 0.0)  runnable 1.3  runqueue 1.5  blocked 19.5 futex 18.7 | timer 0.5 | present 0.3   preempted by ksoftirqd/2/25 for 0.5 ms
+    mg_worker2/6753               oncpu 16.9  runnable 0.3  runqueue 0.2  blocked 49.5 futex (still blocked at frame end 2.0 ms)   largest 49.7 ms in __futex_wait   preempted by kworker/2:1/95 for 0.1 ms
+    mg_worker0/6751               oncpu 18.7  runqueue 0.2  blocked 49.5 futex (still blocked at frame end 0.5 ms)   largest 49.7 ms in __futex_wait
+    mg_worker1/6752               oncpu 17.7  runqueue 0.1  blocked 49.4 futex (still blocked at frame end 1.7 ms)   largest 49.5 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.6  blocked 1.9 futex (still blocked at frame end 66.4 ms)   largest 2.5 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 1.2  runqueue 0.1  blocked 0.6 futex (still blocked at frame end 67.0 ms)   largest 0.7 ms in __futex_wait
+    mg_main/6739                  oncpu 0.4  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 68.3 ms)   largest 0.1 ms in __futex_wait
+  14 stalls this frame, 24 off-CPU intervals of the process logged
+
+hitch frame 1412  22.2 ms  (budget 20.8 ms, over by 1.4 ms, 1442% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      1.8 ms   runqueue 0.5 ms
+  blocked   19.9 ms  futex 19.4 | present 0.6
+  resolved   waiting on a running task 19.9 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     19.4 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      1.0 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 1.8  runqueue 0.5  blocked 19.9 futex 19.4 | present 0.6
+    mg_main/6739                  oncpu 0.7  runqueue 0.2  blocked 21.3 futex   largest 21.1 ms in __futex_wait
+    mg_worker2/6753               oncpu 17.4  runqueue 1.6  blocked 1.3 futex (still blocked at frame end 1.9 ms)   largest 2.9 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 2.0 futex (still blocked at frame end 20.1 ms)   largest 2.0 ms in __futex_wait
+    mg_worker0/6751               oncpu 18.1  runqueue 0.1  blocked 1.3 futex (still blocked at frame end 2.7 ms)   largest 1.4 ms in __futex_wait
+    mg_worker1/6752               oncpu 19.4  runqueue 0.2  blocked 1.2 futex (still blocked at frame end 1.5 ms)   largest 1.4 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.7  runqueue 0.1  blocked 1.2 futex 1.1 | poll 0.1 (still blocked at frame end 20.2 ms)   largest 1.2 ms in __futex_wait
+  3 stalls this frame, 12 off-CPU intervals of the process logged
+
+hitch frame 1417  24.0 ms  (budget 20.8 ms, over by 3.1 ms, 704% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      1.3 ms   runqueue 0.3 ms
+  blocked   22.4 ms  futex 21.6 | present 0.8
+  resolved   waiting on a running task 22.4 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     21.6 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      0.8 ms  present  blocked in __futex_wait, 2 times, longest 0.7 ms
+              <- mg_main/6739           was running (waiting for work) 0.0 ms
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 1.3  runqueue 0.3  blocked 22.4 futex 21.6 | present 0.8
+    WSI swapchain e/6750          oncpu 0.1  runqueue 2.9  blocked 1.9 futex (still blocked at frame end 19.1 ms)   largest 4.8 ms in __futex_wait
+    mg_worker2/6753               oncpu 20.5  runnable 0.1  runqueue 0.8  blocked 1.1 futex (still blocked at frame end 1.5 ms)   largest 1.1 ms in __futex_wait   preempted by WSI swapchain e/6750 for 0.1 ms
+    mg_worker1/6752               oncpu 21.7  runqueue 0.1  blocked 1.1 futex (still blocked at frame end 1.1 ms)   largest 1.2 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.7  runqueue 0.2  blocked 1.0 futex 1.0 | poll 0.1 (still blocked at frame end 22.0 ms)   largest 1.0 ms in __futex_wait
+    mg_worker0/6751               oncpu 18.8  runqueue 0.1  blocked 1.1 futex (still blocked at frame end 3.9 ms)   largest 1.2 ms in __futex_wait
+    mg_main/6739                  oncpu 0.9  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 23.0 ms)   largest 0.0 ms in __futex_wait
+  3 stalls this frame, 13 off-CPU intervals of the process logged
+
+hitch frame 1418  22.5 ms  (budget 20.8 ms, over by 1.6 ms, 1189% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      1.4 ms   runqueue 0.3 ms
+  blocked   20.7 ms  futex 19.1 | present 1.7
+  resolved   waiting on a running task 19.2 ms, inherited stalls 1.6 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     19.1 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        kept off the CPU 0.2 ms
+      1.7 ms  present  blocked in __futex_wait, 2 times, longest 1.6 ms
+              <- mg_main/6739           kept off the CPU 1.3 ms
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 1.4  runqueue 0.3  blocked 20.7 futex 19.1 | present 1.7
+    mg_main/6739                  oncpu 0.5  runqueue 1.6  blocked 20.4 futex   largest 20.5 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 7.4 futex (still blocked at frame end 15.0 ms)   largest 7.4 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 1.4  runqueue 3.8  blocked 2.2 futex 2.0 | poll 0.2 (still blocked at frame end 15.0 ms)   largest 3.7 ms in poll_schedule_timeout.constprop.0
+    mg_worker0/6751               oncpu 16.6  runnable 0.4  runqueue 0.1  blocked 2.1 futex (still blocked at frame end 3.3 ms)   largest 2.2 ms in __futex_wait   preempted by WSI swapchain q/6749 for 0.4 ms
+    mg_worker2/6753               oncpu 18.9  runqueue 0.3  blocked 2.1 futex (still blocked at frame end 1.3 ms)   largest 2.3 ms in __futex_wait
+    mg_worker1/6752               oncpu 18.0  runqueue 0.0  blocked 2.1 futex (still blocked at frame end 2.4 ms)   largest 2.1 ms in __futex_wait
+  3 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 1419  24.1 ms  (budget 20.8 ms, over by 3.2 ms, 714% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.7 ms   runqueue 0.2 ms
+  blocked   23.2 ms  futex 22.9 | present 0.3
+  resolved   waiting on a running task 23.1 ms, inherited stalls 0.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     22.9 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        was running (waiting for work) 0.1 ms
+      0.5 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.7  runqueue 0.2  blocked 23.2 futex 22.9 | present 0.3
+    mg_worker2/6753               oncpu 11.6  runnable 6.0  runqueue 3.5  blocked 0.8 futex (still blocked at frame end 2.1 ms)   largest 4.4 ms in __futex_wait   preempted by mg_worker1/6752 for 3.0 ms
+    mg_worker1/6752               oncpu 14.4  runnable 8.3  runqueue 0.2  blocked 0.8 futex (still blocked at frame end 0.3 ms)   preempted by mg_worker2/6753 for 4.0 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 2.1 futex (still blocked at frame end 21.9 ms)   largest 2.2 ms in __futex_wait
+    mg_worker0/6751               oncpu 22.9  runqueue 0.2  blocked 0.8 futex (still blocked at frame end 0.3 ms)   largest 0.9 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 1.3  runqueue 0.1  blocked 0.7 futex (still blocked at frame end 22.0 ms)   largest 0.8 ms in __futex_wait
+    mg_main/6739                  oncpu 0.5  runqueue 0.1  blocked 0.1 futex (still blocked at frame end 23.4 ms)   largest 0.1 ms in __futex_wait
+  3 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 1421  24.3 ms  (budget 20.8 ms, over by 3.5 ms, 619% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.9 ms   runnable 0.0 ms   runqueue 0.2 ms
+  blocked   23.2 ms  futex 21.3 | present 1.9
+  resolved   waiting on a running task 21.8 ms, inherited stalls 1.5 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     21.3 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        kept off the CPU 0.5 ms
+      1.9 ms  present  blocked in __futex_wait
+              <- mg_main/6739           kept off the CPU 1.0 ms
+      0.2 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.9  runnable 0.0  runqueue 0.2  blocked 23.2 futex 21.3 | present 1.9   preempted by mg_main/6739 for 0.0 ms
+    mg_main/6739                  oncpu 1.0  runqueue 1.1  blocked 22.2 futex   largest 22.2 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.1  runqueue 0.8  blocked 4.1 futex (still blocked at frame end 19.3 ms)   largest 4.9 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.8  runnable 0.0  runqueue 0.6  blocked 2.7 futex 2.1 | poll 0.6 (still blocked at frame end 20.2 ms)   largest 2.2 ms in __futex_wait   preempted by KMS thread/1987 for 0.0 ms
+    mg_worker1/6752               oncpu 18.8  runqueue 0.5  blocked 2.2 futex (still blocked at frame end 2.9 ms)   largest 2.7 ms in __futex_wait
+    mg_worker2/6753               oncpu 20.9  runqueue 0.5  blocked 2.2 futex (still blocked at frame end 0.8 ms)   largest 2.7 ms in __futex_wait
+    mg_worker0/6751               oncpu 20.8  runnable 0.1  runqueue 0.0  blocked 2.2 futex (still blocked at frame end 1.3 ms)   largest 2.2 ms in __futex_wait   preempted by WSI swapchain e/6750 for 0.1 ms
+  4 stalls this frame, 20 off-CPU intervals of the process logged
+
+hitch frame 1424  48.8 ms  (budget 20.8 ms, over by 28.0 ms, 169% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     34.0 ms  (fault 6.1, reclaim 17.5, compact 9.1)   runnable 0.9 ms   runqueue 0.2 ms
+  blocked   13.8 ms  futex 13.5 | present 0.2
+  resolved   waiting on a running task 13.5 ms, inherited stalls 0.2 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     13.5 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        kept off the CPU 0.2 ms, last preempted by VizCompositorTh/3000
+      1.3 ms  in 4 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 34.0 (fault 6.1, reclaim 17.5, compact 9.1)  runnable 0.9  runqueue 0.2  blocked 13.8 futex 13.5 | present 0.2   preempted by KMS thread/1987 for 0.4 ms
+    mg_main/6739                  oncpu 0.4  runqueue 0.1  blocked 48.2 futex   largest 48.3 ms in __futex_wait
+    mg_worker0/6751               oncpu 13.3  runnable 0.2  runqueue 0.1  blocked 35.0 futex (still blocked at frame end 0.2 ms)   largest 35.1 ms in __futex_wait   preempted by VizCompositorTh/3000 for 0.2 ms
+    mg_worker1/6752               oncpu 13.2  runqueue 0.1  blocked 35.0 futex (still blocked at frame end 0.5 ms)   largest 35.1 ms in __futex_wait
+    mg_worker2/6753               oncpu 13.1  runqueue 0.1  blocked 34.9 futex (still blocked at frame end 0.7 ms)   largest 35.0 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.6 futex (still blocked at frame end 47.0 ms)   largest 1.8 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.8  runqueue 0.2  blocked 0.7 futex 0.6 | poll 0.1 (still blocked at frame end 47.1 ms)   largest 0.7 ms in __futex_wait
+  8 stalls this frame, 18 off-CPU intervals of the process logged
+
+hitch frame 1439  61.1 ms  (budget 20.8 ms, over by 40.3 ms, 137% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     45.4 ms  (fault 6.2, reclaim 28.3, compact 5.3)   runqueue 0.3 ms
+  blocked   15.4 ms  futex 13.4 | timer 1.8 | present 0.2
+  resolved   waiting on a running task 13.6 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     13.4 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      2.3 ms  in 4 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 45.4 (fault 6.2, reclaim 28.3, compact 5.3)  runqueue 0.3  blocked 15.4 futex 13.4 | timer 1.8 | present 0.2
+    mg_worker2/6753               oncpu 12.9  runqueue 0.2  blocked 47.4 futex (still blocked at frame end 0.6 ms)   largest 47.6 ms in __futex_wait
+    mg_worker0/6751               oncpu 12.9  runnable 0.2  runqueue 0.1  blocked 47.4 futex (still blocked at frame end 0.6 ms)   largest 47.4 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker1/6752               oncpu 13.4  runqueue 0.1  blocked 47.3 futex (still blocked at frame end 0.3 ms)   largest 47.4 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 1.9 futex (still blocked at frame end 59.1 ms)   largest 2.0 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.9  runnable 0.4  runqueue 0.1  blocked 0.5 futex 0.4 | poll 0.1 (still blocked at frame end 59.1 ms)   largest 0.5 ms in __futex_wait   preempted by Xwayland/2670 for 0.4 ms
+    mg_main/6739                  oncpu 0.3  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 60.7 ms)   largest 0.1 ms in __futex_wait
+  4 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 1442  21.4 ms  (budget 20.8 ms, over by 0.5 ms, 3868% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.9 ms   runqueue 0.3 ms
+  blocked   20.1 ms  futex 18.8 | timer 1.2 | present 0.2
+  resolved   waiting on a running task 13.1 ms, inherited stalls 5.9 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     18.8 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        kept off the CPU 5.9 ms, last preempted by mg_worker2/6753
+      1.2 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.5 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.9  runqueue 0.3  blocked 20.1 futex 18.8 | timer 1.2 | present 0.2
+    mg_worker1/6752               oncpu 12.9  runnable 3.0  runqueue 2.9  blocked 1.7 futex (still blocked at frame end 0.9 ms)   largest 4.6 ms in __futex_wait   preempted by mg_worker2/6753 for 3.0 ms
+    mg_worker2/6753               oncpu 13.7  runnable 3.8  runqueue 0.0  blocked 1.7 futex (still blocked at frame end 2.2 ms)   preempted by mg_worker1/6752 for 3.0 ms
+    mg_worker0/6751               oncpu 16.1  runnable 0.5  runqueue 0.1  blocked 1.6 futex (still blocked at frame end 3.1 ms)   largest 1.8 ms in __futex_wait   preempted by KMS thread/1987 for 0.4 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 1.2 futex (still blocked at frame end 20.1 ms)   largest 1.2 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.3  blocked 0.5 futex 0.4 | poll 0.1 (still blocked at frame end 20.2 ms)   largest 0.5 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 21.0 ms)   largest 0.1 ms in __futex_wait
+  4 stalls this frame, 18 off-CPU intervals of the process logged
+
+hitch frame 1454  44.5 ms  (budget 20.8 ms, over by 23.7 ms, 164% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     27.9 ms  (fault 8.5, reclaim 11.7, compact 2.0)   runqueue 0.1 ms
+  blocked   16.5 ms  futex 14.1 | timer 2.3 | present 0.0
+  resolved   waiting on a running task 14.1 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     14.1 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      2.3 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.1 ms  in 1 smaller group
+  threads
+    mg_main/6737          (root)  oncpu 27.9 (fault 8.5, reclaim 11.7, compact 2.0)  runqueue 0.1  blocked 16.5 futex 14.1 | timer 2.3 | present 0.0
+    mg_worker0/6751               oncpu 13.7  runnable 0.2  runqueue 0.0  blocked 30.0 futex (still blocked at frame end 0.5 ms)   largest 30.1 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker1/6752               oncpu 14.1  runqueue 0.1  blocked 30.1 futex (still blocked at frame end 0.2 ms)   largest 30.1 ms in __futex_wait
+    mg_worker2/6753               oncpu 13.4  runqueue 0.1  blocked 30.1 futex (still blocked at frame end 1.0 ms)   largest 30.1 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.9 futex (still blocked at frame end 42.5 ms)   largest 2.0 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.5  runqueue 1.1  blocked 0.4 futex 0.0 | poll 0.4 (still blocked at frame end 42.6 ms)   largest 0.9 ms in __futex_wait
+    mg_main/6739                  oncpu 0.0  runnable 0.0  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 44.4 ms)   largest 0.0 ms in __futex_wait   preempted by mg_main/6737 for 0.0 ms
+  4 stalls this frame, 19 off-CPU intervals of the process logged
+
+hitch frame 1469  44.9 ms  (budget 20.8 ms, over by 24.1 ms, 159% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     25.6 ms  (fault 8.8, reclaim 10.0, compact 0.3)   runqueue 0.1 ms
+  blocked   19.2 ms  futex 19.0 | present 0.2
+  resolved   waiting on a running task 19.1 ms, inherited stalls 0.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     19.0 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.1 ms
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 25.6 (fault 8.8, reclaim 10.0, compact 0.3)  runqueue 0.1  blocked 19.2 futex 19.0 | present 0.2
+    mg_worker2/6753               oncpu 16.6  runnable 0.3  runqueue 0.1  blocked 25.5 futex (still blocked at frame end 2.4 ms)   largest 25.6 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker1/6752               oncpu 19.0  runnable 0.0  runqueue 0.0  blocked 25.5 futex (still blocked at frame end 0.3 ms)   largest 25.5 ms in __futex_wait   preempted by ksoftirqd/2/25 for 0.0 ms
+    mg_worker0/6751               oncpu 15.1  runqueue 0.0  blocked 25.5 futex (still blocked at frame end 4.3 ms)   largest 25.5 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.2  blocked 0.7 futex (still blocked at frame end 44.0 ms)   largest 0.8 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.3 futex 0.3 | poll 0.0 (still blocked at frame end 44.2 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 44.6 ms)   largest 0.1 ms in __futex_wait
+  3 stalls this frame, 15 off-CPU intervals of the process logged
+
+hitch frame 1484  52.9 ms  (budget 20.8 ms, over by 32.1 ms, 150% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     34.7 ms  (fault 7.2, reclaim 17.2, compact 5.9)   runnable 0.3 ms   runqueue 1.6 ms
+  blocked   16.3 ms  futex 14.1 | timer 1.9 | present 0.2
+  resolved   waiting on a running task 14.3 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     14.1 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        was running (waiting for work) 0.0 ms
+      1.9 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      2.1 ms  in 4 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 34.7 (fault 7.2, reclaim 17.2, compact 5.9)  runnable 0.3  runqueue 1.6  blocked 16.3 futex 14.1 | timer 1.9 | present 0.2   preempted by kworker/0:0/6586 for 0.2 ms
+    mg_main/6739                  oncpu 0.3  runqueue 0.1  blocked 52.6 futex   largest 52.6 ms in __futex_wait
+    mg_worker1/6752               oncpu 13.7  runqueue 0.1  blocked 37.1 futex (still blocked at frame end 2.0 ms)   largest 37.2 ms in __futex_wait
+    mg_worker0/6751               oncpu 14.2  runqueue 0.1  blocked 37.1 futex (still blocked at frame end 1.5 ms)   largest 37.2 ms in __futex_wait
+    mg_worker2/6753               oncpu 12.9  runqueue 0.0  blocked 37.2 futex (still blocked at frame end 2.8 ms)   largest 37.2 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 1.7  blocked 0.8 futex (still blocked at frame end 50.5 ms)   largest 2.4 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.0  blocked 0.4 futex (still blocked at frame end 52.2 ms)   largest 0.4 ms in __futex_wait
+  7 stalls this frame, 16 off-CPU intervals of the process logged
+
+hitch frame 1499  43.7 ms  (budget 20.8 ms, over by 22.9 ms, 183% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     25.6 ms  (fault 3.3, reclaim 5.2, compact 15.3)   runnable 0.0 ms   runqueue 0.1 ms
+  blocked   17.9 ms  futex 14.2 | timer 3.6 | present 0.1
+  resolved   waiting on a running task 14.4 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     14.2 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      3.6 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 25.6 (fault 3.3, reclaim 5.2, compact 15.3)  runnable 0.0  runqueue 0.1  blocked 17.9 futex 14.2 | timer 3.6 | present 0.1   preempted by kworker/0:0/6586 for 0.0 ms
+    mg_worker0/6751               oncpu 12.9  runnable 0.1  runqueue 0.1  blocked 29.2 futex (still blocked at frame end 1.4 ms)   largest 29.3 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker2/6753               oncpu 13.2  runqueue 0.0  blocked 29.2 futex (still blocked at frame end 1.3 ms)   largest 29.2 ms in __futex_wait
+    mg_worker1/6752               oncpu 14.3  runqueue 0.0  blocked 29.2 futex (still blocked at frame end 0.2 ms)   largest 29.2 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.6 futex (still blocked at frame end 43.1 ms)   largest 0.6 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.3 futex 0.2 | poll 0.0 (still blocked at frame end 43.1 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 43.5 ms)   largest 0.0 ms in __futex_wait
+  5 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 1512  21.5 ms  (budget 20.8 ms, over by 0.6 ms, 3366% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu      0.5 ms   runqueue 0.1 ms
+  blocked   20.8 ms  futex 18.8 | timer 1.9 | present 0.1
+  resolved   waiting on a running task 18.9 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     18.8 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        was running (waiting for work) 0.0 ms
+      1.9 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 0.5  runqueue 0.1  blocked 20.8 futex 18.8 | timer 1.9 | present 0.1
+    mg_worker2/6753               oncpu 17.1  runqueue 0.1  blocked 2.2 futex (still blocked at frame end 2.0 ms)   largest 2.3 ms in __futex_wait
+    mg_worker1/6752               oncpu 18.5  runqueue 0.1  blocked 2.2 futex (still blocked at frame end 0.7 ms)   largest 2.3 ms in __futex_wait
+    mg_worker0/6751               oncpu 18.9  runqueue 0.1  blocked 2.2 futex (still blocked at frame end 0.4 ms)   largest 2.2 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.6 futex (still blocked at frame end 20.8 ms)   largest 0.6 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.2  runqueue 0.1  blocked 0.3 futex 0.2 | poll 0.0 (still blocked at frame end 20.9 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 21.2 ms)   largest 0.0 ms in __futex_wait
+  4 stalls this frame, 13 off-CPU intervals of the process logged
+
+hitch frame 1514  47.8 ms  (budget 20.8 ms, over by 27.0 ms, 170% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     33.7 ms  (fault 4.3, reclaim 5.8, compact 22.1)   runqueue 0.2 ms
+  blocked   13.9 ms  futex 13.6 | present 0.4
+  resolved   waiting on a running task 13.9 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     13.6 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        was running (waiting for work) 0.0 ms
+      0.5 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 33.7 (fault 4.3, reclaim 5.8, compact 22.1)  runqueue 0.2  blocked 13.9 futex 13.6 | present 0.4
+    mg_worker0/6751               oncpu 12.8  runnable 0.2  runqueue 0.0  blocked 34.0 futex (still blocked at frame end 0.8 ms)   largest 34.0 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker1/6752               oncpu 13.5  runqueue 0.0  blocked 34.0 futex (still blocked at frame end 0.3 ms)   largest 34.1 ms in __futex_wait
+    mg_worker2/6753               oncpu 13.6  runqueue 0.0  blocked 34.0 futex (still blocked at frame end 0.2 ms)   largest 34.0 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 1.2 futex (still blocked at frame end 46.6 ms)   largest 1.2 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.2  blocked 0.7 futex 0.6 | poll 0.1 (still blocked at frame end 46.6 ms)   largest 0.6 ms in __futex_wait
+    mg_main/6739                  oncpu 0.5  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 47.3 ms)   largest 0.0 ms in __futex_wait
+  3 stalls this frame, 13 off-CPU intervals of the process logged
+
+hitch frame 1529  35.2 ms  (budget 20.8 ms, over by 14.3 ms, 226% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     19.1 ms  (fault 4.5, reclaim 2.3, compact 9.7)   runnable 0.3 ms   runqueue 0.1 ms
+  blocked   15.6 ms  futex 14.9 | timer 0.6 | present 0.1
+  resolved   waiting on a running task 15.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     14.9 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      1.1 ms  in 4 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 19.1 (fault 4.5, reclaim 2.3, compact 9.7)  runnable 0.3  runqueue 0.1  blocked 15.6 futex 14.9 | timer 0.6 | present 0.1   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker2/6753               oncpu 11.4  runnable 0.1  runqueue 2.8  blocked 20.1 futex (still blocked at frame end 0.8 ms)   largest 22.9 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker0/6751               oncpu 13.5  runqueue 0.1  blocked 20.0 futex (still blocked at frame end 1.4 ms)   largest 20.2 ms in __futex_wait
+    mg_worker1/6752               oncpu 14.9  runqueue 0.0  blocked 20.0 futex (still blocked at frame end 0.2 ms)   largest 20.1 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 0.5 futex (still blocked at frame end 34.5 ms)   largest 0.6 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.0  blocked 0.3 futex 0.2 | poll 0.0 (still blocked at frame end 34.6 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 34.9 ms)   largest 0.0 ms in __futex_wait
+  6 stalls this frame, 15 off-CPU intervals of the process logged
+
+hitch frame 1544  47.1 ms  (budget 20.8 ms, over by 26.3 ms, 155% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     26.2 ms  (fault 6.8, reclaim 12.4, compact 0.8)   runqueue 1.0 ms
+  blocked   19.9 ms  futex 17.8 | timer 2.0 | present 0.1
+  resolved   waiting on a running task 17.8 ms, inherited stalls 0.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     17.8 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        was running (waiting for work) 0.1 ms
+      2.0 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      1.1 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 26.2 (fault 6.8, reclaim 12.4, compact 0.8)  runqueue 1.0  blocked 19.9 futex 17.8 | timer 2.0 | present 0.1
+    mg_worker1/6752               oncpu 17.2  runnable 0.4  runqueue 0.0  blocked 29.0 futex (still blocked at frame end 0.6 ms)   largest 29.0 ms in __futex_wait   preempted by KMS thread/1987 for 0.3 ms
+    mg_worker0/6751               oncpu 17.8  runnable 0.0  runqueue 0.1  blocked 28.9 futex (still blocked at frame end 0.3 ms)   largest 29.0 ms in __futex_wait   preempted by llvmpipe-6/2000 for 0.0 ms
+    mg_worker2/6753               oncpu 16.7  runnable 0.0  runqueue 0.1  blocked 28.9 futex (still blocked at frame end 1.4 ms)   largest 29.0 ms in __futex_wait   preempted by llvmpipe-7/2001 for 0.0 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 0.5 futex (still blocked at frame end 46.5 ms)   largest 0.6 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.2 futex 0.2 | poll 0.0 (still blocked at frame end 46.6 ms)   largest 0.2 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 46.9 ms)   largest 0.0 ms in __futex_wait
+  4 stalls this frame, 17 off-CPU intervals of the process logged
+
+hitch frame 1559  36.2 ms  (budget 20.8 ms, over by 15.4 ms, 216% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     19.1 ms  (fault 4.9, reclaim 3.8, compact 7.5)   runnable 0.4 ms   runqueue 0.1 ms
+  blocked   16.6 ms  futex 13.7 | timer 2.8 | present 0.1
+  resolved   waiting on a running task 13.8 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     13.7 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        was running (waiting for work) 0.0 ms
+      2.8 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.7 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 19.1 (fault 4.9, reclaim 3.8, compact 7.5)  runnable 0.4  runqueue 0.1  blocked 16.6 futex 13.7 | timer 2.8 | present 0.1   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker0/6751               oncpu 12.2  runqueue 0.1  blocked 22.2 futex (still blocked at frame end 1.7 ms)   largest 22.3 ms in __futex_wait
+    mg_worker2/6753               oncpu 13.7  runqueue 0.1  blocked 22.2 futex (still blocked at frame end 0.2 ms)   largest 22.3 ms in __futex_wait
+    mg_worker1/6752               oncpu 12.5  runqueue 0.0  blocked 22.2 futex (still blocked at frame end 1.4 ms)   largest 22.3 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.6 futex (still blocked at frame end 35.6 ms)   largest 0.6 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.2  runqueue 0.1  blocked 0.2 futex 0.2 | poll 0.0 (still blocked at frame end 35.7 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 36.0 ms)   largest 0.0 ms in __futex_wait
+  7 stalls this frame, 15 off-CPU intervals of the process logged
+
+hitch frame 1574  39.3 ms  (budget 20.8 ms, over by 18.5 ms, 188% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     23.5 ms  (fault 5.2, reclaim 7.5, compact 6.4)   runqueue 0.1 ms
+  blocked   15.6 ms  futex 12.6 | timer 2.9 | present 0.1
+  resolved   waiting on a running task 12.7 ms, inherited stalls 0.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     12.6 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        was running (waiting for work) 0.1 ms
+      2.9 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 23.5 (fault 5.2, reclaim 7.5, compact 6.4)  runqueue 0.1  blocked 15.6 futex 12.6 | timer 2.9 | present 0.1
+    mg_worker1/6752               oncpu 12.2  runnable 0.1  runqueue 0.1  blocked 26.3 futex (still blocked at frame end 0.6 ms)   largest 26.4 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker2/6753               oncpu 12.6  runqueue 0.1  blocked 26.4 futex (still blocked at frame end 0.3 ms)   largest 26.4 ms in __futex_wait
+    mg_worker0/6751               oncpu 12.4  runqueue 0.1  blocked 26.3 futex (still blocked at frame end 0.6 ms)   largest 26.4 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.5 futex (still blocked at frame end 38.8 ms)   largest 0.5 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.2  runqueue 0.0  blocked 0.2 futex (still blocked at frame end 38.9 ms)   largest 0.2 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 39.1 ms)   largest 0.0 ms in __futex_wait
+  4 stalls this frame, 12 off-CPU intervals of the process logged
+
+hitch frame 1589  40.9 ms  (budget 20.8 ms, over by 20.1 ms, 194% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     24.4 ms  (fault 3.4, reclaim 1.5, compact 17.8)   runqueue 0.2 ms
+  blocked   16.3 ms  futex 13.1 | timer 2.9 | present 0.3
+  resolved   waiting on a running task 13.3 ms, inherited stalls 0.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     13.1 ms  futex    blocked in __futex_wait
+              <- mg_worker1/6752        was running (waiting for work) 0.0 ms
+      2.9 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.4 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 24.4 (fault 3.4, reclaim 1.5, compact 17.8)  runqueue 0.2  blocked 16.3 futex 13.1 | timer 2.9 | present 0.3
+    mg_worker0/6751               oncpu 12.2  runnable 0.1  runqueue 0.1  blocked 27.6 futex (still blocked at frame end 1.0 ms)   largest 27.6 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker2/6753               oncpu 13.0  runnable 0.0  runqueue 0.1  blocked 27.6 futex (still blocked at frame end 0.3 ms)   largest 27.6 ms in __futex_wait   preempted by kworker/0:0/6586 for 0.0 ms
+    mg_worker1/6752               oncpu 13.1  runqueue 0.1  blocked 27.5 futex (still blocked at frame end 0.2 ms)   largest 27.6 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.3  blocked 1.2 futex (still blocked at frame end 39.4 ms)   largest 1.6 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.5  runqueue 0.3  blocked 0.5 futex 0.4 | poll 0.1 (still blocked at frame end 39.7 ms)   largest 0.5 ms in __futex_wait
+    mg_main/6739                  oncpu 0.3  runnable 0.0  runqueue 0.1  blocked 0.1 futex (still blocked at frame end 40.5 ms)   largest 0.1 ms in __futex_wait   preempted by mg_main/6737 for 0.0 ms
+  5 stalls this frame, 18 off-CPU intervals of the process logged
+
+hitch frame 1604  40.4 ms  (budget 20.8 ms, over by 19.5 ms, 180% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     23.4 ms  (fault 5.8, reclaim 5.6, compact 6.8)   runqueue 0.1 ms
+  blocked   16.9 ms  futex 14.1 | timer 2.7 | present 0.1
+  resolved   waiting on a running task 14.2 ms, inherited stalls 0.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     14.1 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        was running (waiting for work) 0.1 ms
+      2.7 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 23.4 (fault 5.8, reclaim 5.6, compact 6.8)  runqueue 0.1  blocked 16.9 futex 14.1 | timer 2.7 | present 0.1
+    mg_main/6739                  oncpu 0.2  runqueue 0.1  blocked 40.0 futex   largest 40.1 ms in __futex_wait
+    mg_worker0/6751               oncpu 13.2  runnable 0.3  runqueue 0.2  blocked 25.8 futex (still blocked at frame end 0.9 ms)   largest 26.0 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker2/6753               oncpu 14.0  runqueue 0.1  blocked 25.8 futex (still blocked at frame end 0.4 ms)   largest 25.9 ms in __futex_wait
+    mg_worker1/6752               oncpu 13.1  runnable 0.0  runqueue 0.1  blocked 25.8 futex (still blocked at frame end 1.4 ms)   largest 25.8 ms in __futex_wait   preempted by VizCompositorTh/3000 for 0.0 ms
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.1  blocked 0.8 futex (still blocked at frame end 39.5 ms)   largest 0.9 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.1  blocked 0.3 futex 0.2 | poll 0.1 (still blocked at frame end 39.5 ms)   largest 0.3 ms in __futex_wait
+  4 stalls this frame, 16 off-CPU intervals of the process logged
+
+hitch frame 1619  40.9 ms  (budget 20.8 ms, over by 20.0 ms, 171% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     22.8 ms  (fault 7.9, reclaim 8.1, compact 0.5)   runqueue 0.2 ms
+  blocked   17.9 ms  futex 15.6 | timer 2.1 | present 0.2
+  resolved   waiting on a running task 15.7 ms, inherited stalls 0.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     15.6 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        was running (waiting for work) 0.1 ms
+      2.1 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 22.8 (fault 7.9, reclaim 8.1, compact 0.5)  runqueue 0.2  blocked 17.9 futex 15.6 | timer 2.1 | present 0.2
+    mg_main/6739                  oncpu 0.2  runqueue 0.1  blocked 40.6 futex   largest 40.6 ms in __futex_wait
+    mg_worker0/6751               oncpu 15.6  runnable 0.1  runqueue 0.0  blocked 24.8 futex (still blocked at frame end 0.3 ms)   largest 24.9 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker1/6752               oncpu 14.2  runqueue 0.1  blocked 24.8 futex (still blocked at frame end 1.7 ms)   largest 24.9 ms in __futex_wait
+    mg_worker2/6753               oncpu 14.0  runqueue 0.1  blocked 24.8 futex (still blocked at frame end 2.0 ms)   largest 24.8 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.6 futex (still blocked at frame end 40.2 ms)   largest 0.6 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.0  blocked 0.3 futex 0.3 | poll 0.1 (still blocked at frame end 40.2 ms)   largest 0.3 ms in __futex_wait
+  4 stalls this frame, 15 off-CPU intervals of the process logged
+
+hitch frame 1634  39.8 ms  (budget 20.8 ms, over by 18.9 ms, 205% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     22.5 ms  (fault 2.7, reclaim 0.9, compact 18.1)   runnable 0.3 ms   runqueue 0.2 ms
+  blocked   16.8 ms  futex 15.0 | timer 1.6 | present 0.2
+  resolved   waiting on a running task 15.2 ms, inherited stalls 0.0 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     15.0 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        was running (waiting for work) 0.0 ms
+      1.6 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.6 ms  in 3 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 22.5 (fault 2.7, reclaim 0.9, compact 18.1)  runnable 0.3  runqueue 0.2  blocked 16.8 futex 15.0 | timer 1.6 | present 0.2   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker1/6752               oncpu 13.6  runqueue 0.1  blocked 24.3 futex (still blocked at frame end 1.8 ms)   largest 24.4 ms in __futex_wait
+    mg_worker0/6751               oncpu 13.7  runqueue 0.1  blocked 24.2 futex (still blocked at frame end 1.7 ms)   largest 24.4 ms in __futex_wait
+    mg_worker2/6753               oncpu 15.1  runqueue 0.1  blocked 24.3 futex (still blocked at frame end 0.3 ms)   largest 24.3 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.8 futex (still blocked at frame end 38.9 ms)   largest 0.8 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.3  runqueue 0.1  blocked 0.4 futex 0.4 | poll 0.1 (still blocked at frame end 39.0 ms)   largest 0.4 ms in __futex_wait
+    mg_main/6739                  oncpu 0.3  runqueue 0.1  blocked 0.0 futex (still blocked at frame end 39.4 ms)   largest 0.1 ms in __futex_wait
+  6 stalls this frame, 15 off-CPU intervals of the process logged
+
+hitch frame 1649  36.4 ms  (budget 20.8 ms, over by 15.5 ms, 219% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     20.3 ms  (fault 3.6, reclaim 2.9, compact 11.6)   runqueue 0.2 ms
+  blocked   15.9 ms  futex 13.0 | timer 2.7 | present 0.2
+  resolved   waiting on a running task 13.1 ms, inherited stalls 0.1 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     13.0 ms  futex    blocked in __futex_wait
+              <- mg_worker0/6751        was running (waiting for work) 0.1 ms
+      2.7 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.4 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 20.3 (fault 3.6, reclaim 2.9, compact 11.6)  runqueue 0.2  blocked 15.9 futex 13.0 | timer 2.7 | present 0.2
+    mg_worker2/6753               oncpu 12.7  runnable 0.2  runqueue 0.0  blocked 23.1 futex (still blocked at frame end 0.3 ms)   largest 23.1 ms in __futex_wait   preempted by KMS thread/1987 for 0.1 ms
+    mg_worker0/6751               oncpu 13.0  runqueue 0.1  blocked 23.1 futex (still blocked at frame end 0.2 ms)   largest 23.2 ms in __futex_wait
+    mg_worker1/6752               oncpu 12.9  runqueue 0.1  blocked 23.1 futex (still blocked at frame end 0.3 ms)   largest 23.2 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.9 futex (still blocked at frame end 35.4 ms)   largest 1.0 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.5  runqueue 0.0  blocked 0.4 futex (still blocked at frame end 35.4 ms)   largest 0.4 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 36.1 ms)   largest 0.1 ms in __futex_wait
+  4 stalls this frame, 14 off-CPU intervals of the process logged
+
+hitch frame 1664  50.7 ms  (budget 20.8 ms, over by 29.9 ms, 169% kernel-observable)  root mg_main/6737  [open stall]
+  oncpu     26.2 ms  (fault 6.8, reclaim 19.4)   runqueue 0.2 ms
+  blocked   24.4 ms  futex 13.9 | io 7.5 | timer 2.8 | present 0.1
+  resolved   waiting on a running task 13.6 ms, inherited stalls 0.5 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+     13.9 ms  futex    blocked in __futex_wait
+              <- mg_worker2/6753        kept off the CPU 0.5 ms, last preempted by KMS thread/1987
+      7.5 ms  io       blocked in rq_qos_wait
+              <- [softirq]              woken from a softirq
+      2.8 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/6737          (root)  oncpu 26.2 (fault 6.8, reclaim 18.2, compact 1.0)  runqueue 0.2  blocked 24.4 futex 13.9 | io 7.5 | timer 2.8 | present 0.1
+    mg_worker2/6753               oncpu 13.4  runnable 0.3  runqueue 0.2  blocked 36.5 futex (still blocked at frame end 0.2 ms)   largest 36.7 ms in __futex_wait   preempted by KMS thread/1987 for 0.2 ms
+    mg_worker0/6751               oncpu 13.4  runnable 0.0  runqueue 0.2  blocked 36.5 futex (still blocked at frame end 0.5 ms)   largest 36.7 ms in __futex_wait   preempted by VizCompositorTh/3000 for 0.0 ms
+    mg_worker1/6752               oncpu 12.9  runqueue 0.1  blocked 36.5 futex (still blocked at frame end 1.2 ms)   largest 36.6 ms in __futex_wait
+    WSI swapchain e/6750          oncpu 0.0  runqueue 0.0  blocked 0.6 futex (still blocked at frame end 50.1 ms)   largest 0.6 ms in __futex_wait
+    WSI swapchain q/6749          oncpu 0.4  runqueue 0.0  blocked 0.3 futex (still blocked at frame end 50.1 ms)   largest 0.3 ms in __futex_wait
+    mg_main/6739                  oncpu 0.2  runqueue 0.0  blocked 0.0 futex (still blocked at frame end 50.5 ms)   largest 0.0 ms in __futex_wait
+  5 stalls this frame, 15 off-CPU intervals of the process logged
+

@@ -23,6 +23,15 @@
 #              MEM_MAX, so the walk faults pages back in from swap (cases.md
 #              B: memory pressure)
 #   memthp     the same with transparent huge pages asked for the world
+#   alloc      the game allocates and fills ALLOC_MB of new memory every
+#              ALLOC_EVERY frames, keeping the newest ALLOC_KEEP blocks, with
+#              its unwalked world filling the cgroup to MEM_MAX: the kernel
+#              has to make room first (cases.md B: reclaim)
+#   compact    the game's memory grows by THP_MB of huge pages every
+#              ALLOC_EVERY frames while frag holds the machine's free memory
+#              in single pages, all but FRAG_LEAVE_MB (cases.md B2: huge
+#              pages and compaction). Not limited to a cgroup: when the free
+#              memory is used up the whole machine is short, so keep it brief
 #   slack      the game's sleeps are made imprecise in bursts by a preloaded
 #              library (cases.md F2: timers delivered late)
 #   ipc        the game makes IPC_CALLS blocking calls per frame to a server
@@ -30,6 +39,10 @@
 #              game waiting on wineserver)
 #   cpuspike   the game burns BURN_MS of CPU on its main thread every
 #              ASSET_EVERY frames: a negative control, not a kernel stall
+#   squeeze    every SQ_PERIOD_MS, squeeze confines all the game's threads to
+#              CPUs SQ_CPUS for SQ_BURST_MS, with nothing else running there
+#              (cases.md A: a scheduler packing a game's threads onto too
+#              few cores)
 #   iodisk     iothread on a disk the game shares: the game and bgio, reading
 #              in bursts, run in one cgroup whose reads from the data disk
 #              are limited to DISK_BPS (cases.md C1: other I/O saturating a
@@ -42,7 +55,7 @@
 #   hitch.txt      the same, human-readable
 #   bursts.jsonl   the ground truth where the environment supplies it: when
 #                  bgload was burning CPU (bgcpu, ipc), when bgio was reading
-#                  (iodisk), which sleeps were made imprecise (slack). Elsewhere it is frames.jsonl: which
+#                  (iodisk), when the threads were confined (squeeze), which sleeps were made imprecise (slack). Elsewhere it is frames.jsonl: which
 #                  frames loaded, walked or burned
 #   manifest.json  what was run, on what
 set -u
@@ -67,10 +80,18 @@ PACK=$ROOT/build/cases/data/pack.bin
 WORLD_MB=${WORLD_MB:-512}
 WALK_MB=${WALK_MB:-2}
 MEM_MAX=${MEM_MAX:-420M}
+ALLOC_MB=${ALLOC_MB:-8}
+ALLOC_EVERY=${ALLOC_EVERY:-15}
+ALLOC_KEEP=${ALLOC_KEEP:-64}
+THP_MB=${THP_MB:-24}
+FRAG_LEAVE_MB=${FRAG_LEAVE_MB:-64}
 SLACK_NS=${SLACK_NS:-8000000}
 SRV_CPU=${SRV_CPU:-5}
 IPC_CALLS=${IPC_CALLS:-30}
 BURN_MS=${BURN_MS:-12}
+SQ_CPUS=${SQ_CPUS:-0}
+SQ_PERIOD_MS=${SQ_PERIOD_MS:-1500}
+SQ_BURST_MS=${SQ_BURST_MS:-300}
 DISK_BPS=${DISK_BPS:-200M}
 DISK_SLICE=hitchdisk.slice
 SCRATCH=$ROOT/build/cases/data/scratch.bin
@@ -78,11 +99,13 @@ SCRATCH=$ROOT/build/cases/data/scratch.bin
 read -r -a TRACE_ARGS <<<"${HITCHTRACE_ARGS:-}"
 
 case $VARIANT in
-baseline|bgcpu) ;;
+baseline|bgcpu|squeeze) ;;
 iomain)   GAME_ARGS="$GAME_ARGS -s main -p $PACK -a $ASSET_MB -e $ASSET_EVERY" ;;
 iothread) GAME_ARGS="$GAME_ARGS -s thread -p $PACK -a $ASSET_MB -e $ASSET_EVERY" ;;
 mem)      GAME_ARGS="$GAME_ARGS -m $WORLD_MB -g $WALK_MB -e $ASSET_EVERY" ;;
 memthp)   GAME_ARGS="$GAME_ARGS -m $WORLD_MB -g $WALK_MB -e $ASSET_EVERY -H" ;;
+alloc)    GAME_ARGS="$GAME_ARGS -m $WORLD_MB -g 0 -A $ALLOC_MB -K $ALLOC_KEEP -e $ALLOC_EVERY" ;;
+compact)  GAME_ARGS="$GAME_ARGS -A $THP_MB -K 1024 -H -e $ALLOC_EVERY" ;;
 slack)    ;;
 ipc)      GAME_ARGS="$GAME_ARGS -i $OUT/srv.sock -c $IPC_CALLS"
 	  # more threads than the game's cores see: the server's one CPU is crowded
@@ -116,14 +139,16 @@ fi
 # What the game is started through: a memory-limited cgroup, a preload.
 WRAP=()
 case $VARIANT in
-mem*)  WRAP=(systemd-run --user --scope -q -p "MemoryMax=$MEM_MAX") ;;
+mem*|alloc) [ "$MEM_MAX" = none ] ||
+	WRAP=(systemd-run --user --scope -q -p "MemoryMax=$MEM_MAX") ;;
 iodisk) [ "$DISK_BPS" = none ] ||
 	WRAP=(systemd-run --user --scope -q "--slice=$DISK_SLICE") ;;
 slack) WRAP=(env "LD_PRELOAD=$ROOT/build/cases/slack.so" "SLACK_NS=$SLACK_NS"
 	     "SLACK_LOG=$OUT/bursts.jsonl") ;;
 esac
 for f in build/hitchtrace build/cases/minigame build/cases/bgload \
-	 build/cases/bgio build/cases/ipcserver build/cases/slack.so; do
+	 build/cases/bgio build/cases/ipcserver build/cases/squeeze build/cases/frag \
+	 build/cases/slack.so; do
 	[ -e "$ROOT/$f" ] || { echo "missing $f: run make && make -C cases" >&2; exit 2; }
 done
 [ -f "$LAYER" ] || { echo "run 'make layer layer-install' first" >&2; exit 2; }
@@ -154,10 +179,17 @@ if [ "$VARIANT" = iodisk ]; then
 	fi
 fi
 
+vmstat_mem() {
+	grep -E '^(compact_stall|compact_fail|compact_success|thp_fault_alloc|thp_fault_fallback|allocstall_movable|pgmigrate_success) ' \
+		/proc/vmstat | tr '\n' ' '
+}
+
 GAME_PID=
 BG_PID=
 SRV_PID=
+FRAG_PID=
 cleanup() {
+	[ -n "$FRAG_PID" ] && kill "$FRAG_PID" 2>/dev/null
 	[ -n "$BG_PID" ] && kill "$BG_PID" 2>/dev/null
 	[ -n "$GAME_PID" ] && kill "$GAME_PID" 2>/dev/null
 	[ -n "$SRV_PID" ] && kill "$SRV_PID" 2>/dev/null
@@ -169,6 +201,17 @@ if [ "$VARIANT" = ipc ]; then
 		2>"$OUT/server.log" &
 	SRV_PID=$!
 	sleep 0.3
+fi
+
+if [ "$VARIANT" = compact ]; then
+	"$ROOT/build/cases/frag" -l "$FRAG_LEAVE_MB" >"$OUT/frag.out" 2>"$OUT/frag.log" &
+	FRAG_PID=$!
+	for _ in $(seq 100); do
+		grep -q ready "$OUT/frag.out" 2>/dev/null && break
+		sleep 0.2
+	done
+	grep -E 'DMA32|Normal' /proc/buddyinfo >>"$OUT/frag.log"
+	echo "before: $(vmstat_mem)" >"$OUT/vmstat.log"
 fi
 
 # the game outlives the trace on both ends
@@ -196,6 +239,14 @@ if [ "$VARIANT" = bgcpu ] || [ "$VARIANT" = ipc ]; then
 	BG_PID=$!
 fi
 
+if [ "$VARIANT" = squeeze ]; then
+	# the game's threads, not the taskset that started it
+	"$ROOT/build/cases/squeeze" -P "$GAME_PID" -c "$SQ_CPUS" \
+		-p "$SQ_PERIOD_MS" -b "$SQ_BURST_MS" -d $((SECS - 2)) \
+		-o "$OUT/bursts.jsonl" 2>"$OUT/squeeze.log" &
+	BG_PID=$!
+fi
+
 if [ "$VARIANT" = iodisk ]; then
 	# off the game's cores: the disk is the only thing they share
 	"${WRAP[@]}" taskset -c "${IO_BG_CPUS:-6-9}" \
@@ -212,6 +263,12 @@ wait "$GAME_PID"
 GAME_PID=
 [ -n "$SRV_PID" ] && wait "$SRV_PID" 2>/dev/null
 SRV_PID=
+if [ -n "$FRAG_PID" ]; then
+	echo "after:  $(vmstat_mem)" >>"$OUT/vmstat.log"
+	kill "$FRAG_PID" 2>/dev/null
+	wait "$FRAG_PID" 2>/dev/null
+	FRAG_PID=
+fi
 
 cat >"$OUT/manifest.json" <<EOF
 {"variant": "$VARIANT", "seconds": $SECS, "date": "$(date -Is)",
@@ -220,8 +277,11 @@ cat >"$OUT/manifest.json" <<EOF
  "bgload": {"threads": $BG_THREADS, "period_ms": $BG_PERIOD_MS, "burst_ms": $BG_BURST_MS},
  "asset": {"mb": $ASSET_MB, "every_frames": $ASSET_EVERY},
  "memory": {"world_mb": $WORLD_MB, "walk_mb": $WALK_MB, "max": "$MEM_MAX"},
+ "alloc": {"mb": $ALLOC_MB, "every_frames": $ALLOC_EVERY, "keep": $ALLOC_KEEP},
+ "compact": {"thp_mb": $THP_MB, "frag_leave_mb": $FRAG_LEAVE_MB},
  "slack_ns": $SLACK_NS, "server_cpu": "$SRV_CPU", "ipc_calls": $IPC_CALLS,
  "burn_ms": $BURN_MS, "disk_bps": "$DISK_BPS",
+ "squeeze": {"cpus": "$SQ_CPUS", "period_ms": $SQ_PERIOD_MS, "burst_ms": $SQ_BURST_MS},
  "hitchtrace_args": "${HITCHTRACE_ARGS:-}",
  "vulkan_device": "$(vulkaninfo --summary 2>/dev/null | sed -n 's/^\s*deviceName\s*= //p' | head -1)",
  "mesa": "$(vulkaninfo --summary 2>/dev/null | sed -n 's/^\s*driverInfo\s*= //p' | head -1)",

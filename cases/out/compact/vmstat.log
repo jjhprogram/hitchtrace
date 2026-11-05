@@ -1,0 +1,2 @@
+before: allocstall_movable 396 pgmigrate_success 583482 compact_stall 635 compact_fail 589 compact_success 46 thp_fault_alloc 2088 thp_fault_fallback 132 
+after:  allocstall_movable 854 pgmigrate_success 916754 compact_stall 2108 compact_fail 1958 compact_success 150 thp_fault_alloc 3052 thp_fault_fallback 572 
