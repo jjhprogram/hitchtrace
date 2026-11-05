@@ -58,13 +58,22 @@
 #                  (iodisk), when the threads were confined (squeeze), which sleeps were made imprecise (slack). Elsewhere it is frames.jsonl: which
 #                  frames loaded, walked or burned
 #   manifest.json  what was run, on what
+#
+# For tools/catch: TOOL=delayacct|ftrace|perfsched|offwaketime|chaingraph
+# attaches that tool instead of hitchtrace, through tools/overhead/run.py
+# --attach (sudo, so the credentials must be cached: sudo -v first); its
+# output and tool.json go in the same directory. OUT_DIR=DIR writes there
+# instead of cases/out/RUN_NAME. TOOL_CPUS=LIST keeps the tool's own process
+# (hitchtrace's included) on those CPUs.
 set -u
 
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
 VARIANT=${1:?usage: cases/run.sh VARIANT [SECONDS] [RUN_NAME]}
 SECS=${2:-30}
 RUN=${3:-$VARIANT}
-OUT=$ROOT/cases/out/$RUN
+OUT=${OUT_DIR:-$ROOT/cases/out/$RUN}
+TOOL=${TOOL:-ht}
+TOOL_CPUS=${TOOL_CPUS:-}
 LAYER=$ROOT/build/libVkLayer_hitchtrace.so
 
 GAME_CPUS=${GAME_CPUS:-0-3}
@@ -188,7 +197,9 @@ GAME_PID=
 BG_PID=
 SRV_PID=
 FRAG_PID=
+DA_OLD=
 cleanup() {
+	[ -n "$DA_OLD" ] && sudo -n sysctl -q -w "kernel.task_delayacct=$DA_OLD"
 	[ -n "$FRAG_PID" ] && kill "$FRAG_PID" 2>/dev/null
 	[ -n "$BG_PID" ] && kill "$BG_PID" 2>/dev/null
 	[ -n "$GAME_PID" ] && kill "$GAME_PID" 2>/dev/null
@@ -214,19 +225,44 @@ if [ "$VARIANT" = compact ]; then
 	echo "before: $(vmstat_mem)" >"$OUT/vmstat.log"
 fi
 
-# the game outlives the trace on both ends
+# delay accounting covers only threads created while it is on: before the game
+if [ "$TOOL" = delayacct ]; then
+	DA_OLD=$(cat /proc/sys/kernel/task_delayacct)
+	sudo -n sysctl -q -w kernel.task_delayacct=1 ||
+		{ echo "cannot turn on delay accounting (sudo -v first)" >&2; DA_OLD=; exit 1; }
+fi
+
+# the game outlives the trace on both ends (another tool may take a while to
+# start: the game gets time to spare and is stopped once the tool is done)
+GAME_SECS=$((SECS + 4))
+[ "$TOOL" = ht ] || GAME_SECS=$((SECS + 120))
 # shellcheck disable=SC2086
 HITCHTRACE=1 "${WRAP[@]}" taskset -c "$GAME_CPUS" "$ROOT/build/cases/minigame" \
-	-d $((SECS + 4)) $GAME_ARGS -o "$OUT/frames.jsonl" 2>"$OUT/game.log" &
+	-d $GAME_SECS $GAME_ARGS -o "$OUT/frames.jsonl" 2>"$OUT/game.log" &
 GAME_PID=$!
 sleep 1.5
 kill -0 "$GAME_PID" 2>/dev/null || { cat "$OUT/game.log" >&2; exit 1; }
 
-sudo -n "$ROOT/build/hitchtrace" -p "$GAME_PID" -x "$LAYER" \
-	-m hitch_frame_mark -M hitch_present_end -b "$BUDGET_US" -d "$SECS" \
-	"${TRACE_ARGS[@]}" \
-	-o "$OUT/hitch.jsonl" >"$OUT/hitch.txt" 2>"$OUT/hitch.err" &
-TRACE_PID=$!
+PIN=()
+[ -n "$TOOL_CPUS" ] && PIN=(taskset -c "$TOOL_CPUS")
+if [ "$TOOL" = ht ]; then
+	"${PIN[@]}" sudo -n "$ROOT/build/hitchtrace" -p "$GAME_PID" -x "$LAYER" \
+		-m hitch_frame_mark -M hitch_present_end -b "$BUDGET_US" -d "$SECS" \
+		"${TRACE_ARGS[@]}" \
+		-o "$OUT/hitch.jsonl" >"$OUT/hitch.txt" 2>"$OUT/hitch.err" &
+	TRACE_PID=$!
+else
+	"${PIN[@]}" sudo -n "$ROOT/tools/overhead/run.py" --attach "$TOOL" "$GAME_PID" "$OUT" "$SECS" \
+		>"$OUT/attach.log" 2>&1 &
+	TRACE_PID=$!
+	for _ in $(seq 900); do
+		# sudo runs as root: this user cannot signal it, even with kill -0
+		[ -f "$OUT/tool.ready" ] || [ ! -d "/proc/$TRACE_PID" ] && break
+		sleep 0.1
+	done
+	[ -f "$OUT/tool.ready" ] ||
+		{ echo "$TOOL did not start:" >&2; tail -n 5 "$OUT/attach.log" >&2; exit 1; }
+fi
 sleep 1
 
 if [ "$VARIANT" = bgcpu ] || [ "$VARIANT" = ipc ]; then
@@ -257,6 +293,7 @@ if [ "$VARIANT" = iodisk ]; then
 fi
 
 wait "$TRACE_PID"
+[ "$TOOL" = ht ] || kill "$GAME_PID" 2>/dev/null
 [ -n "$BG_PID" ] && wait "$BG_PID"
 BG_PID=
 wait "$GAME_PID"
@@ -271,7 +308,7 @@ if [ -n "$FRAG_PID" ]; then
 fi
 
 cat >"$OUT/manifest.json" <<EOF
-{"variant": "$VARIANT", "seconds": $SECS, "date": "$(date -Is)",
+{"variant": "$VARIANT", "tool": "$TOOL", "seconds": $SECS, "date": "$(date -Is)",
  "kernel": "$(uname -r)", "cpus_online": $(nproc --all),
  "game_cpus": "$GAME_CPUS", "game_args": "$GAME_ARGS", "budget_us": $BUDGET_US,
  "bgload": {"threads": $BG_THREADS, "period_ms": $BG_PERIOD_MS, "burst_ms": $BG_BURST_MS},
@@ -282,11 +319,11 @@ cat >"$OUT/manifest.json" <<EOF
  "slack_ns": $SLACK_NS, "server_cpu": "$SRV_CPU", "ipc_calls": $IPC_CALLS,
  "burn_ms": $BURN_MS, "disk_bps": "$DISK_BPS",
  "squeeze": {"cpus": "$SQ_CPUS", "period_ms": $SQ_PERIOD_MS, "burst_ms": $SQ_BURST_MS},
- "hitchtrace_args": "${HITCHTRACE_ARGS:-}",
+ "hitchtrace_args": "${HITCHTRACE_ARGS:-}", "tool_cpus": "$TOOL_CPUS",
  "vulkan_device": "$(vulkaninfo --summary 2>/dev/null | sed -n 's/^\s*deviceName\s*= //p' | head -1)",
  "mesa": "$(vulkaninfo --summary 2>/dev/null | sed -n 's/^\s*driverInfo\s*= //p' | head -1)",
  "hitchtrace_commit": "$(git -C "$ROOT" describe --always --dirty)"}
 EOF
 
-tail -n 2 "$OUT/hitch.err"
+if [ "$TOOL" = ht ]; then tail -n 2 "$OUT/hitch.err"; else tail -n 2 "$OUT/attach.log"; fi
 echo "output in ${OUT#"$ROOT"/}"
