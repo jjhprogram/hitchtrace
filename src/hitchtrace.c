@@ -1257,10 +1257,14 @@ static void json_stall(FILE *f, const struct ht_stall *st, __u32 tgid)
 	fprintf(f, "]}");
 }
 
-/* One logged interval. The stack is given by its blocking point only. */
+/*
+ * One logged interval. Its full kernel stack is in the record's "kstacks"
+ * table under kstack_id (-1 for none: a preempted thread was not blocked).
+ */
 static void json_event(FILE *f, const struct ht_event *e)
 {
 	const char *where = e->cause == HT_RUNNABLE ? NULL : blocked_in(e->kstack_id);
+	const __s32 kid = e->cause == HT_RUNNABLE ? -1 : e->kstack_id;
 
 	fprintf(f, "{\"tid\":%u,\"out_ns\":%llu,\"wake_ns\":%llu,\"in_ns\":%llu,"
 		"\"cause\":", e->pid, (unsigned long long)e->out_ns,
@@ -1283,6 +1287,41 @@ static void json_event(FILE *f, const struct ht_event *e)
 		json_str(f, where);
 	else
 		fprintf(f, "null");
+	fprintf(f, ",\"kstack_id\":%d", kid);
+	fputc('}', f);
+}
+
+static int cmp_s32(const void *a, const void *b)
+{
+	const __s32 x = *(const __s32 *)a, y = *(const __s32 *)b;
+
+	return (x > y) - (x < y);
+}
+
+/*
+ * The kernel stacks the record's events and chain hops point at, each written
+ * once: "kstacks":{"ID":[frames...],...}.
+ */
+static void json_kstack_table(FILE *f, const struct ht_record *r, const struct ht_events *evs)
+{
+	static __s32 ids[HT_MAX_EVENTS + HT_MAX_STALLS * HT_MAX_HOPS];
+	__u32 n = 0;
+
+	for (__u32 i = 0; evs && i < evs->n && i < HT_MAX_EVENTS; i++)
+		if (evs->ev[i].cause != HT_RUNNABLE && evs->ev[i].kstack_id >= 0)
+			ids[n++] = evs->ev[i].kstack_id;
+	for (__u32 s = 0; s < HT_MAX_STALLS; s++)
+		for (__u32 h = 0; h < r->stalls[s].nhops && h < HT_MAX_HOPS; h++)
+			if (r->stalls[s].hops[h].kstack_id >= 0)
+				ids[n++] = r->stalls[s].hops[h].kstack_id;
+	qsort(ids, n, sizeof(ids[0]), cmp_s32);
+	fprintf(f, ",\"kstacks\":{");
+	for (__u32 i = 0; i < n; i++) {
+		if (i && ids[i] == ids[i - 1])
+			continue;
+		fprintf(f, "%s\"%d\":", i ? "," : "", ids[i]);
+		json_kstack(f, ids[i]);
+	}
 	fputc('}', f);
 }
 
@@ -1364,6 +1403,7 @@ static void json_record(FILE *f, const struct ht_record *r,
 		}
 		fputc(']', f);
 	}
+	json_kstack_table(f, r, evs);
 
 	fprintf(f, "}\n");
 	fflush(f);
