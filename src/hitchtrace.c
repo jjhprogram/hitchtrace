@@ -18,6 +18,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
+#include <poll.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -60,6 +61,7 @@ static struct env {
 	long duration;
 	bool user_stacks;
 	bool no_timeline;
+	bool stop_on_eof;
 	bool quiet;
 	bool verbose;
 } env = {
@@ -81,6 +83,7 @@ enum {
 	OPT_MIN_BUDGET,
 	OPT_SHARE,
 	OPT_NO_TIMELINE,
+	OPT_STOP_ON_EOF,
 };
 
 const char *argp_program_version = "hitchtrace 0.1";
@@ -123,6 +126,9 @@ static const struct argp_option opts[] = {
 	  "Do not log the frame's individual off-CPU intervals. With them, "
 	  "the JSON of a hitch carries every interval of every thread of the "
 	  "process (\"events\")", 0 },
+	{ "stop-on-eof", OPT_STOP_ON_EOF, NULL, 0,
+	  "Also stop when standard input reaches end of file: how a program "
+	  "that started hitchtrace as root asks it to finish", 0 },
 	{ "budget-mode", OPT_BUDGET_MODE, "fixed|median", 0,
 	  "fixed: -b is the budget. median: the budget follows the app, "
 	  "rolling median of the last 19 frames x --median-factor "
@@ -226,6 +232,9 @@ static error_t parse_arg(int key, char *arg, struct argp_state *state)
 		break;
 	case OPT_NO_TIMELINE:
 		env.no_timeline = true;
+		break;
+	case OPT_STOP_ON_EOF:
+		env.stop_on_eof = true;
 		break;
 	case ARGP_KEY_ARG:
 		fprintf(stderr, "unrecognized positional argument: %s\n", arg);
@@ -1524,6 +1533,22 @@ static void print_stats(struct hitchtrace_bpf *obj)
 
 /* ---- target process ----------------------------------------------------- */
 
+/*
+ * For --stop-on-eof: has standard input been closed? Anything written to it is
+ * read and ignored.
+ */
+static bool stdin_closed(void)
+{
+	struct pollfd p = { .fd = STDIN_FILENO, .events = POLLIN };
+	char buf[64];
+
+	if (poll(&p, 1, 0) <= 0)
+		return false;
+	if (p.revents & (POLLERR | POLLNVAL))
+		return true;
+	return read(STDIN_FILENO, buf, sizeof(buf)) <= 0;
+}
+
 static bool target_alive(pid_t tgid)
 {
 	char path[64], buf[256], *p;
@@ -1872,6 +1897,8 @@ int main(int argc, char **argv)
 				fprintf(stderr, "target %d exited\n", (int)env.tgid);
 			break;
 		}
+		if (env.stop_on_eof && stdin_closed())
+			break;
 	}
 	sigprocmask(SIG_UNBLOCK, &sigs, NULL);
 
