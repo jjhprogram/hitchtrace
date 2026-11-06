@@ -24,7 +24,7 @@ PAGES = [
     ("iodisk", 2144, "Another program reads from the same slow disk"),
     ("mem", 779, "Touching memory that was swapped out"),
     ("slack", 1030, "The frame limiter's sleep ends late"),
-    ("ipc", 2475, "Calls to a server that cannot get its CPU"),
+    ("ipc-holder", 2475, "Calls to a server that cannot get its CPU"),
     ("cpuspike", 2009, "The game's own CPU work"),
     ("squeeze", 540, "The game's threads confined to one core"),
     ("alloc", 1604, "New memory while memory is full"),
