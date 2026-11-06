@@ -11,4 +11,4 @@ in the README next to it (`cases/`, `gui/`, `hitchlab/`, `layer/`, `paper/`,
 | `design-conversation-summary.md` | summary of the design conversation the plan came from |
 | `cases.md` | catalogue of documented Linux gaming hitch cases, mapped to hitchtrace's causes; `cases/` reproduces their mechanisms |
 | `evaluation-status.md` | the paper's claims, the evidence each needs, and what has been measured so far |
-| `catch-test.md` | protocol for "catches what others miss": hitches, tools, scoring rules fixed before the runs (`tools/catch/`) |
+| `catch-test.md` | protocol for "catches what others miss": hitches, tools, scoring rules fixed before the runs (`tools/catch/`), and the tools added later (perf `--off-cpu`, Perfetto) |

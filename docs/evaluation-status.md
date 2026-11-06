@@ -1,7 +1,7 @@
 # Evaluation status
 
 What the paper claims, what each claim needs, and what has been measured so
-far. Updated 2026-11-05.
+far. Updated 2026-11-06.
 
 ## Claims and evidence
 
@@ -10,7 +10,7 @@ far. Updated 2026-11-05.
 | The records are correct | Injected causes with independent ground truth | **Done** in a VM: hitchbench, 10 case studies ([below](#done-the-records-are-correct)) |
 | It works on real software | Proton and native free titles on bare metal | Not started |
 | It's cheap enough for long sessions | Overhead against no tool and existing tools | **Pilot only**, in a VM ([below](#pilot-overhead-against-existing-tools)); bare metal not started |
-| It catches what others miss | Same rare hitches, same machine, hitchtrace vs existing tools | **Run once in the VM** on five case studies ([below](#run-does-hitchtrace-catch-what-others-miss)); real software not started |
+| It catches what others miss | Same rare hitches, same machine, hitchtrace vs existing tools | **Run once in the VM** on five case studies, eight tools ([below](#run-does-hitchtrace-catch-what-others-miss)); real software not started |
 | It finds the cause without being told | Blind diagnosis | Not started |
 | This class of hitch matters | Share of real hitches that are kernel-observable | Not started (the draft's Q8) |
 | It tells us something new | A finding nobody had measured | Not started |
@@ -26,16 +26,20 @@ i7-12700H, kernel 7.0, lavapipe). None of it is a bare-metal number.
 own ground truth per frame; `tests/run_hitch_tests.sh` attaches hitchtrace and
 `tests/check_hitches.py` joins the two. Thirteen injector classes, including
 two negative controls (`cpu_spike`, `quiet_baseline`). The paper's numbers
-are generated from `tests/out/` by `paper/scripts/hitchbench_results.py`;
-none is typed by hand. That script lists twelve classes: the thirteenth,
-`server_queued` (2026-11-05), is not in the paper yet.
+are generated from `tests/out/` by `paper/plot/src/hitchbench_results.py`;
+none is typed by hand. Since 2026-11-05 the script covers all twelve
+injected classes and the baseline, and the paper's evaluation takes its numbers from
+the 13-class run now in `tests/out/`.
 
 - Every class passes: exactly the over-budget frames recorded (Q1), the
   injected cause named (Q2), same-symptom causes told apart (Q3), many small
   waits added up (Q4), negative controls not blamed on a stall (Q5).
 - Stall groups (ranking by group, not by longest single wait): the injected
   cause ranked first in 146 of 151 injected frames (97%), against 113 (75%)
-  under the old rule.
+  under the old rule. In the 13-class run, scored as the paper scores it
+  (frames wholly inside the trace, `server_queued` included): 151 of 160,
+  against 119; the nine misses are all `io`, where the present wait
+  outweighs the I/O.
 - The reclaim-inside-a-page-fault fix (found in case 8) kept all 12 classes
   passing.
 - `server_queued` (2026-11-05): a server at the lowest priority shares a CPU
@@ -43,8 +47,10 @@ none is typed by hand. That script lists twelve classes: the thirteenth,
   the run queue without being preempted. The server's hop names a hog as the
   CPU's last holder, flag `queued`, in 15 of 19 injected frames; the other
   four are three frames at the trace window's edges with no record and the
-  first record after attach. All 13 classes pass. `tests/out/` now holds this
-  run, so regenerating the paper's figures would take their numbers from it.
+  first record after attach. All 13 classes pass. In that first record the
+  server had gone to sleep before hitchtrace attached, so the root's wait
+  resolves as waiting on a running task, and the resolved gate drops that
+  one frame (15 of 16 inside the window).
 
 Still open in the draft: §5.4's vkcube numbers and §5.5's "real Vulkan
 application" numbers. The artifacts for §5.5 were lost and must be
@@ -171,6 +177,37 @@ comparisons per switch and writes only after a run-queue wait of at least
 100 µs, which a pipe round trip (about 9 µs) never reaches. The hook's own
 time per call (the cost phase, needs root) was not rerun.
 
+**Added 2026-11-06: perf `--off-cpu` and Perfetto.** Each was run with
+`ht` in a pilot of its own (`build/overhead/perfoffcpu-pilot`,
+`build/overhead/perfetto-pilot`; 64 runs each, no failures). The VM drifted
+between the runs: `ht` itself came out at 780–800 ns per switch in the first
+and 419–505 ns in the second, against 409–479 ns on 2026-11-03, so compare
+each tool with `ht` in its own run.
+
+| | `ht`, same run | perf `--off-cpu` | `ht`, same run | Perfetto |
+|---|---|---|---|---|
+| Added ns per switch, `pipe-target` | 800 | **2,463** | 419 | −44 (noise) |
+| … `pipe-other` | 780 | 834 | 505 | 195 |
+| `gamemax` frames/s | 0.996 [0.960, 1.007] | **0.945 [0.907, 0.985]** | 1.000 | 1.000 |
+| `game60` job phase p50 | 1.015 | 1.030 [1.028, 1.038] | 0.980 | 0.988 |
+| Tool's own processes, CPU, game workloads | 0.1% | 0.0–0.1% | 0.1% | 1.0–2.3% |
+| MB/hour, `game60` / `ipc` | 31 / 57 | 1,375 / 1,450 | 22 / 61 | 2,557 / 15,766 |
+| Slow frames caught, `game60` / `ipc` | 29/28, 40/39 | no per-frame output | 23/23, 39/39 | 23/22, 65/65 |
+
+- perf `--off-cpu` is the costliest tool on the traced process (it takes the
+  user stack at every switch-out and keeps perf's usual on-CPU sampling) and
+  the only one with a measurable frame slowdown: 5.5% fewer frames per
+  second on the uncapped game.
+- Perfetto costs about nothing per switch, like the ftrace recorder (the
+  kernel only writes each event into its ring); its cost is `traced_probes`
+  reading and encoding events in user space, 1.0–2.3% of a core, against
+  `ht`'s BPF programs at about 1.8% of a core on `game60` in the same run.
+  It caught every slow frame. Its output is an underestimate: in 15 s runs
+  each snapshot is a few MB, where in a long session each would be the whole
+  32 MB ring.
+- The cost phase (`kernel.bpf_stats_enabled`) covers `ht` only; perf's BPF
+  time was not measured that way.
+
 **Other observations.** Server calls in `ipc` came out about 10% faster
 under hitchtrace and about 15% slower under chaingraph and offwaketime, with
 wide intervals. The speed-up may be the extra kernel work keeping vCPUs out
@@ -181,9 +218,10 @@ of idle; untested.
 **Where hitchtrace is not ahead:**
 
 - **Per context switch** it is among the more expensive tools: about 480 ns
-  on the traced process (only offwaketime is higher), and the highest of all
+  on the traced process (only offwaketime is higher, and perf `--off-cpu`,
+  measured later: about three times `ht` in its run), and the highest of all
   on other processes (about 410 ns against chaingraph's 18 and perf sched's
-  73).
+  73; level with perf `--off-cpu` in its run, above Perfetto's).
 - **In-kernel time on the game** it is level with chaingraph and about
   twice offwaketime's. It is cheaper than both only on the pipe benchmark.
 - **At frame level** every tool is indistinguishable from no tool, so no tool
@@ -196,7 +234,9 @@ of idle; untested.
   per-frame detail of everything.
 - **Completeness:** every slow frame caught, where the ftrace flight
   recorder, the cheap way to keep only the moments around a slow frame,
-  caught half to three quarters at 2–5 GB/hour.
+  caught half to three quarters at 2–5 GB/hour. Perfetto as a flight
+  recorder, with a trigger that sees the whole frame, also caught every one,
+  at 2.6–15.8 GB/hour in 15 s runs (more in a long session).
 - **Per-frame causes:** offwaketime and chaingraph cost about the same but
   give one summary for the whole run, with nothing per frame. delayacct is
   cheaper but has no wake chain. They are not doing the same work.
@@ -263,20 +303,24 @@ Protocol, with its rules fixed before the run: [catch-test.md](catch-test.md).
 Run `build/catch/catch-20261104-171550` (`tools/catch/run.sh`, scored by
 `tools/catch/score.py`; table in its `summary.md`): five cases, six tools,
 one 120 s run each, one injection every 10 s, tools on CPUs 6-9. All 30 runs
-completed; no rule was changed after this run.
+completed; no rule was changed after this run. Two more tools were added on
+2026-11-06, with their rules written into the protocol before their own runs
+(["Added tools"](catch-test.md#added-tools)): `perf record --off-cpu`
+(`build/catch/catch-perfoffcpu`) and Perfetto as a flight recorder
+(`build/catch/catch-perfetto`), same cases, rarity and placement.
 
 Injected hitches recorded / attributed / culprit named:
 
-| Case | ht | delayacct | ftrace | perf sched | offwaketime | chaingraph |
-|---|---|---|---|---|---|---|
-| `bgcpu` | 8/8/8 of 8 | 11/11/– of 11 | 8 of 8 | 10 of 10 | cause ranked 39th | cause absent |
-| `iothread` | 12/12/12 of 12 | 12/12/– of 12 | 11 of 12 | 12 of 12 | 22nd | 47th |
-| `ipc` | 33/33/**0** of 33; second version 29/29/**29** of 29 | 28/0/– of 30 | 29 of 33 | 32 of 32 | absent | absent |
-| `mem` | 12/11 of 12 | 9/**0** of 9 | 12 of 12 | 12 of 12 | 20th | 37th |
-| `cpuspike` | 12/12 of 12 | 12/12 of 12 | 12 of 12 | 12 of 12 | n/a | n/a |
-| MB per injected hitch | 0.08–0.10 | < 0.01 | 15–42 | 25–33 | 0.01–0.02 (total) | 0.01–0.04 (total) |
+| Case | ht | delayacct | perf off-cpu | ftrace | Perfetto | perf sched | offwaketime | chaingraph |
+|---|---|---|---|---|---|---|---|---|
+| `bgcpu` | 8/8/8 of 8 | 11/11/– of 11 | 11/0/0 of 11 | 8 of 8 | 11 of 11 | 10 of 10 | cause ranked 39th | cause absent |
+| `iothread` | 12/12/12 of 12 | 12/12/– of 12 | 12/10/0 of 12 | 11 of 12 | 12 of 12 | 12 of 12 | 22nd | 47th |
+| `ipc` | 33/33/**0** of 33; second version 29/29/**29** of 29 | 28/0/– of 30 | 33/0/0 of 33 | 29 of 33 | 33 of 33 | 32 of 32 | absent | absent |
+| `mem` | 12/11 of 12 | 9/**0** of 9 | 12/0 of 12 | 12 of 12 | 12 of 12 | 12 of 12 | 20th | 37th |
+| `cpuspike` | 12/12 of 12 | 12/12 of 12 | 12/0 of 12 | 12 of 12 | 12 of 12 | 12 of 12 | n/a | n/a |
+| MB per injected hitch | 0.08–0.10 | < 0.01 | 1.3–3.7 | 15–42 | 45–89 | 25–33 | 0.01–0.02 (total) | 0.01–0.04 (total) |
 
-ftrace and perf sched are scored for recording only: they hold the cause
+ftrace, Perfetto and perf sched are scored for recording only: they hold the cause
 when they hold the frame, but say nothing until someone analyses them (the
 blind test's question). The summary tools' column is the rank of the
 heaviest line carrying the cause; "visible" needs the top 10. The number of
@@ -288,7 +332,15 @@ What it shows:
 
 - **Only hitchtrace names the cause per frame across the cases**: 76 of 77
   injected hitches attributed, against 35 of 74 for delay accounting (which
-  cannot see the `ipc` server, and books swap-in waits as block I/O, below).
+  cannot see the `ipc` server, and books swap-in waits as block I/O, below)
+  and 10 of 80 for perf `--off-cpu`. perf samples only blocked intervals of
+  at least the threshold (1 ms), with the user stack and the interval's
+  length: it names the read in `iothread` (the other two load frames' waits
+  were each under 1 ms, which perf only sums at the end of the run), but
+  preemption is never sampled, a wait on the server or on a swapped-out page
+  says nothing of its cause, and the main thread's usual wait for its
+  workers looks the same as a stall (`cpuspike`). It attributed none of the
+  noise hitches.
 - **Only hitchtrace names a culprit**: `bgload` in 8 of 8, the disk's
   interrupt in 12 of 12. In `ipc` it names none (0 of 33): it records that
   the server was runnable but not who held its CPU, the gap already listed
@@ -300,11 +352,17 @@ What it shows:
   heaviest lines, and its share of the summary rounded to 0.0% in every
   case. offwaketime and chaingraph never show `bgload` at all in `bgcpu` and
   `ipc`, where it preempts rather than wakes.
-- **The raw recorders hold almost everything at 150 to 470 times
-  hitchtrace's output** per injected hitch. perf sched recorded every
-  injected hitch. ftrace's flight recorder missed 5 of 77: four were slow
-  frames 22 to 57 ms from another slow frame (below); one is a scoring edge
-  case (below).
+- **The raw recorders hold almost everything at 155 to 900 times
+  hitchtrace's output** per injected hitch (ftrace 155–454, perf sched
+  293–420, Perfetto 502–903, case by case). perf sched and Perfetto recorded
+  every injected hitch. ftrace's flight recorder missed 5 of 77: four were
+  slow frames 22 to 57 ms from another slow frame (below); one is a scoring
+  edge case (below). Perfetto's trigger, fired by a watcher of the frame
+  marks, sees the whole frame including present, and `CLONE_SNAPSHOT` copies
+  the ring rather than swapping it, so every slow frame left a snapshot (479
+  in all). Each snapshot is the whole ring: Perfetto's default 32 MB, which
+  at about 150 KB/s of scheduler events here does not fill in a 120 s run, so
+  each holds everything since tracing began.
 - **No false culprits**: across 255 noise hitches in the three cases with a
   culprit, hitchtrace never named `bgload` or the disk.
 
@@ -341,8 +399,9 @@ Misses and weak spots, looked at one by one:
   budget by under 1 ms, where any short run-queue wait is "half the
   overrun". The culprit column is the one that measures false blame.
 
-Not shown by this run: real software; GPU stalls; other rarities (the summary
-tools' ranks should fall with rarer hitches, not tested); repeat runs.
+Not shown by these runs: real software; GPU stalls; other rarities (the
+summary tools' ranks should fall with rarer hitches, not tested); repeat
+runs; Perfetto in a session long enough to fill its ring.
 
 ## Next
 
@@ -355,3 +414,7 @@ tools' ranks should fall with rarer hitches, not tested); repeat runs.
 - Real software on bare metal (Proton and native free titles), then the
   catch-what-others-miss comparison on the same rare hitches.
 - Blind diagnosis, and the prevalence study (Q8).
+- Perfetto in a session long enough to fill its ring, for its output per
+  hitch at steady state; and the per-event threshold sweep the paper's Q4
+  asks for (`thousand_cuts` under `perf record --off-cpu-thresh` at several
+  thresholds), now that a perf with BPF skeletons is built.

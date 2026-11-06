@@ -191,6 +191,89 @@ injection every 3 s), before the measured run.
    accepts that holder. Only `ht` in `ipc` is rerun, as a second version;
    the measured run's 0 of 33 stands.
 
+## Added tools
+
+Written 2026-11-06, after the measured run and before these tools' own runs.
+The rules above stay as they are; these tools are scored in runs of their
+own, with the same cases, rarity and placement.
+
+### `perfoffcpu`: `perf record --off-cpu --off-cpu-thresh 1`
+
+`perf record --off-cpu -k CLOCK_MONOTONIC --off-cpu-thresh 1 -p PID`, with a
+perf 7.0.14 built from the kernel source with BPF skeletons
+(`build/perf/perf`; Ubuntu's perf has none, which `--off-cpu` needs). The
+1 ms threshold is generous to perf: at its 500 ms default no wait in these
+cases would be sampled at all.
+
+What it records, from its BPF program (`util/bpf_skel/off_cpu.bpf.c`): for
+each **blocked** interval (sleeping or uninterruptible) of a thread of the
+process at least the threshold long, one sample when the thread runs again,
+whose period is the interval's length (switch-out to switch-in, so it
+includes the time spent queued after the wakeup) and whose stack is the
+**user** stack it blocked in. Time spent preempted is never sampled, no
+kernel stack is kept, and no waker is named. Intervals under the threshold
+are summed per stack and written once at the end, with no time, so they
+cannot be placed in a frame. `perf record` also samples on-CPU time as usual;
+those samples are not scored.
+
+- Recorded: a sample's interval overlaps the frame, and no lost-event record
+  falls in the frame.
+- Attributed, by case:
+  - `iothread`: samples whose user stack contains `load_asset` or `pread`
+    cover ≥ half the overrun within the frame.
+  - `cpuspike`: no sample covers a quarter of the overrun within the frame.
+  - `bgcpu`, `ipc`, `mem`: never. Preempted time is not sampled (`bgcpu`), and
+    a sample of a thread waiting for a reply or for a page says nothing about
+    why the server or the page was late (`ipc`, `mem`).
+- Culprit: never; nothing in a sample names another task or an interrupt.
+
+Check run `build/catch/check-perfoffcpu` (2026-11-06; `iothread` and
+`cpuspike`, 20 s, one injection every 3 s): samples fall in the frames they
+belong to on the game's clock, and `load_asset` appears only in load frames.
+`perf script` prints the process's name rather than the thread's for every
+off-CPU sample (the thread ids are right), so no rule uses thread names. No
+rule was changed.
+
+### `perfetto`: a flight recorder with a trigger
+
+Perfetto v59.1's prebuilt binaries (`build/perfetto/v59.1/linux-amd64`, from
+the google/perfetto GitHub release, checked against its SHA-256): `traced`
+and `traced_probes` started for the run, and one session with
+`sched/sched_switch`, `sched/sched_waking` and the layer's frame mark in a
+ring buffer of Perfetto's default size (32 MB), process names from
+`linux.process_stats`, on `CLOCK_MONOTONIC`, and trigger mode
+`CLONE_SNAPSHOT`: each trigger saves a copy of the whole ring
+(`perfetto-trace.N`) and tracing goes on.
+
+Perfetto cannot see frames, so something outside it has to fire the trigger,
+as a game or a system daemon would. Here a watcher reads the layer's frame
+mark from a tracefs instance of its own and fires the trigger when the time
+from one mark to the next is over budget: the same frames as hitchtrace's,
+including present's own wait (which the ftrace recorder's in-kernel trigger
+cannot see). The game is not changed. The watcher, the trigger and both
+daemons run in one process tree, counted as the tool. The trace perfetto
+writes when the session ends is not kept: a flight recorder's output is its
+snapshots.
+
+- Recorded: a snapshot holds the frame's own mark (within 1 ms of the frame's
+  end in the game's log), and every CPU's oldest scheduler event in it is
+  before the frame began. The ring is shared by all CPUs and full after its
+  first seconds, so the second condition always applies (for the ftrace
+  recorder it applies only when a CPU's ring overwrote events).
+- Attributed and culprit: not scored, as for `ftrace` and `perfsched`: raw
+  scheduler events hold the cause when they hold the frame, but say nothing
+  about it until someone analyses them. Output per injected hitch is
+  reported.
+
+Check run `build/catch/check-perfetto` (2026-11-06; `iothread` and
+`cpuspike`, 20 s, one injection every 3 s): every slow frame fired the
+trigger and left a snapshot (14 in each run); the frame marks in the snapshots
+agree with the game's log to within 85 µs, and every snapshot has events from
+all 10 CPUs. Scheduler events arrive at about 150 KB/s here, so the 32 MB ring
+fills only after about 3.5 minutes: in a 120 s run each snapshot holds
+everything since tracing began and grows through the run, where in a longer
+session it would hold the last few minutes. No rule was changed.
+
 ## Run
 
 Measured run: `build/catch/catch-20261104-171550` (2026-11-04, all 30 runs
@@ -201,3 +284,12 @@ rerun of a changed hitchtrace. Results and the misses looked at one by one:
 Second version, after change 4: `build/catch/catch-ipc-holder` (2026-11-05,
 `ht` in `ipc` only, same rules otherwise). 29 injected hitches: 29 recorded,
 29 attributed, 29 culprit. 88 noise hitches: 10 attributed, 0 culprit.
+
+Added tools (2026-11-06, by the rules under [Added tools](#added-tools), each
+alone in a run of its own; no rule was changed after these runs):
+
+- `build/catch/catch-perfoffcpu`: 80 injected hitches, 80 recorded, 10
+  attributed (all in `iothread`), 0 culprit; 0 of 348 noise hitches
+  attributed. 1.3 to 3.7 MB per injected hitch.
+- `build/catch/catch-perfetto`: 80 injected hitches, 80 recorded; 479
+  triggers, 479 snapshots. 45 to 89 MB per injected hitch.
