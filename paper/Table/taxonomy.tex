@@ -1,0 +1,24 @@
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}L{1.85cm}L{2.75cm}L{2.95cm}@{}}
+\toprule
+\textbf{Bucket} & \textbf{Hook} & \textbf{Rule} \\
+\midrule
+\bucket{oncpu} & \texttt{sched\_switch} & running, minus the carve-outs below \\
+\bucket{oncpu\_fault}, \bucket{\ldots\_major} & fentry/fexit \texttt{handle\_\allowbreak mm\_\allowbreak fault} & on-CPU inside a fault; major from \texttt{VM\_FAULT\_\allowbreak MAJOR} \\
+\bucket{oncpu\_\allowbreak reclaim} & direct and memcg reclaim tracepoints & on-CPU inside reclaim \\
+\bucket{oncpu\_\allowbreak compact} & compaction tracepoints & on-CPU inside compaction \\
+\midrule
+\bucket{runnable} & \texttt{sched\_switch} & switched out while runnable; preemptor recorded \\
+\bucket{runqueue} & \texttt{sched\_waking} & woken, waiting for a CPU \\
+\midrule
+\bucket{block\_\allowbreak present} & layer markers & blocked inside present \\
+\bucket{block\_gpu} & \texttt{dma\_fence\_\allowbreak wait\_\allowbreak timeout}, \texttt{drm\_syncobj\_\allowbreak *wait\_\allowbreak ioctl} & blocked in a GPU fence wait \\
+\bucket{block\_io} & \texttt{in\_iowait} at switch-out & blocked in I/O wait \\
+\bucket{block\_futex} & \texttt{sys\_enter/\allowbreak exit} & in \texttt{futex}, \texttt{futex\_\allowbreak waitv}, \texttt{futex\_\allowbreak wait} \\
+\bucket{block\_poll} & \texttt{sys\_enter/\allowbreak exit} & in poll, select, epoll \\
+\bucket{block\_timer} & \texttt{sys\_enter/\allowbreak exit}, waker & in a sleep, or woken by an interrupt \\
+\bucket{block\_task} & \texttt{sched\_waking} & woken by another task, none of the above \\
+\bucket{block\_other} & --- & none of the above \\
+\bottomrule
+\end{tabular}

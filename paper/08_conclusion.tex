@@ -1,0 +1,28 @@
+\section{Conclusion}
+
+This paper presented \sys, which explains frame hitches in unmodified Linux
+games by partitioning the presenting thread's frame by kernel cause,
+resolving its waits online through wake chains carried in task-local
+storage, and deciding in the kernel, at frame end, whether the frame is
+worth a record. On a ground-truth benchmark it recorded exactly the
+over-budget frames, named the injected mechanism, and distinguished a
+thread waiting on a stalled worker from one waiting on a busy worker. In ten
+case studies its records explained nearly every hitch whose cause was known,
+and the failures of an earlier version shaped the design: the waker's
+off-CPU history and the record of who held a queued task's CPU each fixed a
+case. On rare hitches it was the only one of eight tools to attribute nearly
+every hitch and name its culprit, at a few hundred times less output than
+full tracing or a flight recorder, for a cost per context switch in the range of existing
+scheduler tracers. The case studies also list plainly what the records
+cannot yet say: that a sleep was late, which CPU a thread waited for, and
+who else was using the disk.
+\tbd{[Conclusion on real titles and prevalence.]}
+
+\section*{Acknowledgments}
+
+\todo{Acknowledgments and funding.}
+
+\section*{Availability}
+
+\todo{Repository URL, license, and the scripts that regenerate every table
+and figure from raw runs.}

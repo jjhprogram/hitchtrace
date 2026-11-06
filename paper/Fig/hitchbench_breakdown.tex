@@ -1,0 +1,36 @@
+\pgfplotstableread{plot/data/hitchbench_breakdown.dat}\breakdown
+\begin{tikzpicture}
+\begin{axis}[
+  xbar stacked,
+  width=0.88\columnwidth, height=6.9cm,
+  bar width=6.5pt,
+  y dir=reverse,
+  ytick=data,
+  yticklabels from table={\breakdown}{class},
+  yticklabel style={font=\ttfamily\scriptsize},
+  xticklabel style={font=\scriptsize},
+  xlabel={Mean time per injected frame (ms)},
+  xlabel style={font=\scriptsize},
+  xmin=0, xmax=45,
+  enlarge y limits=0.06,
+  set layers,
+  legend cell align=left,
+  legend style={font=\scriptsize, at={(0.5,1.02)}, anchor=south,
+    legend columns=5, draw=none, /tikz/every even column/.append style={column sep=4pt}},
+  legend image code/.code={\draw[#1, draw=none] (0cm,-0.08cm) rectangle (0.25cm,0.1cm);},
+  axis x line*=bottom, axis y line*=left,
+  xmajorgrids, grid style={black!12},
+]
+\addplot[fill=cOncpu, draw=none] table[x=oncpu, y expr=\coordindex]{\breakdown};
+\addplot[fill=cOncpuK, draw=none] table[x=oncpukern, y expr=\coordindex]{\breakdown};
+\addplot[fill=cSched, draw=none] table[x=sched, y expr=\coordindex]{\breakdown};
+\addplot[fill=cFutex, draw=none] table[x=futex, y expr=\coordindex]{\breakdown};
+\addplot[fill=cPoll, draw=none] table[x=poll, y expr=\coordindex]{\breakdown};
+\addplot[fill=cIO, draw=none] table[x=io, y expr=\coordindex]{\breakdown};
+\addplot[fill=cTimer, draw=none] table[x=timer, y expr=\coordindex]{\breakdown};
+\addplot[fill=cPresent, draw=black!30] table[x=present, y expr=\coordindex]{\breakdown};
+\addplot[fill=cOther, draw=none] table[x=other, y expr=\coordindex]{\breakdown};
+\legend{oncpu, oncpu kernel, runnable+rq, futex, poll, io, timer, present, other}
+\draw[on layer=axis foreground, black, dashed, thick] (axis cs:16.667,-0.6) -- (axis cs:16.667,11.6);
+\end{axis}
+\end{tikzpicture}

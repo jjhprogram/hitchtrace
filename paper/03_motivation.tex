@@ -1,0 +1,148 @@
+\section{The Frame Attribution Problem}
+\label{sec:problem}
+
+This section describes the gap between what hitch-capture tools observe and
+what an engineer needs (\autoref{sec:gap}), the limitations of existing
+approaches (\autoref{sec:limits}), what an in-kernel declarative tracer can
+express (\autoref{sec:ftrace}), and the scope we assume (\autoref{sec:scope}).
+
+\subsection{Challenge: The Symptom--Cause Gap}
+\label{sec:gap}
+
+The cheapest signal of a hitch is its symptom, the frame time. It is known
+only when the frame ends, and it says nothing about cause. The cause lies in
+events that happened during the frame, on the presenting thread and on the
+threads it waited for: when each thread was off-CPU, why, and who ended each
+wait. We call the distance between the two the \emph{symptom--cause gap}.
+How a tool bridges it determines two trade-offs.
+
+\paragraph{Trade-off 1: Output volume versus detail}
+A tool can keep the raw events and decide later, as a flight recorder does,
+paying a full window per hitch; or it can reduce events to a summary as they
+happen, paying little but answering only the questions built into the
+summary.
+
+\paragraph{Trade-off 2: Gate timing versus sensitivity}
+Whether a stall matters depends on whether its frame ends up over budget,
+which is unknown while the stall is happening. A gate evaluated per stall
+must use a per-stall threshold and misses frames made of many small stalls;
+a gate evaluated at frame end must carry state across the frame. Consider a
+16.7\,ms frame with 7\,ms of work and forty waits of 200--600\,$\mu$s:
+futex hand-offs, minor faults, two short preemptions. The frame takes
+23\,ms. No single stall is remarkable, and normal frames contain dozens of
+similar stalls; what distinguishes the bad frame is the sum. By the time the
+thirty-fifth stall shows the frame going bad, a per-event filter has already
+dropped the first thirty-four.
+
+\subsection{Limitations of Existing Approaches}
+\label{sec:limits}
+
+\autoref{tab:compare} summarizes the approaches.
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\input{Table/comparison}
+\caption{Comparison of approaches to capturing and explaining frame hitches.}
+\label{tab:compare}
+\end{table*}
+
+\subsubsection{Flight Recorders}
+
+A flight recorder records continuously into an overwriting buffer and
+freezes it on a trigger. The frame-time trigger itself needs no custom
+kernel code: an ftrace uprobe event on the present call, a histogram trigger
+that computes the delta between consecutive presents into a synthetic event,
+and a \texttt{snapshot} trigger filtered on that delta implement ``freeze the
+buffer when a frame exceeds 16.6\,ms'' entirely in the kernel~\cite{ftracehist}.
+Perfetto does the same with a user-space trigger~\cite{perfetto-triggers}, and
+gpuvis~\cite{gpuvis} with a manual one. The costs are those listed in the
+introduction: the trigger is symptom-only, every trigger dumps the window,
+and diagnosis is manual. In steady state, however, a flight recorder moves no
+data at all, so any claim that an eBPF tool ``reduces data movement'' must be
+measured against it rather than against streaming tracers (\autoref{sec:eval-overhead}).
+
+\subsubsection{Per-Event Thresholds}
+
+\texttt{perf record --off-cpu} aggregates off-CPU time in a BPF map and,
+with \texttt{--off-cpu-thresh}, emits a sample for each off-CPU interval
+longer than a threshold~\cite{perf-offcpu-thresh}; bcc's
+\texttt{offwaketime} pairs each blocked stack with its waker's stack, and
+\texttt{runqslower} prints run-queue delays above a
+threshold~\cite{gregg2019bpf}. These tools summarize in the kernel, but the
+gate applies to each stall, not to the frame, so the forty-stall frame of
+\autoref{sec:gap} produces nothing at a 1\,ms threshold and a stream
+indistinguishable from normal frames at 100\,$\mu$s.
+
+\subsubsection{Delay and Per-Request Accounting}
+
+The kernel's delay accounting already accumulates, per task and without a
+threshold, time spent waiting for a CPU, for block I/O, in swap-in, in
+reclaim, in thrashing and in compaction~\cite{delayacct}. Reading the
+counters at consecutive presents yields per-frame sums with no kernel code,
+which makes it the baseline any frame-scoped tool must beat. It lacks a
+futex category (futex waits are plain sleeps), any notion of the waker, and
+per-frame scoping without diffing every thread from user space every frame.
+VarMRI applies the same accumulate-and-emit pattern per server request, and
+had to patch the kernel after finding the required hooks unavailable to
+eBPF~\cite{varmri}.
+
+\subsubsection{Offline Critical Path}
+
+Critical-path analysis~\cite{giraldeau2016wait,zhou2018wperf,perfetto-critpath}
+answers the chain question precisely, but over a full trace after the fact.
+Its algorithm is not our contribution. Our contribution is executing a
+bounded form of it online, in the kernel, gated on frame outcome.
+
+\subsection{What an In-Kernel Declarative Tracer Can Express}
+\label{sec:ftrace}
+
+Since ftrace can decide in the kernel which events to keep, the question is
+not \emph{whether} the kernel should decide but \emph{what} the decision can
+depend on. ftrace's in-kernel language is intentionally declarative: stateless
+filters over an event's fields, triggers, and histograms whose variables
+pair a start event with an end event by key~\cite{ftracehist}. Running
+arbitrary logic at a tracepoint is the problem eBPF's verifier exists to
+make safe. \autoref{tab:ftrace} lists the pieces of frame attribution and
+which side of that line each falls on.
+
+\begin{table}[t]
+\centering
+\small
+\input{Table/ftrace_expressiveness}
+\caption{Parts of frame attribution expressible in ftrace's in-kernel
+filter/trigger/histogram language. $^\dagger$Histogram variables pair two
+events by key; a running sum reset by a third event is outside the documented
+model \todo{verify on 7.0}. $^\ddagger$Only whole-buffer snapshots.}
+\label{tab:ftrace}
+\end{table}
+
+The first two rows show that ftrace can already make the \emph{detection}
+record proportional to hitches: a filtered synthetic event is tens of bytes.
+The remaining rows show that it cannot make the \emph{attribution} record
+proportional to hitches, because attribution needs state accumulated across
+the frame and a decision taken at its end. That is the part \sys moves into
+eBPF, and it is the claim we evaluate. We do not claim that eBPF reduces
+per-event cost: a BPF program on \texttt{sched\_switch} costs at least as
+much as an ftrace ring-buffer write, and whether frame-scoped reduction
+pays for itself is an empirical question (\autoref{sec:eval-overhead}).
+
+\subsection{Scope and Assumptions}
+\label{sec:scope}
+
+\paragraph{Target} We assume an unmodified game, native or under Proton, that
+presents through Vulkan, on a stock kernel with BTF, traced by an engineer
+with \texttt{CAP\_BPF} and \texttt{CAP\_PERFMON}. \sys is a bench
+instrument for platform, scheduler and driver engineers, not a consumer tool.
+
+\paragraph{In scope} Time the presenting thread spends off-CPU or inside kernel
+stall paths: preemption, run-queue delay, futex, poll, block I/O, sleeps,
+GPU fence waits, present and display pacing, page faults, reclaim and
+compaction, and, through the chain, the same on any thread or process it
+waited for.
+
+\paragraph{Out of scope} What the game's own code does on the CPU, and what the
+GPU does internally. \sys reports on-CPU time so that a user can tell when a
+hitch is \emph{not} kernel-observable and switch tools; that negative answer
+is itself useful (\autoref{sec:eval-gate}). Shader compilation, the most
+widely reported source of PC stutter, is on-CPU work and outside our scope.

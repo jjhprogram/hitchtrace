@@ -1,0 +1,136 @@
+\section{Introduction}
+
+A game that averages 60 frames per second can still feel broken. Players
+perceive a single 40\,ms frame in a stream of 16\,ms frames as a
+\emph{hitch}, and reviewers and platform owners increasingly report the
+1\% or 0.1\% low frame rate rather than the mean for exactly this reason.
+On Linux the problem has grown with the platform: Proton~\cite{proton}
+runs Windows games through Wine and a Direct3D-to-Vulkan translation
+layer~\cite{dxvk,vkd3d-proton}, and handheld PCs such as the Steam Deck
+run them on four cores and 16\,GB of memory shared between CPU and GPU. On
+such machines a frame can miss its budget without the game doing anything
+wrong: a lock holder is preempted, an allocation enters direct reclaim, an
+asset read waits on slow storage, or a background process takes the CPU for
+a few milliseconds.
+
+These hitches are hard to diagnose because they are rare and unrepeatable.
+A scheduler developer working on the Steam Deck's scheduler described
+problems that appear as a spike every few minutes, with no way to trigger
+tracing on the spike itself; he fell back to sampling every ten seconds and
+named the missing piece as the correlation between the frame-level view and
+the scheduler-level view~\cite{lwn-lpc2025-gaming,lpc2025-min}. In the same
+session he was asked whether anyone had analyzed the chain of tasks from
+the first wakeup to the last to explain a frame; nobody had.
+\todo{Verify both statements against the LPC 2025 recording and quote it,
+not LWN.}
+Tracing everything for hours is not an answer: a full scheduler trace grows
+faster than it can be stored, post-processing it takes hours~\cite{vapormark},
+and the tracer perturbs the frame timing it is meant to explain.
+
+The standard answer to ``capture only what matters'' is the \emph{flight
+recorder}. The kernel keeps the last few seconds of events in an
+overwriting ring buffer and freezes it when a trigger fires: an ftrace
+snapshot trigger on a synthetic frame-latency event~\cite{ftracehist},
+Perfetto's \texttt{STOP\_TRACING} trigger~\cite{perfetto-triggers}, LTTng
+snapshots driven by latency-tracker~\cite{desfossez2016latency}, or
+retroactive sampling in distributed systems~\cite{zhang2023hindsight}.
+Flight recorders solve capture, and we do not claim otherwise. They leave
+three problems. First, the trigger sees only the symptom: a frame that is
+late because the game spent 25\,ms computing pathfinding fires the same
+trigger as a frame that is late because the render thread waited on a
+preempted worker. Second, each trigger dumps the whole window, megabytes of
+raw events, so output grows with the number of hitches times the window
+size, and a game that hitches every few seconds over a multi-hour session
+brings back the storage problem. Third, the dump is raw: an engineer still
+has to find, among thousands of scheduler events, which thread the frame
+was waiting on and what that thread was waiting on in turn.
+
+Per-event thresholds (\texttt{perf --off-cpu-thresh}~\cite{perf-offcpu-thresh},
+bcc's \texttt{*slower} tools~\cite{gregg2019bpf}, ftrace filters) and kernel
+delay accounting~\cite{delayacct} address output volume, but they decide at
+the wrong time. A per-event filter judges each stall when it ends, with only
+that stall in hand. It cannot keep a 400\,$\mu$s futex wait because the frame
+it belongs to will turn out to be 30\,ms long, so a hitch made of forty
+sub-threshold stalls is invisible to it. Delay accounting accumulates without
+a threshold, but has no notion of a frame, no futex category and no
+waker.
+
+Our observation is that what should cross into user space is neither the
+raw events nor the individual stalls, but an \emph{attribution record} for
+the frame: how the presenting thread's frame time divides among kernel
+causes, and which chain of other threads and interrupts its longest wait
+depended on. That record can only be computed from state accumulated across
+the whole frame and must be committed or discarded when the frame ends.
+Both require stateful, programmable logic that runs at the event, which is
+what eBPF provides and what ftrace's declarative filter, trigger and
+histogram language deliberately does not (\autoref{sec:ftrace}).
+
+This paper presents \sys. \sys has three parts:
+\begin{itemize}
+\item \textbf{A frame source that works for unmodified games.} An implicit
+  Vulkan layer brackets \texttt{vkQueuePresentKHR} with two exported marker
+  functions that \sys probes. A uprobe on the Vulkan loader's exported
+  symbol would see nothing: applications that fetch entry points through
+  \texttt{vkGetDeviceProcAddr} (volk, DXVK, vkd3d-proton, Wine's Vulkan
+  bridge, and \texttt{vkcube} itself) bypass the loader
+  entirely~\cite{vulkan-loader}.
+\item \textbf{A frame-scoped partition of the presenting thread's time.}
+  Every interval of the root thread within the frame is clipped to the
+  frame window and assigned to exactly one of fifteen cause buckets, so the
+  buckets sum to the frame time. This is maintained in the kernel, in
+  task-local storage, as the scheduler runs.
+\item \textbf{Online wake-chain resolution.} Every task keeps a short
+  history of its own off-CPU time and carries a link to its waker: how long
+  the waker was itself off-CPU while it was being waited for, who last held
+  the waker's CPU, and, recursively, the waker's own links. When the root's
+  blocked interval ends, the time its waker was itself off-CPU is
+  \emph{inherited} (a kernel stall one hop away) and the remainder is
+  \emph{waiting on a running task} (the game waiting for its own work, not
+  a kernel stall). The root's waits are grouped by cause and by who ended
+  them, each group with its chain. No graph is walked at report time.
+\end{itemize}
+A record crosses into user space only when the frame exceeds its budget
+and, optionally, only when a configurable share of the overrun is
+kernel-observable.
+
+We implement \sys in 1,828 lines of BPF C and 1,992 lines of user-space C,
+reusing a symbolizer and interrupt-context detection from our earlier
+wake-chain profiler, plus a 689-line Vulkan layer. We also build \bench, a
+synthetic frame loop with \hbnClasses\ injectable stall classes and a
+per-frame ground-truth log. On \bench, \sys recorded all \hbtotOver\
+over-budget frames of \hbtotFrames\ and no frame within budget; its largest
+bucket named the injected mechanism in \hbtotMatch\ of \hbtotInj\ injected
+frames, with the misses explained in \autoref{sec:eval-accuracy}; chain
+resolution cleanly separated a thread waiting on a stalled worker from one
+waiting on a busy worker; and a gate that uses the resolution rejected every
+negative control while keeping every positive class. We then reproduce ten
+mechanisms behind documented Linux gaming stutters around an unmodified
+game-shaped program: the records explain nearly every affected frame, and
+three of the cases found faults in an earlier version that \bench had not.
+On the same hitches made rare, \sys is the only one of eight tools that
+attributes nearly every hitch and names its culprit, and the raw recorders
+that also hold the frames, Perfetto's flight recorder among them, need 155
+to 900 times its output per hitch. Its
+overhead per context switch is in the range of existing scheduler tracers,
+not below it; what it saves is output.
+\tbd{[One sentence on Proton titles, one on prevalence.]}
+
+This paper makes the following contributions.
+\begin{itemize}
+\item We identify the \emph{symptom--cause gap} in hitch capture and show
+  which parts of frame-scoped attribution an in-kernel declarative tracer
+  can and cannot express, locating exactly where programmable in-kernel
+  logic is needed (\autoref{sec:problem}).
+\item We present a design that partitions a frame's critical thread by kernel
+  cause and resolves its waits through wake chains online, with a commit or
+  discard decision at frame end, so that output is proportional to hitches
+  and normal frames emit nothing (\autoref{sec:design}).
+\item We show how to express this under the eBPF verifier on a stock
+  kernel, including the restructurings the verifier forced
+  (\autoref{sec:verifier}).
+\item We build \bench, a ground-truth hitch benchmark, and ten case
+  studies that reproduce documented stutter mechanisms, and evaluate
+  attribution, chain resolution, cause gating, how eight tools capture and
+  explain rare hitches, and overhead, reporting what the records cannot yet
+  say; \tbd{prevalence on real titles} (\autoref{sec:eval}).
+\end{itemize}

@@ -1,0 +1,264 @@
+\section{hitchtrace}
+\label{sec:design}
+
+\sys explains over-budget frames while emitting nothing for normal frames,
+with no change to the game or the kernel.
+
+\subsection{Design Overview}
+
+\autoref{fig:arch} shows the components.
+
+\begin{figure*}[t]
+\centering
+\resizebox{\textwidth}{!}{\input{Fig/overview}}
+\caption{Overview of \sys. Hooks keep per-task state current as the
+scheduler runs; the frame mark closes the root thread's frame, evaluates the
+gate, and emits a record, followed by the frame's interval log, only for an
+over-budget frame.}
+\label{fig:arch}
+\end{figure*}
+
+Three principles guide the design.
+
+\paragraph{Account on the critical thread, not the process}
+Summing off-CPU time over all of a game's threads is unbounded: a process
+with ten parked workers accumulates ten frames' worth of off-CPU time per
+frame. \sys accounts on the \emph{root} thread, the thread that presents,
+whose timeline within the frame is a partition of the frame time. Other
+threads enter the record as context and through the chain.
+
+\paragraph{Build chains forward, not backward}
+Instead of recording wakeup edges and searching them when a frame goes bad,
+every task carries the chain that led to its latest wakeup, copied forward
+from its waker at wakeup time. The chain is always current, so resolving a
+wait is a lookup, not a search.
+
+\paragraph{Decide at frame end, in the kernel}
+All per-frame state lives in maps until the frame mark. Only then does \sys
+know whether the frame was over budget and how much of the overrun was
+kernel-observable, and only then does it reserve ring-buffer space.
+
+\subsection{Frame Source}
+\label{sec:layer}
+
+\sys needs two points per frame: present entry, which ends one frame and
+begins the next, and present return, which ends the present call. The
+implicit layer \texttt{VK\_LAYER\_hitchtrace} wraps
+\texttt{vkQueuePresentKHR} in the device dispatch chain and calls two
+exported, non-inlined marker functions around the next layer's present,
+passing a process-global present counter as the frame id. \sys attaches a
+uprobe to each marker in the layer's shared object. The layer is inert
+unless \texttt{HITCHTRACE=1} is set; with no probe attached the markers are
+two empty calls. Because the layer lives in the dispatch chain, it sees
+presents from applications that bypass the loader (\autoref{sec:background}),
+and because Steam's container runtime resolves a host layer to the same
+inode, a uprobe attached through the host path fires inside it.
+\todo{Confirm inside pressure-vessel on the evaluation machine; the layer
+is 64-bit only.}
+
+For programs without a layer, \sys accepts any symbol in any binary as the
+frame marker, and \texttt{-M ret:} brackets a single function with a
+uprobe and a uretprobe.
+
+\paragraph{Frame model} Frame $N$ runs from present entry $N-1$ to present entry
+$N$. Blocked time of the root between present entry and present return is
+charged to \bucket{block\_present}, the display pacing the application, so a
+vsynced game does not register its vsync waits as stalls. The bracket is
+only opened when the return probe is attached; otherwise a missed close
+would silently relabel every wait.
+
+\subsection{Root Timeline and Cause Taxonomy}
+\label{sec:taxonomy}
+
+Within a frame $[s, e)$, the root is always in one of four states, and every
+interval of each state is clipped to the window:
+\begin{equation*}
+\textit{oncpu} + \textit{runnable} + \textit{runqueue} + \textstyle\sum \textit{blocked}_c = e - s .
+\end{equation*}
+On-CPU time is measured from switch-in to switch-out, never computed as a
+remainder. At switch-out, \sys records the time, whether the switch was a
+preemption, the task's \texttt{in\_iowait} bit, and a kernel stack for
+voluntary sleeps. At switch-in, the interval since switch-out is split at
+the wakeup timestamp: before the wakeup is blocked time, after it is
+run-queue delay. \autoref{tab:taxonomy} lists the buckets and how each is
+decided.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\input{Table/taxonomy}
+\caption{Root-timeline buckets, in the precedence order used for blocked
+time. Together they partition the frame.}
+\label{tab:taxonomy}
+\end{table}
+
+\paragraph{What was asked beats who answered} A blocked interval is named first
+by what the thread asked the kernel for, and only then by who woke it: a
+futex wait ended by its timeout interrupt is still a futex wait. The
+present bracket outranks everything, including GPU fences, because a FIFO
+present may legitimately block on a fence and blaming the GPU would point at
+the application's own rendering.
+
+\paragraph{On-CPU kernel stalls} Page faults, reclaim and compaction are mostly
+on-CPU. \sys times them per task with entry/exit hooks and, at each
+switch-out and at frame end, carves the time accrued since the last update
+out of \bucket{oncpu}. Reclaim is hooked at both the direct and the memcg
+tracepoints, since a cgroup memory limit triggers only the latter. Reclaim
+and compaction usually run inside the fault that needs the memory, so the
+fault and the reclaim around a compaction subtract what ran nested inside
+them, and the three carve up the same on-CPU time once.
+
+\paragraph{Per-thread context} Every thread of the target process also keeps a
+per-frame line in one of 32 slots: its own buckets, its longest off-CPU
+interval, the task that preempted it longest, and, if it is still off-CPU
+when the frame closes, how long it has been waiting. These lines are context:
+threads run in parallel, so their off-CPU time does not add to the frame.
+
+\subsection{Online Wake-Chain Resolution}
+\label{sec:chain}
+
+\begin{figure}[t]
+\centering
+\input{Fig/wake_chain}
+\caption{Resolving a blocked interval of the root. The part of render's
+futex wait during which the worker was itself off-CPU (I/O plus run queue,
+ended by the disk interrupt) is inherited; the rest is time the worker spent
+running, i.e.\ render waiting for work. The reported chain is
+render $\leftarrow$ worker (io) $\leftarrow$ [irq].}
+\label{fig:chain}
+\end{figure}
+
+\paragraph{Copy-forward chains} On every \texttt{sched\_waking}, \sys writes into
+the wakee's task storage a \emph{link} describing the waker as it is at that
+moment: its identity, how long it has itself been off-CPU since the wakee
+began to wait, split into runnable and blocked time, the cause and kernel
+stack of its last blocked interval, and the task that last held its CPU in
+that window. It then copies the waker's own links into the wakee's
+slots $1..4$, so the wakee holds its waker, its waker's waker, and so on, up
+to five hops. The copy has constant size, as the verifier requires, and a
+sequence counter on the waker detects a copy torn by a concurrent wakeup of
+the waker on another CPU; a torn copy is discarded rather than trusted.
+
+\paragraph{Off-CPU history} A waker's time off-CPU during someone else's wait is
+rarely one interval: a worker that shares its CPU with another process loses
+it several times a frame, and a read split into small requests blocks many
+times. Every task therefore keeps a ring of 32 checkpoints of its
+cumulative runnable and blocked time, each taken just before an off-CPU
+interval began. Intervals that end within 2\,ms of the newest checkpoint
+share it rather than open their own, so the ring reaches back at least
+64\,ms however finely the time is chopped up, at the cost of up to one grain
+at the start of a window that opens among merged intervals. At a wakeup the
+waker reads its off-CPU time since the wakee began to wait from the
+checkpoint before that moment. A history shorter than the wait is flagged,
+and the hop is then a lower bound.
+
+\paragraph{Resolution} When the root switches back in after a blocked interval
+$[\textit{lo}, \textit{hi})$ ended by another task,
+\begin{align*}
+\textit{inherited} &= \min\bigl(\textit{hi} - \textit{lo},\; r_w + b_w\bigr),\\
+\textit{wait\_oncpu} &= (\textit{hi} - \textit{lo}) - \textit{inherited},
+\end{align*}
+where $r_w$ and $b_w$ are the waker's runnable and blocked time during the
+wait, from its link (\autoref{fig:chain}). Inherited time is a stall
+one hop away; \textit{wait\_oncpu} is the root waiting for a thread that was
+running, the game's own work rather than a kernel stall. Both are reported
+alongside the partition. For the longest interval of each stall group
+(\autoref{sec:groups}), \sys repeats the step hop by hop down the chain, each
+hop's window narrowed to the previous hop's wait, recording for each hop the
+task, the time it explains and how much of it was runnable, what it was
+blocked in, and whether its wait had ended before the previous hop's began
+(a stale link).
+
+\paragraph{Where chains stop} A chain ends at an interrupt, at the idle task, at
+a waker that was running (off-CPU for less than the minimum stall,
+100\,$\mu$s), or at a waker that spent most of the wait runnable rather than
+blocked. In the last case the cause is whoever held its CPU, not whoever had
+last woken it, and the hop names that holder instead of continuing. \sys
+detects hardirq and NMI context from the
+per-CPU preemption count, read through two weak kernel symbols because x86
+moved the variable into and back out of a per-CPU structure between kernel
+versions; the verifier prunes the branch for the symbol that does not exist.
+Softirqs that run on interrupt exit, after the hardirq bits are cleared, are
+detected by a per-CPU nesting counter maintained by \texttt{fentry} and
+\texttt{fexit} on \texttt{irq\_exit\_rcu} and reset at every context switch,
+where it must be zero. An interrupt link carries no task identity: the task
+it names is a bystander.
+
+\paragraph{Who held the CPU} A task loses its CPU in one of two ways. Preempted,
+it is switched out while runnable, and \texttt{sched\_switch} names the task
+that took it. Woken while its CPU is busy, it waits in the run queue without
+ever being preempted, and no event names anyone; at the switch-in that ends
+a run-queue wait of at least 100\,$\mu$s, \sys records the task leaving the
+CPU as the last holder, flagged \emph{queued}. Both are kept for every task,
+since any task can be waited for, and the link carries the waker's last
+holder in the wait window. Only the last holder is seen: not an earlier one
+in the same wait, and not one on a CPU the task migrated from.
+
+\subsection{Stall Groups}
+\label{sec:groups}
+
+A frame's time is often lost in many short waits on one thing rather than
+in one long wait: forty short sleeps, a read split into many requests, a
+worker preempted in slices. Explaining only the frame's longest interval
+picks the wrong wait whenever that happens, and can never pick preemption,
+which is not a blocked interval. \sys therefore groups the root's off-CPU
+intervals within the frame by cause and by who ended them: blocked intervals
+by the thread that woke the root (or by an interrupt), time spent preempted
+by the process that took the CPU, and time spent woken but queued for a CPU
+in a group of its own. Each group keeps its total, its count, its longest
+interval, its inherited time, and the chain behind its longest interval.
+Seven groups get a slot. An interval of at least 100\,$\mu$s takes a free
+slot, or displaces the smallest group once it is longer than that group's
+whole total; whatever is displaced or too short to be a stall is summed in
+an eighth group, so the groups always add up to the root's off-CPU time.
+The front end ranks the groups by total and prints each one above 3\% of
+the frame with its chain (\autoref{fig:record}).
+
+\subsection{Cause Gate and Emission}
+\label{sec:gate}
+
+At the frame mark, \sys closes the root's on-CPU tail, applies the
+carve-outs, and computes the frame time $f$ and the budget $b$. The budget is
+fixed, or, for an uncapped game, 1.5 times the rolling median of the last 19
+frames, with a floor. The frame is a hitch if $f > b$. With a share $\sigma
+> 0$, the frame is emitted only if
+\[
+\textit{stall} \geq \sigma \cdot (f - b),
+\]
+where \textit{stall} is the root's time in every bucket except
+\bucket{oncpu} and \bucket{block\_present}. A share of zero gates on the
+symptom alone, which is what an unbiased prevalence study needs; a share of
+0.5 says ``at least half of the overrun must be kernel-observable.''
+
+For an emitted frame, \sys reserves a 10,344-byte record in the ring buffer
+and fills it with the partition, the resolution totals, the stall groups
+with their chains, and the 32 per-thread lines. The record is followed by
+the frame's \emph{interval log}: every off-CPU interval of every thread of
+the process during the frame, saying when the thread left the CPU, when it
+was woken and when it ran again, why it waited, who woke or preempted it,
+how long that waker had itself been off-CPU, and where it blocked. Each
+interval is appended to a per-frame buffer as it ends, at 72 bytes, a median
+of 16 to 22 per hitch in our case-study game (\autoref{sec:eval-cases}). For
+every other frame \sys empties the buffer, resets the root's state and moves
+on: no bytes cross into user space. The user-space front end symbolizes
+kernel stacks, optionally user stacks, writes each kernel stack the record
+refers to once in a table at its end, and produces a human-readable report
+and JSONL (\autoref{fig:record}). A viewer turns the JSONL into a page
+that draws each hitch's intervals as one lane per thread, with an arrow from
+whichever thread ended each wait, beside its groups and chains.
+
+\begin{figure*}[t]
+\centering
+\input{Fig/record}
+\resizebox{\textwidth}{!}{\usebox{\recordbox}}
+\caption{A \sys record, as printed, for a frame of the \texttt{ipc} case
+study (\autoref{sec:eval-cases}); three thread lines are cut. The game's main
+thread made 30 blocking calls to a server process in this frame; two were
+slow because the server, woken, waited for its CPU behind a thread of a
+background program. The header's share (852\%) is what the prototype's gate
+weighs: it counts the frame limiter's sleep and the wait for workers that
+were running, which is why the resolved gate subtracts the latter
+(\autoref{sec:eval-gate}). The same record, with its interval log, is written
+as JSONL.}
+\label{fig:record}
+\end{figure*}

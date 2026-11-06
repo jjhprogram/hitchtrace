@@ -1,0 +1,65 @@
+\begin{tikzpicture}[
+  font=\footnotesize,
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=3pt, minimum height=0.62cm},
+  hook/.style={box, fill=blue!6, minimum width=2.35cm},
+  state/.style={box, fill=orange!10},
+  prog/.style={box, fill=green!8},
+  zone/.style={draw, dashed, rounded corners=4pt, inner sep=6pt, black!55},
+  arr/.style={-{Stealth[length=1.6mm]}, thick},
+  zlabel/.style={font=\scriptsize\itshape, text=black!60, anchor=south west, inner sep=1pt}
+]
+% ---- game process
+\node[box] (threads) at (1.1,0) {game threads\\(render, workers, \ldots)};
+\node[box, right=0.45cm of threads] (loader) {Vulkan\\loader};
+\node[box, fill=yellow!15, right=0.45cm of loader, font=\scriptsize] (layer) {\textbf{\footnotesize implicit layer} \texttt{VK\_LAYER\_hitchtrace}\\\texttt{hitch\_frame\_mark()} $\to$ next \texttt{vkQueuePresentKHR} $\to$ \texttt{hitch\_present\_end()}};
+\node[box, right=0.45cm of layer] (icd) {driver\\(ICD)};
+\draw[arr] (threads) -- (loader);
+\draw[arr] (loader) -- (layer);
+\draw[arr] (layer) -- (icd);
+\node[zone, fit=(threads)(icd)(layer)] (game) {};
+\node[zlabel] at (game.north west) {game process (unmodified; native or Proton)};
+
+% ---- hooks
+\node[hook] (h1) at (1.3,-1.9) {\texttt{sched\_switch}};
+\node[hook] (h2) at (3.8,-1.9) {\texttt{sched\_waking}};
+\node[hook] (h3) at (6.3,-1.9) {\texttt{sys\_enter/exit}};
+\node[hook] (h4) at (8.8,-1.9) {faults, reclaim,\\compaction};
+\node[hook] (h5) at (11.3,-1.9) {GPU fence /\\syncobj waits};
+\node[hook] (h6) at (13.8,-1.9) {\texttt{irq\_exit\_rcu}\\entry/exit};
+
+% ---- task storage spans all hooks
+\node[state, minimum width=14.9cm, text width=14.5cm] (ts) at (7.55,-3.35)
+  {\textbf{task-local storage, every task}: switch-out/in times $\cdot$ state at switch-out $\cdot$ syscall class $\cdot$ time in faults, reclaim, compaction $\cdot$ \textbf{off-CPU history} (32 checkpoints) $\cdot$ last CPU holder $\cdot$ \textbf{wake links}: the waker's off-CPU time during the wait and who held its CPU, and the waker's own links, up to 5 hops};
+\foreach \h in {h1,h2,h3,h4,h5,h6} \draw[arr] (\h.south) -- (\h.south |- ts.north);
+
+% ---- per-frame state
+\node[state, text width=4.6cm] (root) at (5.2,-4.85) {\textbf{root timeline}: 15 cause buckets partitioning the frame; resolved inherited / wait-on-running; \textbf{stall groups}, each with its chain};
+\node[state, text width=3.0cm] (slots) at (9.6,-4.85) {\textbf{per-thread slots}: each thread's buckets, longest stall, preemptor};
+\node[state, text width=2.6cm] (evlog) at (13.2,-4.85) {\textbf{interval log}: every off-CPU interval of the process, two buffers};
+\draw[arr] (root.north |- ts.south) -- (root.north);
+\draw[arr] (slots.north |- ts.south) -- (slots.north);
+\draw[arr] (evlog.north |- ts.south) -- (evlog.north);
+
+% ---- frame mark program
+\node[prog, text width=6.0cm] (mark) at (7.3,-6.35) {\textbf{frame mark} (uprobe on present entry): close frame $\to$ budget and cause gate $\to$ fill record, or discard $\to$ open next frame};
+\draw[arr] (root.south) -- (root.south |- mark.north);
+\draw[arr] (slots.south) -- (slots.south |- mark.north);
+\draw[arr] (evlog.south) -- (evlog.south |- 0,-6.15) -- ([yshift=0.2cm]mark.east);
+\draw[arr, dashed] (layer.south) -- (layer.south |- 0,-1.05) -- (15.55,-1.05) -- (15.55,-6.55) -- ([yshift=-0.2cm]mark.east);
+\node[font=\scriptsize\itshape, text=black!60, anchor=south east] at (15.5,-1.05) {uprobes on both markers};
+
+\node[box, fill=gray!10] (rb) at (1.6,-6.35) {ring buffer\\(over-budget frames only)};
+\draw[arr] (mark.west) -- (rb.east);
+\node[zone, fit=(h1)(h6)(ts)(root)(slots)(mark)(rb)] (kern) {};
+\node[zlabel] at (kern.north west) {kernel (eBPF, verified)};
+
+% ---- user space
+\node[box] (fe) at (2.2,-8.1) {loader and ring-buffer consumer};
+\node[box] (sym) at (6.6,-8.1) {kernel/user stack symbolizer};
+\node[box] (out) at (10.6,-8.1) {human report and JSONL};
+\draw[arr] (rb.south) -- (rb.south |- fe.north);
+\draw[arr] (fe) -- (sym);
+\draw[arr] (sym) -- (out);
+\node[zone, fit=(fe)(out)] (usr) {};
+\node[zlabel] at (usr.north west) {\sys (user space)};
+\end{tikzpicture}

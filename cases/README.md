@@ -248,8 +248,8 @@ hitch frame 3119  28.9 ms  (budget 20.8 ms, over by 8.1 ms)  root mg_main
 - On-CPU kernel time (page faults, reclaim, compaction) is still a bucket and not a group, so it is
   not in the ranking.
 - The JSON keeps a `worst` object for older readers. It is now the largest group, so `worst.ns` is a
-  group total; the longest single interval is `longest_ns`. `paper/scripts/hitchbench_results.py`
-  still reads `worst.ns` as the latter and needs updating before it is run on new data.
+  group total; the longest single interval is `longest_ns`. The paper's script
+  (`paper/plot/src/hitchbench_results.py`) reads `longest_ns` since 2026-11-05.
 
 **Incidental finding.** In the first, noisier run (`out/bgcpu`), the top preemptor in the *noise*
 frames was `llvmpipe-N`: threads of another process doing software rendering, most likely the desktop

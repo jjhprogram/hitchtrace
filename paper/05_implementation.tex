@@ -1,0 +1,44 @@
+\section{Implementing Under the Verifier}
+\label{sec:verifier}
+
+Expressing this design as verified BPF required several restructurings,
+which we report because they are the practical cost of in-kernel
+attribution.
+
+\paragraph{Per-thread slots by index, not by counter} The emit path copies up to
+32 per-thread lines into the record in a bounded loop that the verifier
+unrolls. Writing each thread at a running output index made every path
+through the unrolled loop distinct, the verifier could not prune states, and
+the program exceeded the one-million-instruction limit. Each thread instead
+lands at its own fixed slot index; unused slots are zeroed and skipped in
+user space. The root's own slot is finalized before the loop for the same
+reason.
+
+\paragraph{State in task storage} All per-task state lives in task-local
+storage, created lazily and freed with the task. A fixed-size hash keyed by
+thread id, as in earlier chain tools, both overflows and leaks entries of
+exited tasks.
+
+\paragraph{Constant-size copies and bounded selection} The chain copy always
+moves four links and trims logically; the rolling median is a counting
+selection over two bounded loops rather than a sort. The checkpoint ring has
+a power-of-two size, so its indices are masked rather than bounds-checked.
+
+\paragraph{Groups outside task storage} The stall groups live in a one-entry map
+owned by the root rather than in its task storage, and are copied into the
+record group by group: a copy of the whole table is more than the compiler
+will inline.
+
+\paragraph{Concurrent appends} Threads on several CPUs append to the interval log
+at once, so each entry is claimed with an atomic increment. The frame's
+epoch selects one of two buffers, so the frame mark can send the frame that
+just closed while the next one is already being logged. The record is
+reserved before the log is sent, so the reader always receives a record
+before its intervals; sending the log first lost the interval of any thread
+the root wakes on its way into present.
+
+\paragraph{Attach order} Paired entry and exit hooks attach exit first, so an
+invocation in flight during attachment can produce only an unmatched
+decrement, which is ignored, never a counter stuck high. The present-return
+probe attaches before the frame marker, so no frame can open a present
+bracket that nothing can close.

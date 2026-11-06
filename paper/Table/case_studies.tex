@@ -1,0 +1,19 @@
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{3.7cm}cccc>{\raggedright\arraybackslash}p{3.4cm}@{}}
+\toprule
+ & & & & \multicolumn{2}{c}{\textbf{Ranked first}} & \\
+\cmidrule(lr){5-6}
+\textbf{Case} & \textbf{Cause} & \textbf{Explained} & \textbf{Amount} & \textbf{by total} & \textbf{by stall time} & \textbf{What the record cannot say} \\
+\midrule
+1 \texttt{bgcpu} & a background program takes the game's cores & 99\% & 100\% & \multicolumn{2}{c}{first (one long wait)} & which preemptor took longest \\
+2 \texttt{iomain}, \texttt{iothread} & an asset read from storage & 100\% & 91--94\% & 66--71\% & 81--88\% & why the disk was slow \\
+2b \texttt{iodisk} & another program reads from the same throttled disk & 100\% & 99\% & 94\% & 100\% & who else was using the disk \\
+3 \texttt{mem}, \texttt{memthp} & walking memory that was swapped out & 99--100\% & 95--96\% & 33--60\% & 99--100\% & what caused the memory pressure \\
+4 \texttt{slack} & the frame limiter's sleep ends late & -- & 99\% & 0\% & 0\% & that the sleep was late \\
+5 \texttt{ipc} & a server the game calls cannot get its CPU & 100\% & 97--105\% & 8--83\% & 98--100\% & who held the CPU before the last holder \\
+6 \texttt{cpuspike} & CPU work in the game (negative control) & ``running'' 100\% & 99\% & \multicolumn{2}{c}{no stall blamed in 91\%} & what the CPU was running \\
+7 \texttt{squeeze} & the game's threads confined to one core & 100\% & 96\% & \multicolumn{2}{c}{100\%} & which CPU; that the others were idle \\
+8 \texttt{alloc} & new memory while memory is full & 97\% & 94\% & never & never & what was pushed out, and why \\
+9 \texttt{compact} & huge pages while free memory is in pieces & 100\% & 78\% & never & never & that the kernel fell back to small pages \\
+\bottomrule
+\end{tabular}

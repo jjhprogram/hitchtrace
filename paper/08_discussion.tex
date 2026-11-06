@@ -1,0 +1,42 @@
+\section{Discussion and Limitations}
+\label{sec:limitations}
+
+\paragraph{One root per frame} Under DXVK and vkd3d-proton the presenting thread
+is a translation thread, and a stall on the game thread can close in the
+frame before the late one when frames are pipelined. The chain reaches the
+game thread when the present thread's waits are ended by it, but the
+prototype does not yet look back across a frame boundary.
+\todo{Measure on Proton titles; consider identifying the frame thread from
+the chain at present.}
+
+\paragraph{One chain per group, one waker per wait} A group carries the chain
+behind its longest interval only; its other waits may have had different
+chains. A wait on several threads follows the one that finished last.
+
+\paragraph{On-CPU kernel time is not ranked} Faults, reclaim and compaction are
+carved out of on-CPU time as buckets rather than recorded as intervals, so
+they form no group and never lead a record, however large
+(\autoref{sec:eval-cases}, cases 8 and 9).
+
+\paragraph{Only the last holder of a CPU} A hop names the task that last took
+or held its CPU, not the one that held it longest. Once a background
+program takes cores, the game's own threads start preempting each other,
+and the last holder is sometimes one of them.
+
+\paragraph{The gate does not yet use the resolution} The share gate weighs
+blocked time including \textit{wait\_oncpu}. \autoref{sec:eval-gate}
+shows the consequence and that subtracting it fixes it.
+
+\paragraph{Not yet recorded} The requested duration of a sleep, so that an
+oversleeping frame limiter is distinguishable from an intentional sleep; the
+CPU each thread ran on, and whether other CPUs sat idle; how long an I/O
+request queued in the block layer against how long the device took, and who
+else had requests in flight; and a refinement of \bucket{block\_other} by
+kernel stack (e.g.\ the ntsync driver~\cite{ntsync}, split-lock
+mitigation~\cite{lwn-splitlock}). The case studies show where each is needed
+(\autoref{sec:eval-cases}). \todo{Implement or scope out.}
+
+\paragraph{Cost outside the game} \sys keeps state for every task on the
+machine, because a chain can run through any process (a server, wineserver)
+whose history is needed before it is known to matter. Every context switch
+on the machine pays for it (\autoref{sec:eval-overhead}).

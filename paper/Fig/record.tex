@@ -1,0 +1,27 @@
+\begin{lrbox}{\recordbox}
+\footnotesize
+\begin{minipage}{1.42\textwidth}
+\begin{verbatim}
+hitch frame 2475  23.5 ms  (budget 20.8 ms, over by 2.7 ms, 852% kernel-observable)  root mg_main/39791  [open stall]
+  oncpu      0.6 ms   runqueue 1.7 ms
+  blocked   21.1 ms  futex 8.1 | timer 4.0 | present 0.2 | task 8.9
+  resolved   waiting on a running task 8.9 ms, inherited stalls 8.2 ms
+  stalls     off-CPU time by cause and by who ended it, largest first
+      8.9 ms  task     blocked in __skb_wait_for_more_packets, 30 times, longest 5.5 ms
+              <- mg_server/39784        kept off the CPU 5.5 ms, last queued behind bgload2/39824
+      8.1 ms  futex    blocked in __futex_wait
+              <- mg_worker1/39806       was running (waiting for work) 0.1 ms
+      4.0 ms  timer    blocked in do_nanosleep
+              <- [hardirq]              woken by an interrupt
+      1.6 ms  runqueue waiting for a CPU, 31 times, longest 0.2 ms
+      0.3 ms  in 2 smaller groups
+  threads
+    mg_main/39791          (root)  oncpu 0.6  runqueue 1.7  blocked 21.1 futex 8.1 | timer 4.0 | present 0.2 | task 8.9
+    mg_worker2/39807               oncpu 6.2  runqueue 0.9  blocked 15.2 futex (still blocked at frame end 1.2 ms)   largest 16.1 ms in __futex_wait
+    mg_worker1/39806               oncpu 8.1  runqueue 0.1  blocked 15.2 futex (still blocked at frame end 0.1 ms)   largest 15.3 ms in __futex_wait
+    mg_worker0/39805               oncpu 7.1  runqueue 0.0  blocked 15.2 futex (still blocked at frame end 1.1 ms)   largest 15.2 ms in __futex_wait
+    [3 more threads]
+  34 stalls this frame, 45 off-CPU intervals of the process logged
+\end{verbatim}
+\end{minipage}
+\end{lrbox}

@@ -1,0 +1,14 @@
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+ & \textbf{Gate} & \textbf{Sub-threshold} & \textbf{Output} & \textbf{Cause} & \textbf{Cross-thread} & \textbf{Custom} \\
+ & \textbf{evaluated} & \textbf{sums} & \textbf{per hitch} & \textbf{attribution} & \textbf{chain} & \textbf{kernel code} \\
+\midrule
+Flight recorder~\cite{ftracehist,perfetto-triggers,desfossez2016latency} & frame end, symptom & raw events & whole window & manual & manual & none / module \\
+Per-event threshold~\cite{perf-offcpu-thresh,gregg2019bpf} & each stall & \xmark & per stall & stack & one hop (offwake) & BPF \\
+Delay accounting~\cite{delayacct,psi} & polled & \cmark & counters & categories, no futex & \xmark & none \\
+Per-request accounting~\cite{varmri} & request end & \cmark & one record & categories & \xmark & kernel patch \\
+Offline critical path~\cite{giraldeau2016wait,zhou2018wperf,perfetto-critpath} & offline & \cmark & full trace & \cmark & \cmark & none \\
+\textbf{\sys} & \textbf{frame end, cause} & \cmark & \textbf{one record} & \cmark & \textbf{online, bounded} & \textbf{verified BPF} \\
+\bottomrule
+\end{tabular}

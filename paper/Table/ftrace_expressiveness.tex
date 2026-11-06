@@ -1,0 +1,13 @@
+\begin{tabular}{@{}p{5.2cm}cc@{}}
+\toprule
+\textbf{Logic} & \textbf{ftrace} & \textbf{eBPF} \\
+\midrule
+Frame-time predicate at present & \cmark & \cmark \\
+Per-stall duration threshold & \cmark & \cmark \\
+Per-thread sum reset at each frame boundary & \xmark$^\dagger$ & \cmark \\
+Sum over all of a process's threads at present & \xmark & \cmark \\
+Classify by task state not in the event (\texttt{in\_iowait}, syscall in progress, preemption count) & \xmark & \cmark \\
+Multi-hop wake chain with interval overlap & \xmark & \cmark \\
+Commit or discard a computed record at frame end & \xmark$^\ddagger$ & \cmark \\
+\bottomrule
+\end{tabular}

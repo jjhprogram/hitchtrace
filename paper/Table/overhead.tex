@@ -1,0 +1,21 @@
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+ & \multicolumn{2}{c}{\textbf{Added ns per switch}} & \multicolumn{2}{c}{\textbf{BPF time, \% of a core}} & \textbf{Slow frames caught} & \textbf{Output} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+\textbf{Tool} & \textbf{traced process} & \textbf{other process} & \textbf{game} & \textbf{pipe} & \textbf{game / ipc} & \textbf{MB per hour} \\
+\midrule
+\sys & 479 & 409 & 2.10 & 7.50 & 27/27, 49/49 & 28--75 \\
+\sys, no interval log & 569 & 413 & 2.14 & 7.40 & 34/34, 56/56 & 20--39 \\
+\texttt{offwaketime} & 881 & 322 & 1.13 & 11.81 & no per-frame output & 0.08--0.11 MB in all \\
+\texttt{chaingraph} & 430 & 18 & 2.17 & 13.87 & no per-frame output & 0.11--0.36 MB in all \\
+\texttt{perf sched} & 325 & 73 & -- & -- & all & 9,646--25,215 \\
+ftrace flight recorder & 134 & 168 & -- & -- & 10/21, 44/60 & 1,766--5,154 \\
+\midrule
+\multicolumn{7}{@{}l}{\emph{Separate runs, each with \sys alongside:}} \\
+\sys & 800 & 780 & 2.41 & 8.08 & 29/28, 40/39 & 31--57 \\
+perf \texttt{--off-cpu} & \textbf{2,463} & 834 & n/m & n/m & no per-frame output & 1,375--2,068 \\
+\sys & 419 & 505 & 1.84 & 7.43 & 23/23, 39/39 & 22--61 \\
+Perfetto flight recorder & $\approx$0 & 195 & -- & -- & 23/22, 65/65 & 2,557--15,766$^\dagger$ \\
+\bottomrule
+\end{tabular}

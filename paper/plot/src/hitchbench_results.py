@@ -5,9 +5,9 @@ Joins each injector class's ground truth (<class>.gt.jsonl, written by
 tests/hitchbench.c) with the hitchtrace records for the same run
 (<class>.hitch.jsonl) on frame_id, and writes:
 
-  data/hitchbench_table.tex      rows of the attribution table
-  data/hitchbench_breakdown.dat  mean root-timeline composition per class (ms)
-  data/hitchbench_macros.tex     \\newcommand numbers quoted in the text
+  Table/hitchbench_table.tex         rows of the attribution table
+  plot/data/hitchbench_breakdown.dat mean root-timeline composition per class (ms)
+  Table/hitchbench_macros.tex        \\newcommand numbers quoted in the text
 
 Only frames that lie wholly inside the trace are scored. hitchtrace opens its
 first frame at the first mark it sees after attaching, and the run ends
@@ -22,9 +22,10 @@ import sys
 from collections import Counter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-PAPER = os.path.dirname(HERE)
+PAPER = os.path.dirname(os.path.dirname(HERE))
 OUT = os.path.join(PAPER, "..", "tests", "out")
-DATA = os.path.join(PAPER, "data")
+TABLE = os.path.join(PAPER, "Table")
+DATA = os.path.join(PAPER, "plot", "data")
 
 PART = ["oncpu", "oncpu_fault", "oncpu_fault_major", "oncpu_reclaim",
         "oncpu_compact", "runnable", "runqueue", "block_futex", "block_poll",
@@ -44,7 +45,14 @@ CLASSES = [
     ("thousand_cuts", r"$\sim$40 sleeps of 0.5\,ms", "block_timer"),
     ("present_long", r"present waits 20\,ms longer", "block_present"),
     ("present_off", r"\texttt{sleep}, present bracket off", "block_timer"),
+    ("server_queued", r"server queued behind hogs", "block_futex"),
 ]
+# expected buckets that are on-CPU time: never a stall group, so never ranked
+ONCPU_EXPECT = ("oncpu", "oncpu_fault")
+# classes whose injection is one wait of the root: the range of their
+# longest-stall fraction is quoted against thousand_cuts
+SINGLE = ("sleep", "poll", "worker_block", "worker_cpu", "present_off",
+          "server_queued")
 BASELINE = "quiet_baseline"
 
 TEX_NAME = {
@@ -124,10 +132,35 @@ def kern_share(r, resolved=False):
     return stall / excess if excess > 0 else float("nan")
 
 
+def longest_stall_frac(r):
+    """The root's longest single stall over the frame's excess.
+
+    A stall is what the gate weighs: any off-CPU interval outside present
+    (on-CPU kernel time is not an interval and has no group). Each group
+    carries its longest interval, so the longest stall of the frame is the
+    largest of those. This is the most a per-stall threshold could see.
+    """
+    longest = max((s["longest_ns"] for s in r["stalls"]
+                   if s["cause"] != "block_present"), default=0)
+    return longest / (r["frame_ns"] - r["budget_ns"])
+
+
+def old_rule_cause(r):
+    """The cause the prototype explained before stall groups: the root's
+    longest single blocked interval (preemption and run-queue time never
+    qualified). Each group's longest interval is enough to replay it, as
+    tests/rank_rules.py does."""
+    blocked = [s for s in r["stalls"]
+               if s["cause"] not in ("runnable", "runqueue")]
+    return max(blocked, key=lambda s: s["longest_ns"])["cause"] if blocked else None
+
+
 def main():
     rows, bars, macro = [], [], {}
     tot_frames = tot_over = tot_rec = tot_extra = tot_miss = 0
     tot_inj = tot_inj_rec = tot_match = 0
+    tot_rank = tot_top = tot_old = 0
+    single_fracs = []
     max_dt_us = 0.0
 
     for cls, what, expect in CLASSES + [(BASELINE, None, None)]:
@@ -146,6 +179,7 @@ def main():
             max_dt_us = max(max_dt_us, dt)
         if cls == BASELINE:
             macro["baselineFrames"] = len(frames)
+            macro["baselineOver"] = len(over)
             macro["baselineRecords"] = len(rec)
             continue
 
@@ -157,10 +191,23 @@ def main():
         tot_inj += len(inj)
         tot_inj_rec += len(caught)
         tot_match += match
-        worst_frac = st.median(
-            recs[g["frame_id"]]["worst"]["ns"] /
-            (recs[g["frame_id"]]["frame_ns"] - recs[g["frame_id"]]["budget_ns"])
-            for g in caught)
+        worst_frac = st.median(longest_stall_frac(recs[g["frame_id"]])
+                               for g in caught)
+        if expect in ONCPU_EXPECT:
+            top_cell = "--"
+        else:
+            top = sum(1 for g in caught
+                      if recs[g["frame_id"]]["stalls"]
+                      and recs[g["frame_id"]]["stalls"][0]["cause"] == expect)
+            old = sum(1 for g in caught
+                      if old_rule_cause(recs[g["frame_id"]]) == expect)
+            tot_rank += len(caught)
+            tot_top += top
+            tot_old += old
+            top_cell = f"{top}/{len(caught)}"
+            macro[f"{cls.replace('_', '')}Top"] = top_cell
+        if cls in SINGLE:
+            single_fracs.append(worst_frac)
         nstalls = st.median(recs[g["frame_id"]]["nstalls"] for g in caught)
         share = st.median(kern_share(recs[g["frame_id"]]) for g in caught)
         gated = sum(1 for g in caught if kern_share(recs[g["frame_id"]]) >= 0.5)
@@ -179,13 +226,13 @@ def main():
         chain, chain_n = chains.most_common(1)[0]
         other = ", ".join(f"{TEX_NAME.get(k, k)} {n}" for k, n in tops.items()
                           if k != expect)
-        top_cell = f"{match}/{len(caught)}"
+        bucket_cell = f"{match}/{len(caught)}"
         if other:
-            top_cell += f" ({other})"
+            bucket_cell += f" ({other})"
         rows.append(
             f"\\texttt{{{cls.replace('_', '\\_')}}} & {what} & "
             f"\\texttt{{{TEX_NAME.get(expect, expect)}}} & "
-            f"{len(caught)}/{len(inj)} & {top_cell} & "
+            f"{len(caught)}/{len(inj)} & {bucket_cell} & {top_cell} & "
             f"{worst_frac:.2f} & {share:.2f} & {gated}/{len(caught)} & "
             f"{rshare:.2f} & {rgated}/{len(caught)} \\\\")
 
@@ -208,6 +255,19 @@ def main():
         macro[f"{k}Chain"] = chain
         macro[f"{k}ChainN"] = f"{chain_n}/{len(caught)}"
         macro[f"{k}Match"] = f"{match}/{len(caught)}"
+        macro[f"{k}Caught"] = len(caught)
+        macro[f"{k}TopGroupCount"] = f"{st.median(recs[g['frame_id']]['stalls'][0]['count'] for g in caught):.0f}"
+        for name, n in tops.items():
+            if name != expect:
+                macro[f"{k}Top{TEX_NAME.get(name, name).replace('_', '')}"] = n
+        if cls == "server_queued":
+            # the server's hop names a hog as the CPU's last holder, queued
+            macro[f"{k}Holder"] = "%d/%d" % (sum(
+                1 for g in caught if any(
+                    h["comm"] == "hb_server" and "queued" in h["flags"]
+                    and (h["preemptor"] or {}).get("comm", "").startswith("hb_hog")
+                    for h in recs[g["frame_id"]]["worst"]["hops"])),
+                len(caught))
         if cls in ("fault", "io", "cpu_spike", "preempt"):
             for key in ("oncpu", "oncpu_fault", "block_io", "block_present",
                         "runnable"):
@@ -219,20 +279,23 @@ def main():
                  totExtra=tot_extra, totMiss=tot_miss, totInj=tot_inj,
                  totInjRec=tot_inj_rec, totMatch=tot_match,
                  maxDtUs=f"{max_dt_us:.0f}", nClasses=len(CLASSES),
-                 nRuns=len(CLASSES) + 1)
+                 nRuns=len(CLASSES) + 1, totRank=tot_rank, totTop=tot_top,
+                 totOld=tot_old, singleFracLo=f"{min(single_fracs):.2f}",
+                 singleFracHi=f"{max(single_fracs):.2f}")
 
     os.makedirs(DATA, exist_ok=True)
-    with open(os.path.join(DATA, "hitchbench_table.tex"), "w") as f:
+    os.makedirs(TABLE, exist_ok=True)
+    with open(os.path.join(TABLE, "hitchbench_table.tex"), "w") as f:
         # a macro, not bare rows: \input inside a tabular breaks \bottomrule
-        f.write("% generated by scripts/hitchbench_results.py -- do not edit\n")
+        f.write("% generated by plot/src/hitchbench_results.py -- do not edit\n")
         f.write("\\newcommand{\\hbTableRows}{%\n" + "\n".join(rows) + "\n}\n")
     with open(os.path.join(DATA, "hitchbench_breakdown.dat"), "w") as f:
         f.write("class " + " ".join(k for k, _ in GROUPS) + "\n")
         for cls, means in bars:
             f.write(cls.replace("_", "\\_") + " " +
                     " ".join(f"{means[k]:.2f}" for k, _ in GROUPS) + "\n")
-    with open(os.path.join(DATA, "hitchbench_macros.tex"), "w") as f:
-        f.write("% generated by scripts/hitchbench_results.py -- do not edit\n")
+    with open(os.path.join(TABLE, "hitchbench_macros.tex"), "w") as f:
+        f.write("% generated by plot/src/hitchbench_results.py -- do not edit\n")
         for k, v in macro.items():
             f.write(f"\\newcommand{{\\hb{k}}}{{{v}}}\n")
     for k, v in macro.items():

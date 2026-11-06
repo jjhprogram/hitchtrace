@@ -1,0 +1,39 @@
+\begin{tikzpicture}[
+  font=\scriptsize, x=0.7cm, y=0.8cm,
+  arr/.style={-{Stealth[length=1.5mm]}, thick}
+]
+\def\lane#1#2{\node[anchor=east, font=\scriptsize\bfseries] at (-0.1,#1) {#2};}
+\lane{2}{render}
+\lane{1}{worker}
+\lane{0.1}{IRQ}
+% render (root)
+\fill[cOncpu!70] (0,1.8) rectangle (1.5,2.2);
+\fill[cFutex!55] (1.5,1.8) rectangle (7,2.2);
+\fill[cSched!45] (7,1.8) rectangle (7.5,2.2);
+\fill[cOncpu!70] (7.5,1.8) rectangle (10,2.2);
+\node at (4.25,2) {blocked: futex};
+% worker
+\fill[cOncpu!70] (0,0.8) rectangle (2.5,1.2);
+\fill[cIO!45] (2.5,0.8) rectangle (5.4,1.2);
+\fill[cSched!45] (5.4,0.8) rectangle (5.8,1.2);
+\fill[cOncpu!70] (5.8,0.8) rectangle (7,1.2);
+\fill[cFutex!25] (7,0.8) rectangle (10,1.2);
+\node at (3.95,1) {blocked: io};
+% wakeups
+\draw[arr] (5.4,0.15) -- (5.4,0.78);
+\node[anchor=west] at (5.5,0.2) {disk IRQ wakes worker};
+\draw[arr] (7,1.22) -- (7,1.78);
+\node[anchor=east] at (6.9,1.5) {worker wakes render};
+% frame window
+\draw[black!55, dashed] (0.3,-0.25) -- (0.3,2.3);
+\draw[black!55, dashed] (9.7,-0.25) -- (9.7,2.3);
+\node[font=\tiny, text=black!65, anchor=north] at (0.3,-0.3) {frame start};
+\node[font=\tiny, text=black!65, anchor=north] at (9.7,-0.3) {frame mark};
+% resolution of render's blocked interval [1.5, 7)
+\draw[decorate, decoration={brace, amplitude=3pt}] (1.52,2.3) -- (2.48,2.3)
+  node[midway, above=3pt, align=center, font=\tiny] {wait on\\running};
+\draw[decorate, decoration={brace, amplitude=3pt}] (2.52,2.3) -- (5.78,2.3)
+  node[midway, above=3pt, align=center, font=\tiny] {inherited:\\worker's io + run queue};
+\draw[decorate, decoration={brace, amplitude=3pt}] (5.82,2.3) -- (6.98,2.3)
+  node[midway, above=3pt, align=center, font=\tiny] {wait on\\running};
+\end{tikzpicture}

@@ -1,0 +1,75 @@
+\section{Background}
+\label{sec:background}
+
+\subsection{Frames, Budgets and Hitches}
+
+A game renders a frame and hands it to the display through a present call,
+\texttt{vkQueuePresentKHR} in Vulkan. The interval between consecutive
+presents is the frame time, the same quantity PresentMon reports as
+\texttt{MsBetweenPresents}~\cite{presentmon} and overlays such as
+MangoHud~\cite{mangohud} plot. A frame has a \emph{budget}, normally the
+display period or the game's frame cap: 16.7\,ms at 60\,Hz. A \emph{hitch}
+is a frame that exceeds its budget by enough to be seen.
+
+Two properties of real games complicate the picture. Under a FIFO (vsync)
+present mode the display paces the game, so a healthy frame spends much of
+its time blocked inside or around the present call; that wait is pacing,
+not a stall. And under Proton, the thread that calls
+\texttt{vkQueuePresentKHR} is usually not the game's render thread but a
+translation-layer thread such as DXVK's submission thread, a few hand-offs
+away from game code. \todo{Verify the DXVK and vkd3d-proton present threads
+on the evaluation stack; cite source.}
+
+\paragraph{Loader bypass} The Vulkan loader exports \texttt{vkQueuePresentKHR},
+but applications that resolve device functions through
+\texttt{vkGetDeviceProcAddr} receive a pointer into the first layer or the
+driver and never call the export~\cite{vulkan-loader}. On our development
+machine \texttt{/usr/bin/vkcube} imports no \texttt{vk*} symbol at all.
+A tool that places a uprobe on the loader's symbol therefore counts zero
+presents for exactly the applications that matter. An implicit layer, in
+contrast, sits in the device dispatch chain however the application obtained
+its pointers.
+
+\subsection{Off-CPU Time and Wakeup Chains}
+
+A thread that is not running is either \emph{runnable} (preempted, or woken
+and waiting for a CPU) or \emph{blocked} (sleeping until an event). Linux
+exposes both transitions as tracepoints: \texttt{sched\_switch} fires when a
+CPU switches from one task to another and reports the outgoing task's state;
+\texttt{sched\_waking} fires when a task is woken, on the waker's CPU and in
+the waker's context. Off-CPU analysis~\cite{gregg-offcpu} times the blocked
+intervals and attributes them to the blocking stack; off-wake and chain-graph
+analysis~\cite{gregg-chaingraph} additionally records who woke the blocked
+thread, and who woke that waker. Gregg's 2016 chain-graph prototype was
+limited by the eBPF of the time to kernel stacks and short chains, and noted
+that latency outliers were not yet addressed.
+
+Chains are also the basis of critical-path analysis over kernel traces:
+Giraldeau and Dagenais recover the wait dependencies of a task recursively
+across threads and hosts~\cite{giraldeau2016wait}, wPerf builds a wait-for
+graph to find bottleneck waiting events~\cite{zhou2018wperf}, and Perfetto
+ships an offline critical-path library over its thread-state
+tables~\cite{perfetto-critpath}. All of these operate offline, over a full
+trace.
+
+\paragraph{Interrupt context} \texttt{sched\_waking} runs in the waker's context,
+but when the wakeup comes from an interrupt, \texttt{current} is whichever
+task the interrupt happened to land on. Recording it as the waker produces a
+false attribution and, worse, splices that bystander's unrelated history
+into the chain. Detecting interrupt context requires the preemption count,
+which on x86-64 is a per-CPU variable, and, because softirqs run on
+interrupt exit after the hardirq bits are cleared, an explicit marker for
+execution inside \texttt{irq\_exit\_rcu()} (\autoref{sec:chain}).
+
+\subsection{eBPF}
+
+eBPF lets user-supplied programs, verified for safety at load
+time~\cite{gershuni2019verifier}, run at kernel hooks: tracepoints
+(\texttt{tp\_btf}), function entry and exit (\texttt{fentry}/\texttt{fexit}),
+and user-space probes (uprobes). Programs keep state in maps, including
+\emph{task-local storage}, a per-task slot freed with the
+task~\cite{bpf-task-storage}, and send records to user space through a ring
+buffer~\cite{bpf-ringbuf}. CO-RE relocations let one object load on many
+kernels~\cite{bpf-core}. The verifier imposes the constraints that shape
+\sys's design: a 512-byte stack, bounded loops, a limit of one million
+verified instructions, and constant-size memory copies.
