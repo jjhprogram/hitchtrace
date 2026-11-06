@@ -28,15 +28,35 @@ adds `summary.md` and `summary.csv`.
 | `perfsched` | `perf sched record`: every scheduler event, to a file | everything |
 | `perfoffcpu` | `perf record --off-cpu --off-cpu-thresh 1`: off-CPU stacks, a sample per wait over 1 ms | per wait |
 | `ftrace` | a flight recorder: `sched_switch`, `sched_waking` and the two frame marks in an overwriting ring, a snapshot when a frame runs long (uprobes, a synthetic event and a hist trigger; no BPF) | a window of events per slow frame |
+| `perfetto` | Perfetto v59.1 as a flight recorder: `traced`, `traced_probes`, a 32 MB ring of `sched_switch`, `sched_waking` and the frame mark, and a `CLONE_SNAPSHOT` trigger fired by a watcher of the frame marks when a frame runs long (`build/perfetto/v59.1/linux-amd64`, or `$PERFETTO_DIR`) | the whole ring per slow frame |
 | `offwaketime` | bcc `offwaketime`: blocked stacks with their wakers' stacks, summed | one summary at the end |
 | `chaingraph` | this repository's wake-chain profiler | one summary at the end |
 | `delayacct` | the kernel's delay accounting, read every frame through taskstats (`delayacct_frames.c`; a uprobe marks frames, no BPF) | per-thread delays per slow frame |
 
-Two arms may not run everywhere: Ubuntu's `perf` is built without BPF
-skeletons, which `--off-cpu` needs, and `offwaketime` needs kernel headers.
-The runner checks for both before it starts and skips what cannot run; an
-arm that fails twice during the runs is dropped too. Both are listed under
-Failures.
+Three arms may not run everywhere: Ubuntu's `perf` is built without BPF
+skeletons, which `--off-cpu` needs, `offwaketime` needs kernel headers, and
+`perfetto` needs Perfetto's prebuilt binaries. The runner checks for all
+three before it starts and skips what cannot run; an arm that fails twice
+during the runs is dropped too. They are listed under Failures.
+
+`perfetto` uses the binaries in `build/perfetto/v59.1/linux-amd64` (or
+`$PERFETTO_DIR`): `linux-amd64.zip` from the google/perfetto v59.1 GitHub
+release, checked against the SHA-256 the release lists, unpacked there and
+made executable. Its ring is Perfetto's default 32 MB; at about 150 KB/s of
+scheduler events in the VM it does not fill in a 15 s run, so its MB/hour in
+these runs understates a long session.
+
+`perfoffcpu` uses `build/perf/perf` when it exists (or `$PERF_BPF`), a perf
+built from the kernel source with BPF skeletons; `perfsched` keeps the
+system's perf. To build it (once: `sudo apt install flex bison
+libtraceevent-dev libdw-dev libcap-dev`):
+
+```sh
+# the source matching `perf version`, from cdn.kernel.org, checked against sha256sums.asc
+tar xf linux-7.0.14.tar.xz -C build/src
+make -C build/src/linux-7.0.14/tools/perf O=$PWD/build/perf BUILD_BPF_SKEL=1 NO_LIBPYTHON=1 NO_JEVENTS=1 -j10
+build/perf/perf version --build-options | grep bpf_skeletons    # on
+```
 
 ## The workloads
 

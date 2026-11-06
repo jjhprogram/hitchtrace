@@ -59,7 +59,7 @@
 #                  frames loaded, walked or burned
 #   manifest.json  what was run, on what
 #
-# For tools/catch: TOOL=delayacct|ftrace|perfsched|offwaketime|chaingraph
+# For tools/catch: TOOL=delayacct|ftrace|perfetto|perfsched|perfoffcpu|offwaketime|chaingraph
 # attaches that tool instead of hitchtrace, through tools/overhead/run.py
 # --attach (sudo, so the credentials must be cached: sudo -v first); its
 # output and tool.json go in the same directory. OUT_DIR=DIR writes there

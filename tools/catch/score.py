@@ -228,7 +228,121 @@ def score_perfsched(d, case, frame, budget_ns):
     return rec, None, None
 
 
-PER_FRAME = {"ht": score_ht, "delayacct": score_delayacct, "ftrace": score_ftrace, "perfsched": score_perfsched}
+PERF_BPF = os.environ.get("PERF_BPF") or (f"{ROOT}/build/perf/perf" if os.path.exists(f"{ROOT}/build/perf/perf")
+                                          else "perf")
+# a game thread's off-CPU wait is the case's mechanism if its user stack has one of these
+OFFCPU_SIG = {"iothread": ("load_asset", "pread")}
+
+
+def perf_offcpu(d, cache={}):
+    """perf record --off-cpu's direct samples: one per blocked interval of the
+    game's threads at least the threshold long, emitted when the thread ran
+    again, its period the interval's length, with the user stack it blocked
+    in. Returns (comm, start, end, stack) per sample and the times of
+    lost-event records. Shorter intervals are only summed per stack at the end
+    of the run, with no time (OFF_CPU_TIMESTAMP), so they cannot be placed in
+    a frame and are dropped here, as are the on-CPU samples."""
+    if d in cache:
+        return cache[d]
+    samples, lost, cur = [], [], None
+    head = re.compile(r"^\s*(?P<comm>\S.*?)\s+(?P<tid>\d+)\s+(?P<s>\d+)\.(?P<ns>\d+):\s+(?P<period>\d+)\s+(?P<ev>\S+):")
+    p = subprocess.Popen([PERF_BPF, "script", "-i", f"{d}/perf.data", "--show-lost-events",
+                          "-F", "comm,tid,time,period,event,ip,sym"],
+                         stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, errors="replace")
+    for line in p.stdout:
+        if "LOST" in line:
+            m = re.search(r"(\d+)\.(\d+):", line)
+            if m:
+                lost.append(int(m.group(1)) * 1_000_000_000 + int(m.group(2).ljust(9, "0")[:9]))
+            cur = None
+            continue
+        m = head.match(line)
+        if m:
+            cur = None
+            t = int(m.group("s")) * 1_000_000_000 + int(m.group("ns").ljust(9, "0")[:9])
+            if m.group("ev").startswith("offcpu-time") and t < (1 << 62):
+                cur = [m.group("comm"), t - int(m.group("period")), t, []]
+                samples.append(cur)
+            continue
+        if cur is not None and line.strip():
+            cur[3].append(line.split()[-1] if len(line.split()) > 1 else line.strip())
+    p.wait()
+    cache[d] = (samples, lost)
+    return cache[d]
+
+
+def score_perfoffcpu(d, case, frame, budget_ns):
+    samples, lost = perf_offcpu(d)
+    s, e = span(frame)
+    excess = frame["frame_us"] * 1000 - budget_ns
+    over = [(c, max(0, min(e, b) - max(s, a)), st) for c, a, b, st in samples if a < e and b > s]
+    rec = bool(over) and not any(s <= t <= e for t in lost)
+    if case in OFFCPU_SIG:
+        att = sum(ns for c, ns, st in over if any(sig in f for f in st for sig in OFFCPU_SIG[case])) >= 0.5 * excess
+    elif case == "cpuspike":
+        att = all(ns < 0.25 * excess for c, ns, st in over)
+    else:		# bgcpu: preempted time is never sampled; ipc, mem: a wait says nothing of its cause
+        att = False
+    return rec, rec and att, False if case in ("bgcpu", "iothread", "ipc") else None
+
+
+PERFETTO_DIR = os.environ.get("PERFETTO_DIR") or f"{ROOT}/build/perfetto/v59.1/linux-amd64"
+PERFETTO_QUERY = ("select 'cpu' as k, cpu as a, min(ts) as b from ftrace_event "
+                  "where name in ('sched_switch', 'sched_waking') group by cpu "
+                  "union all select 'mark', 0, ts from ftrace_event where name like '%fmark'")
+
+
+def perfetto_snapshots(d, cache={}):
+    """Per Perfetto snapshot (perfetto-trace.N): each CPU's first scheduler
+    event and the frame marks it holds, from trace_processor_shell, on the
+    trace's primary clock (CLOCK_MONOTONIC, the game's). Kept in
+    perfetto-index.json, since loading every snapshot takes a while."""
+    if d in cache:
+        return cache[d]
+    idx_path = f"{d}/perfetto-index.json"
+    files = sorted((f for f in os.listdir(d) if re.fullmatch(r"perfetto-trace\.\d+", f)),
+                   key=lambda f: int(f.rsplit(".", 1)[1]))
+    try:
+        idx = json.load(open(idx_path))
+    except (OSError, ValueError):
+        idx = {}
+    for name in files:
+        if name in idx:
+            continue
+        out = subprocess.run([f"{PERFETTO_DIR}/trace_processor_shell", "query", "--no-agent",
+                              f"{d}/{name}", PERFETTO_QUERY],
+                             capture_output=True, text=True).stdout
+        first, marks = {}, []
+        for line in out.splitlines()[1:]:
+            k, a, b = (x.strip('"') for x in line.split(","))
+            if k == "cpu" and b:
+                first[a] = int(b)
+            elif k == "mark":
+                marks.append(int(b))
+        idx[name] = {"first": first, "marks": marks}
+    try:
+        with open(idx_path, "w") as f:
+            json.dump(idx, f)
+    except OSError:
+        pass
+    cache[d] = [idx[n] for n in files]
+    return cache[d]
+
+
+def score_perfetto(d, case, frame, budget_ns):
+    """As ftrace's flight recorder: a snapshot covers the frame if it holds the
+    frame's own mark and every CPU's oldest event in it is older than the frame.
+    Perfetto's buffer is one ring for all CPUs and always full after the first
+    seconds, so the second condition always applies."""
+    s, e = span(frame)
+    rec = any(sn["first"] and max(sn["first"].values()) <= s
+              and any(abs(m - e) <= MATCH_NS for m in sn["marks"])
+              for sn in perfetto_snapshots(d))
+    return rec, None, None
+
+
+PER_FRAME = {"ht": score_ht, "delayacct": score_delayacct, "ftrace": score_ftrace, "perfsched": score_perfsched,
+             "perfoffcpu": score_perfoffcpu, "perfetto": score_perfetto}
 
 
 # ------------------------------------------------------------------ summary tools

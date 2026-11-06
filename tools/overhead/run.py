@@ -25,11 +25,13 @@ Workloads  game60 (the game at its 60 fps cap), gamemax (uncapped), ipc (30
            inside the traced process), pipe-other (in some other process)
 """
 import argparse
+import glob
 import json
 import os
 import pwd
 import random
 import re
+import select
 import shutil
 import signal
 import subprocess
@@ -46,14 +48,21 @@ HITCHTRACE = f"{B}/hitchtrace"
 CHAINGRAPH = f"{B}/chaingraph"
 LAYER = f"{B}/libVkLayer_hitchtrace.so"
 DELAYACCT = f"{B}/overhead/delayacct_frames"
+# --off-cpu needs a perf built with BPF skeletons, which Ubuntu's is not: one
+# built from the kernel source (see tools/overhead/README.md), else the system's
+PERF_BPF = os.environ.get("PERF_BPF") or (f"{B}/perf/perf" if os.path.exists(f"{B}/perf/perf") else "perf")
 TRACEFS = "/sys/kernel/tracing"
 FT = "hitchoh"		# ftrace instance, uprobe group and synthetic event prefix
+# Perfetto's prebuilt binaries (github.com/google/perfetto releases, linux-amd64.zip)
+PERFETTO = os.environ.get("PERFETTO_DIR") or f"{B}/perfetto/v59.1/linux-amd64"
+PF = "hitchpf"		# the Perfetto arm's watcher: tracefs instance and uprobe group
+PF_TRIGGER = "hitch_slow_frame"
 
 GAME_CPUS = [0, 1, 2, 3]
 BUDGET_US = 20833
 PIPE_OPS_PER_S = 70000	# about this machine's rate with no tool
 
-ALL_ARMS = ["ht", "ht-notimeline", "ht-stacks", "perfsched", "perfoffcpu", "ftrace",
+ALL_ARMS = ["ht", "ht-notimeline", "ht-stacks", "perfsched", "perfoffcpu", "ftrace", "perfetto",
             "offwaketime", "chaingraph", "delayacct"]
 BPF_ARMS = ["ht", "ht-notimeline", "ht-stacks", "offwaketime", "chaingraph"]
 NO_ROOT_ARMS = ["ht", "ht-notimeline", "ht-stacks"]
@@ -320,7 +329,9 @@ class PerfOffCpu(Arm):
     def command(self):
         self.out = f"{self.dir}/perf.data"
         self.outputs = [self.out]
-        return ["perf", "record", "--off-cpu", "--off-cpu-thresh", "1", "-p", str(self.pid), "-o", self.out]
+        clock = ["-k", "CLOCK_MONOTONIC"] if CATCH else []	# comparable with the game's log
+        return [PERF_BPF, "record", "--off-cpu", "--off-cpu-thresh", "1", *clock, "-p", str(self.pid),
+                "-o", self.out]
 
     def results(self):
         m = re.search(r"lost (\d+) chunks", tail(self.log, 4000))
@@ -568,8 +579,157 @@ def ftrace_drain(out, stats, text=False):
                    "ring_overrun_events": overrun, "hit_ns": hit_ns}, s)
 
 
+class Perfetto(Arm):
+    """A flight recorder made of Perfetto: scheduler events in traced's ring
+    buffer, and a snapshot of it (trigger mode CLONE_SNAPSHOT, one file each)
+    whenever a frame runs long. Perfetto cannot see frames, so a watcher reads
+    the layer's frame marks from a tracefs instance of its own and fires the
+    trigger, as a game or a system daemon would: from one mark to the next,
+    the same frames hitchtrace sees. All of it runs in perfetto_run(), one
+    process tree, so its CPU is counted."""
+    name = "perfetto"
+    ready = r"perfetto: tracing"
+
+    CONFIG = """\
+buffers {{ size_kb: 32768 fill_policy: RING_BUFFER }}
+data_sources {{ config {{ name: "linux.ftrace" ftrace_config {{
+  ftrace_events: "sched/sched_switch"
+  ftrace_events: "sched/sched_waking"
+  ftrace_events: "{pf}/fmark"
+}} }} }}
+data_sources {{ config {{ name: "linux.process_stats" process_stats_config {{ scan_all_processes_on_start: true }} }} }}
+builtin_data_sources {{ primary_trace_clock: BUILTIN_CLOCK_MONOTONIC }}
+trigger_config {{
+  trigger_mode: CLONE_SNAPSHOT
+  trigger_timeout_ms: 86400000
+  triggers {{ name: "{trigger}" }}
+}}
+"""
+
+    def command(self):
+        self.out = f"{self.dir}/perfetto-trace"
+        self.stats = f"{self.dir}/perfetto.json"
+        self.cfg = f"{self.dir}/perfetto.cfg"
+        with open(self.cfg, "w") as f:
+            f.write(self.CONFIG.format(pf=PF, trigger=PF_TRIGGER))
+        return [sys.executable, os.path.abspath(__file__), "--perfetto-run", self.cfg, self.out, self.stats]
+
+    def snapshots(self):
+        return sorted(glob.glob(f"{self.out}.[0-9]*"), key=lambda p: int(p.rsplit(".", 1)[1]))
+
+    def output_bytes(self):
+        return sum(os.path.getsize(p) for p in self.snapshots())
+
+    def signal(self):
+        self.proc.terminate()
+
+    def results(self):
+        try:
+            with open(self.stats) as f:
+                r = json.load(f)
+        except (OSError, ValueError):
+            r = {}
+        self.outputs = self.snapshots()
+        r["snapshots"] = len(self.outputs)
+        r["record_ends_ns"] = r.pop("hit_ns", [])	# when each slow frame's trigger was fired
+        return r
+
+
+def perfetto_teardown():
+    for path, text in ((f"{TRACEFS}/instances/{PF}/tracing_on", "0"),
+                       (f"{TRACEFS}/instances/{PF}/events/{PF}/fmark/enable", "0")):
+        try:
+            tw(path, text)
+        except OSError:
+            pass
+    try:
+        os.rmdir(f"{TRACEFS}/instances/{PF}")
+    except OSError:
+        pass
+    try:
+        tw(f"{TRACEFS}/uprobe_events", f"-:{PF}/fmark")
+    except OSError:
+        pass
+
+
+def perfetto_run(cfg, out, stats):
+    """The Perfetto arm as one process tree: traced and traced_probes, a ring-
+    buffer session with a CLONE_SNAPSHOT trigger, and the watcher that fires it
+    when the time from one frame mark to the next is over budget. The trace
+    perfetto writes when the session ends is not kept: a flight recorder's
+    output is its snapshots."""
+    stop = []
+    signal.signal(signal.SIGTERM, lambda *a: stop.append(1))
+    signal.signal(signal.SIGINT, lambda *a: stop.append(1))
+    d = os.path.dirname(out)
+    procs = []
+    hit_ns, mark_ns, fired = [], [], 0
+    perfetto_teardown()
+    try:
+        # the frame mark first: perfetto records it too, so frames can be found in a snapshot
+        tw(f"{TRACEFS}/uprobe_events", f"p:{PF}/fmark {LAYER}:{marker_offset('hitch_frame_mark'):#x}\n")
+        inst = f"{TRACEFS}/instances/{PF}"
+        os.mkdir(inst)
+        tw(f"{inst}/trace_clock", "mono")
+        tw(f"{inst}/events/{PF}/fmark/enable", "1")
+        tw(f"{inst}/tracing_on", "1")
+        for name in ("traced", "traced_probes"):
+            procs.append(spawn([f"{PERFETTO}/{name}"], f"{d}/{name}.log"))
+        end = time.monotonic() + 10
+        while not os.path.exists("/tmp/perfetto-consumer") and time.monotonic() < end:
+            time.sleep(0.05)
+        rec = spawn([f"{PERFETTO}/perfetto", "--txt", "-c", cfg, "-o", out], f"{d}/perfetto.log")
+        procs.append(rec)
+        if not wait_for(f"{d}/perfetto.log", r"Connected to the Perfetto traced service|Enabled tracing", 10, rec):
+            raise RuntimeError(f"perfetto did not start: {tail(f'{d}/perfetto.log', 800)}")
+        time.sleep(1.0)		# its data sources start after it connects
+        print("perfetto: tracing", flush=True)
+        line = re.compile(rb"-(\d+)\s+\[\d+\].*?\s(\d+)\.(\d+):\s+fmark:")
+        last = {}
+        fd = os.open(f"{inst}/trace_pipe", os.O_RDONLY | os.O_NONBLOCK)
+        buf = b""
+        while not stop:
+            r, _, _ = select.select([fd], [], [], 0.1)
+            if not r:
+                continue
+            try:
+                buf += os.read(fd, 1 << 16)
+            except BlockingIOError:
+                continue
+            *lines, buf = buf.split(b"\n")
+            for l in lines:
+                m = line.search(l)
+                if not m:
+                    continue
+                tid, t = int(m.group(1)), int(m.group(2)) * 1_000_000_000 + int(m.group(3).ljust(9, b"0")[:9])
+                mark_ns.append(t)
+                if tid in last and t - last[tid] > BUDGET_US * 1000:
+                    hit_ns.append(t)
+                    subprocess.run([f"{PERFETTO}/tracebox", "trigger_perfetto", PF_TRIGGER],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    fired += 1
+                last[tid] = t
+        os.close(fd)
+    finally:
+        for p in reversed(procs):	# perfetto first: it ends the session while traced still runs
+            if p.poll() is None:
+                p.send_signal(signal.SIGINT if p is procs[-1] else signal.SIGTERM)
+                try:
+                    p.wait(timeout=30)
+                except subprocess.TimeoutExpired:
+                    p.kill()
+                    p.wait()
+        perfetto_teardown()
+        try:
+            os.unlink(out)
+        except OSError:
+            pass
+        with open(stats, "w") as f:
+            json.dump({"caught": fired, "hit_ns": hit_ns, "marks": len(mark_ns)}, f)
+
+
 ARMS = {c.name: c for c in (Arm, Hitchtrace, HitchtraceNoTimeline, HitchtraceStacks, PerfSched, PerfOffCpu,
-                            Ftrace, Offwaketime, Chaingraph, Delayacct)}
+                            Ftrace, Perfetto, Offwaketime, Chaingraph, Delayacct)}
 
 
 # ------------------------------------------------------------- bpf costs
@@ -787,12 +947,16 @@ def describe():
 def unavailable_arms():
     """Arms this machine cannot run, and why, found before any run rather than by failing."""
     out = {}
+    if not shutil.which("perf"):
+        out["perfsched"] = "no perf"
     try:
-        opts = subprocess.run(["perf", "version", "--build-options"], capture_output=True, text=True).stdout
+        opts = subprocess.run([PERF_BPF, "version", "--build-options"], capture_output=True, text=True).stdout
         if re.search(r"bpf_skeletons:\s*\[\s*OFF", opts):
-            out["perfoffcpu"] = "this perf is built without BPF skeletons, which --off-cpu needs"
+            out["perfoffcpu"] = f"{PERF_BPF} is built without BPF skeletons, which --off-cpu needs"
     except OSError:
-        out["perfoffcpu"] = out["perfsched"] = "no perf"
+        out["perfoffcpu"] = f"no {PERF_BPF}"
+    if not all(os.access(f"{PERFETTO}/{b}", os.X_OK) for b in ("traced", "traced_probes", "perfetto", "tracebox")):
+        out["perfetto"] = f"no Perfetto binaries in {PERFETTO}"
     if not shutil.which("offwaketime-bpfcc"):
         out["offwaketime"] = "no offwaketime-bpfcc (bpfcc-tools)"
     elif not os.path.isdir(f"/lib/modules/{os.uname().release}/build"):
@@ -835,6 +999,8 @@ def attach(tool, pid, d, seconds):
         abandon(arm)
         if tool == "ftrace":
             Ftrace.teardown()
+        if tool == "perfetto":
+            perfetto_teardown()
         with open(f"{d}/tool.json", "w") as f:
             json.dump(res, f)
         chown_tree(d)
@@ -893,10 +1059,14 @@ def main():
     ap.add_argument("--attach", nargs=4, metavar=("TOOL", "PID", "DIR", "SECONDS"),
                     help="trace PID with one tool for SECONDS and keep its output in DIR (for tools/catch)")
     ap.add_argument("--ftrace-drain", nargs="+", help=argparse.SUPPRESS)
+    ap.add_argument("--perfetto-run", nargs=3, help=argparse.SUPPRESS)
     args = ap.parse_args()
 
     if args.ftrace_drain:
         ftrace_drain(args.ftrace_drain[0], args.ftrace_drain[1], text=args.ftrace_drain[2:] == ["text"])
+        return 0
+    if args.perfetto_run:
+        perfetto_run(*args.perfetto_run)
         return 0
 
     if not is_root and not args.no_root:
@@ -970,6 +1140,7 @@ def main():
             sysctl_set("kernel.bpf_stats_enabled", old_stats)
             sysctl_set("kernel.task_delayacct", old_delayacct)
             Ftrace.teardown()
+            perfetto_teardown()
         chown_tree(out)
 
     print()
