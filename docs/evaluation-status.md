@@ -12,7 +12,7 @@ far. Updated 2026-11-06.
 | It's cheap enough for long sessions | Overhead against no tool and existing tools | **Pilot only**, in a VM ([below](#pilot-overhead-against-existing-tools)); bare metal not started |
 | It catches what others miss | Same rare hitches, same machine, hitchtrace vs existing tools | **Run once in the VM** on five case studies, eight tools ([below](#run-does-hitchtrace-catch-what-others-miss)); real software not started |
 | It finds the cause without being told | Blind diagnosis | Not started |
-| This class of hitch matters | Share of real hitches that are kernel-observable | Not started (the draft's Q8) |
+| This class of hitch matters | Share of real hitches that are kernel-observable | Not started (the paper's Q4) |
 | It tells us something new | A finding nobody had measured | Not started |
 
 Everything so far ran on the development VM (Hyper-V, 10 vCPUs of an
@@ -413,8 +413,8 @@ runs; Perfetto in a session long enough to fill its ring.
   perf sched's write interference.
 - Real software on bare metal (Proton and native free titles), then the
   catch-what-others-miss comparison on the same rare hitches.
-- Blind diagnosis, and the prevalence study (Q8).
+- Blind diagnosis, and the prevalence study (the paper's Q4).
 - Perfetto in a session long enough to fill its ring, for its output per
-  hitch at steady state; and the per-event threshold sweep the paper's Q4
-  asks for (`thousand_cuts` under `perf record --off-cpu-thresh` at several
+  hitch at steady state; and the per-event threshold sweep the paper's TODO on
+  many small waits asks for (`thousand_cuts` under `perf record --off-cpu-thresh` at several
   thresholds), now that a perf with BPF skeletons is built.

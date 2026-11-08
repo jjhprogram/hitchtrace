@@ -2,35 +2,46 @@
 \label{sec:background}
 
 \subsection{Frames, Budgets and Hitches}
+\label{sec:frames}
 
-A game renders a frame and hands it to the display through a present call,
+A game hands each frame to the display through a present call,
 \texttt{vkQueuePresentKHR} in Vulkan. The interval between consecutive
-presents is the frame time, the same quantity PresentMon reports as
+presents is the frame time, the quantity PresentMon reports as
 \texttt{MsBetweenPresents}~\cite{presentmon} and overlays such as
 MangoHud~\cite{mangohud} plot. A frame has a \emph{budget}, normally the
-display period or the game's frame cap: 16.7\,ms at 60\,Hz. A \emph{hitch}
-is a frame that exceeds its budget by enough to be seen.
+display period or the game's frame cap, and a \emph{hitch} is a frame over
+its budget. We call the thread that presents the \emph{root}: within a
+frame it is always running, preempted, waiting for a CPU, or blocked, so
+its states partition the frame time. A \emph{stall} is time the root
+spends off-CPU or inside a kernel stall path (a page fault, reclaim,
+compaction), other than waiting inside present. That exception matters:
+under a FIFO (vsync) present mode the display paces the game, so a healthy
+frame spends much of its time blocked in or around present, and that wait
+is pacing, not a stall. A hitch whose overrun is mostly stalls is
+\emph{kernel-observable}. Under Proton the root is usually not the game's
+render thread but a thread of the translation layer, such as DXVK's
+submission thread, a few hand-offs away from game code. \todo{Verify the
+DXVK and vkd3d-proton present threads on the evaluation stack; cite source.}
 
-Two properties of real games complicate the picture. Under a FIFO (vsync)
-present mode the display paces the game, so a healthy frame spends much of
-its time blocked inside or around the present call; that wait is pacing,
-not a stall. And under Proton, the thread that calls
-\texttt{vkQueuePresentKHR} is usually not the game's render thread but a
-translation-layer thread such as DXVK's submission thread, a few hand-offs
-away from game code. \todo{Verify the DXVK and vkd3d-proton present threads
-on the evaluation stack; cite source.}
+\label{sec:example}
+A frame can miss its budget without the game doing more work: a lock
+holder is preempted, an allocation enters direct reclaim, an asset read
+waits on slow storage, or another process takes the CPU. Our case-study
+program (\autoref{sec:eval-cases}) shows the last of these. It is a small
+Vulkan game, a main thread and three workers that draw the frame, and
+every frame it makes 30 blocking request-and-reply calls to a server
+process, as a game under Wine calls wineserver; the calls normally take
+about 2\,ms in all. When a background program burns CPU on the server's
+core, the same 30 calls take 8.9\,ms, and the frame takes 23.5\,ms against
+a 20.8\,ms budget. The game's own profiler can only say that the calls got
+slower. Nothing in the game or the server ran longer: the server, woken by
+each request, found its CPU taken and waited in the run queue behind the
+other program. The missing time is time threads spent \emph{off} the CPU,
+and its cause is in another process. Explaining such a hitch takes what
+happened off the CPU, on the root and on the threads it waited for.
 
-\paragraph{Loader bypass} The Vulkan loader exports \texttt{vkQueuePresentKHR},
-but applications that resolve device functions through
-\texttt{vkGetDeviceProcAddr} receive a pointer into the first layer or the
-driver and never call the export~\cite{vulkan-loader}. On our development
-machine \texttt{/usr/bin/vkcube} imports no \texttt{vk*} symbol at all.
-A tool that places a uprobe on the loader's symbol therefore counts zero
-presents for exactly the applications that matter. An implicit layer, in
-contrast, sits in the device dispatch chain however the application obtained
-its pointers.
-
-\subsection{Off-CPU Time and Wakeup Chains}
+\subsection{Off-CPU Analysis and Wakeup Chains}
+\label{sec:offcpu}
 
 A thread that is not running is either \emph{runnable} (preempted, or woken
 and waiting for a CPU) or \emph{blocked} (sleeping until an event). Linux
@@ -40,28 +51,23 @@ CPU switches from one task to another and reports the outgoing task's state;
 the waker's context. Off-CPU analysis~\cite{gregg-offcpu} times the blocked
 intervals and attributes them to the blocking stack; off-wake and chain-graph
 analysis~\cite{gregg-chaingraph} additionally records who woke the blocked
-thread, and who woke that waker. Gregg's 2016 chain-graph prototype was
-limited by the eBPF of the time to kernel stacks and short chains, and noted
-that latency outliers were not yet addressed.
+thread, and who woke that waker. In the example above, the wait is the
+main thread's, the waker is the server, and the cause is what kept the
+server waiting. Gregg's 2016 chain-graph prototype was limited by the eBPF
+of the time to kernel stacks and short chains, and left latency outliers
+unaddressed.
 
 Chains are also the basis of critical-path analysis over kernel traces:
 Giraldeau and Dagenais recover the wait dependencies of a task recursively
 across threads and hosts~\cite{giraldeau2016wait}, wPerf builds a wait-for
-graph to find bottleneck waiting events~\cite{zhou2018wperf}, and Perfetto
+graph to find bottleneck waiting events~\cite{zhou2018wperf}, Perfetto
 ships an offline critical-path library over its thread-state
-tables~\cite{perfetto-critpath}. All of these operate offline, over a full
-trace.
-
-\paragraph{Interrupt context} \texttt{sched\_waking} runs in the waker's context,
-but when the wakeup comes from an interrupt, \texttt{current} is whichever
-task the interrupt happened to land on. Recording it as the waker produces a
-false attribution and, worse, splices that bystander's unrelated history
-into the chain. Detecting interrupt context requires the preemption count,
-which on x86-64 is a per-CPU variable, and, because softirqs run on
-interrupt exit after the hardirq bits are cleared, an explicit marker for
-execution inside \texttt{irq\_exit\_rcu()} (\autoref{sec:chain}).
+tables~\cite{perfetto-critpath}, and Windows' wait analysis does the same
+over ETW traces~\cite{ets-wait-analysis}. All of these operate offline, over
+a full trace.
 
 \subsection{eBPF}
+\label{sec:ebpf}
 
 eBPF lets user-supplied programs, verified for safety at load
 time~\cite{gershuni2019verifier}, run at kernel hooks: tracepoints
@@ -71,5 +77,5 @@ and user-space probes (uprobes). Programs keep state in maps, including
 task~\cite{bpf-task-storage}, and send records to user space through a ring
 buffer~\cite{bpf-ringbuf}. CO-RE relocations let one object load on many
 kernels~\cite{bpf-core}. The verifier imposes the constraints that shape
-\sys's design: a 512-byte stack, bounded loops, a limit of one million
-verified instructions, and constant-size memory copies.
+\sys's implementation: a 512-byte stack, bounded loops, a limit of one
+million verified instructions, and constant-size memory copies.

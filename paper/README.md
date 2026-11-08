@@ -6,8 +6,8 @@ GSan paper template: `main.tex` holds the preamble and inputs one file per secti
 ## Layout
 
 - `main.tex`: preamble, macros, title, section order.
-- `00_abstract.tex` … `08_conclusion.tex`: one file per section. `08_discussion.tex` is input
-  before `07_related.tex`, as in the template.
+- `00_abstract.tex` … `09_conclusion.tex`: one file per section, in order (`07_discussion.tex`
+  comes before related work, as in the template).
 - `Fig/`: figure sources (TikZ/pgfplots, and the record in Figure 3), input from the section files.
 - `Table/`: table bodies, input from the section files, plus the generated
   `hitchbench_table.tex` and `hitchbench_macros.tex`.

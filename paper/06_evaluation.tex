@@ -1,48 +1,42 @@
 \section{Evaluation}
 \label{sec:eval}
 
-We evaluate \sys by asking:
+We evaluate four claims:
 \begin{enumerate}[\bfseries {Q}1]
-\item Does \sys record exactly the over-budget frames? (\autoref{sec:eval-accuracy})
-\item Does the partition attribute an injected stall to the right cause? (\autoref{sec:eval-accuracy})
-\item Does chain resolution separate kernel stalls from waiting on work? (\autoref{sec:eval-chain})
-\item Does frame-scoped accounting capture hitches made of many small stalls? (\autoref{sec:eval-cuts})
-\item Does the cause gate reject hitches that are not kernel-observable? (\autoref{sec:eval-gate})
-\item Do the records explain the mechanisms behind reported stutters, and
-  what can they not say? (\autoref{sec:eval-cases})
-\item When hitches are rare, which tools record them, attribute them, and
-  name the culprit? (\autoref{sec:eval-catch})
-\item What does always-on tracing cost, and how does output scale? (\autoref{sec:eval-overhead})
-\item How common are kernel-observable hitches in Linux games? (\autoref{sec:eval-prevalence})
+\item \emph{The records are right}: \sys records exactly the over-budget
+  frames and names the cause, on injected stalls
+  (\autoref{sec:eval-accuracy}) and on reproduced stutters
+  (\autoref{sec:eval-cases}).
+\item \emph{It catches what other tools miss} when hitches are rare
+  (\autoref{sec:eval-catch}).
+\item \emph{It can stay on}: its cost and output allow tracing a whole
+  session (\autoref{sec:eval-overhead}).
+\item \emph{The problem matters}: kernel-observable hitches are common in
+  Linux games (\autoref{sec:eval-prevalence}).
 \end{enumerate}
 
 \paragraph{Setup} The results in this draft come from a development virtual
 machine: Hyper-V on an Intel Core i7-12700H host, 10 vCPUs, 7\,GB of memory,
-Ubuntu 24.04.5 with Linux 7.0 (\texttt{PREEMPT\_LAZY}; Ubuntu's 7.0.0-31 to
-7.0.0-42 kernels over the course of this work, and 7.0.0-42 for the \bench
-run below), and
-Mesa 25.2.8 with lavapipe~\cite{lavapipe}, the only Vulkan device the VM
-exposes. The VM has no PMU. Its timing is not representative of a gaming
-machine, so we use it only for questions whose answer does not depend on
-absolute timing (Q1--Q7), and report Q8 from it as a pilot. Bare-metal
-overhead, real titles and Q9 require a GPU and are planned on
+Ubuntu 24.04.5 with Linux 7.0 (\texttt{PREEMPT\_LAZY}; 7.0.0-31 to 7.0.0-42
+over the course of this work, 7.0.0-42 for \bench), and Mesa 25.2.8 with
+lavapipe~\cite{lavapipe}, the only Vulkan device the VM exposes. Its timing
+is not representative of a gaming machine, so we use it for Q1 and Q2,
+whose answers do not depend on absolute timing, and report Q3 from it as a
+pilot. Bare-metal overhead, real titles and Q4 are planned on
 \tbd{[evaluation machine: AMD Ryzen 7 PRO 8700GE with Radeon 780M,
 Deck-class limits imposed with cgroups]}.
 
-\subsection{Frame Capture and Attribution Accuracy}
+\subsection{Q1: Injected Stalls}
 \label{sec:eval-accuracy}
 
-\paragraph{Benchmark} \bench is a synthetic game loop. Its root thread burns a
-calibrated slice of CPU each frame, hands a job to a worker and waits for it
-on a futex, then presents: the frame marker is called at present entry, the
-thread sleeps to the frame deadline, and the present-return marker is called
-after. The loop paces to 14.6\,ms so that healthy frames stay under a
-16.7\,ms budget. Every twentieth frame it runs one injector that stalls the
-frame through a single kernel mechanism, and it logs every frame's id,
-duration, injection and expected bucket as JSON. We run each of
-\hbnClasses\ injector classes and one uninjected baseline for eight seconds
-with \sys attached for five, and join records to ground truth on frame id.
-Frames that straddle the start or end of tracing are excluded.
+\bench is a synthetic game loop. Its root burns a calibrated slice of CPU
+each frame, hands a job to a worker and waits for it on a futex, then
+presents and sleeps to the frame deadline, pacing to 14.6\,ms against a
+16.7\,ms budget. Every twentieth frame one injector stalls the frame
+through a single kernel mechanism, and the loop logs each frame's duration
+and injection as ground truth. We run each of \hbnClasses\ injector classes
+and an uninjected baseline for eight seconds with \sys attached for five,
+and score the frames traced from end to end.
 
 \begin{table*}[t]
 \centering
@@ -52,50 +46,28 @@ Frames that straddle the start or end of tracing are excluded.
 group}: the record's first-ranked stall group has the expected cause; on-CPU
 classes have no group (--). \emph{Longest stall / excess}: the root's single
 longest stall interval as a fraction of the frame's overrun, the most a
-per-stall threshold could see. \emph{Share}: the root's kernel-observable
-time (all buckets but \bucket{oncpu} and \bucket{block\_present}) over the
-overrun, as the prototype's in-kernel gate computes it. \emph{Resolved gate}: the same
-with time spent waiting on a running task subtracted, computed offline from
-the records. Generated by \texttt{plot/src/hitchbench\_results.py}.}
+per-stall threshold could see. \emph{Share}: the root's stall time over the
+overrun, as the prototype's in-kernel gate computes it. \emph{Resolved
+gate}: the same with time spent waiting on a running task subtracted,
+computed offline from the records. Generated by
+\texttt{plot/src/hitchbench\_results.py}.}
 \label{tab:bench}
 \end{table*}
 
-\paragraph{Q1: exactly the over-budget frames} Across the \hbnRuns\ runs, \bench
-logged \hbtotFrames\ fully traced frames, of which \hbtotOver\ exceeded the
-budget. \sys emitted exactly one record for each of them and none for any
-frame within budget (\hbtotMiss\ missed, \hbtotExtra\ extra). Its frame
-times agree with \bench's own to within \hbmaxDtUs\,$\mu$s. In the
-uninjected baseline, \hbbaselineOver\ of \hbbaselineFrames\ frames
-exceeded the budget, and \sys emitted \hbbaselineRecords\ records.
-
-\paragraph{Q2: the right cause} \autoref{tab:bench} and
-\autoref{fig:breakdown} show the result per class. Every injected frame
-was recorded, and the largest bucket of the root's partition named the
-injected mechanism in \hbtotMatch\ of \hbtotInj. The two classes that fall
-short are informative rather than wrong. In \texttt{fault}, the injector
-touches a burst of fresh pages; \sys carves a median \hbfaultoncpufault\,ms
-out of on-CPU time as \bucket{oncpu\_fault}, but the loop that touches the
-pages runs \hbfaultoncpu\,ms of user code of its own, so plain
-\bucket{oncpu} stays larger. In \texttt{io}, the cold read spends a median
-\hbioblockio\,ms in I/O wait but also \hbiooncpu\,ms on-CPU copying from the
-page cache, and in \hbioToppresent\ of \hbioCaught\ frames the present wait
-that follows exceeds the I/O on this VM's fast virtual disk. In both cases
-the mechanism is present in the record at its real size; ``largest bucket''
-is too blunt a criterion. \todo{Adopt the per-level
-diagnosis criterion (injected bucket $\geq X$\% of excess above the
-normal-frame baseline) and use \texttt{O\_DIRECT} for the I/O injector.}
-
-\paragraph{Which stall the record leads with} A record ranks the root's stall
-groups (\autoref{sec:groups}) by total time and explains each through its
-chain. Over the \hbtotRank\ injected frames of the classes whose cause is an
-off-CPU wait (the on-CPU classes \texttt{fault} and \texttt{cpu\_spike} have
-no group), the first group had the injected cause in \hbtotTop. The misses
-are the \texttt{io} frames above, where the present wait's group outweighs
-the I/O's. Replaying on the same records the rule \sys used before stall
-groups, which explained the root's longest single blocked interval, gives
-\hbtotOld: it fails every \texttt{preempt} frame, because a preemption is not
-a blocked interval, and every \texttt{thousand\_cuts} frame, because no
-single sleep is long.
+\paragraph{Exactly the over-budget frames, and their cause} Of
+\hbtotFrames\ traced frames, \hbtotOver\ exceeded the budget, and \sys
+emitted exactly one record for each and none for any other (frame times
+within \hbmaxDtUs\,$\mu$s of \bench's own). The largest bucket of the
+root's partition named the injected mechanism in \hbtotMatch\ of
+\hbtotInj\ injected frames (\autoref{tab:bench}, \autoref{fig:breakdown}).
+The misses are blunt-criterion misses, not wrong records: in \texttt{fault}
+the \hbfaultoncpufault\,ms carved out as fault time is smaller than the
+\hbfaultoncpu\,ms of user code that touches the pages, and in
+\hbioToppresent\ of \hbioCaught\ \texttt{io} frames the present wait after
+the read exceeds the \hbioblockio\,ms of I/O on this VM's fast disk.
+\todo{Adopt the per-level diagnosis criterion (injected bucket $\geq X$\%
+of excess above the normal-frame baseline) and use \texttt{O\_DIRECT} for
+the I/O injector.}
 
 \begin{figure}[t]
 \centering
@@ -106,102 +78,69 @@ injected frames). Each bar sums to the frame time; the dashed line is the
 \label{fig:breakdown}
 \end{figure}
 
-\subsection{Chain Resolution}
-\label{sec:eval-chain}
-
-\paragraph{Q3} Two classes produce the same symptom on the root, a futex wait of
-about 20\,ms on the worker, for opposite reasons. In
-\texttt{worker\_block} the worker is itself blocked, reading a pipe that a
-feeder thread writes after a 20\,ms sleep. In \texttt{worker\_cpu} the worker
-simply computes for 20\,ms. By bucket the two are indistinguishable
-(\autoref{tab:bench}). By resolution they are opposites: for
-\texttt{worker\_block}, a median \hbworkerblockInherited\,ms of the wait is
-inherited and \hbworkerblockWaitOncpu\,ms is waiting on a running task; for
-\texttt{worker\_cpu}, \hbworkercpuInherited\,ms and \hbworkercpuWaitOncpu\,ms.
-The chain for \texttt{worker\_block} is
-\hbworkerblockChain\ in \hbworkerblockChainN\ frames: the worker, the feeder
-the worker was waiting on, and the timer interrupt that ended the feeder's
-sleep. For \texttt{poll}, where the root waits in \texttt{epoll\_wait} for
-the feeder directly, \hbpollInherited\,ms is inherited through
-\hbpollChain.
-
-This is the distinction a per-cause total cannot make and the reason \sys
-resolves waits online: a futex wait on a stalled thread is a kernel stall
-one hop away, while a futex wait on a busy thread is the game's own CPU
-work, out of scope, and should not count as a kernel stall.
-
-\texttt{server\_queued} has the same symptom again, for a third reason:
-the thread the root waits on loses its CPU without being preempted. The root
-waits on a condition variable for a reply from a server thread that runs at
-the lowest priority and is asleep when three CPU hogs take its CPU; woken,
-it waits about 20\,ms in the run queue behind them. It is never preempted, so there is no preemptor to name. Its
-hop records that it was kept runnable, with \hbserverqueuedInherited\,ms of
-the root's wait inherited, and names the task that held its CPU when it
-finally ran, flagged \emph{queued}: a hog in \hbserverqueuedHolder\ frames.
-The one miss is the first injected frame after \sys attached. The server had
-gone to sleep before the attach, so \sys holds no off-CPU interval for it,
-and the root's wait resolves as waiting on a running task. Only the last
-holder is named; another task that held the CPU earlier in the same wait is
-not.
-
-\subsection{Hitches Made of Many Small Stalls}
+\paragraph{Many small waits}
 \label{sec:eval-cuts}
+\texttt{thousand\_cuts} makes the root sleep about forty times for
+0.5\,ms. Its longest single stall covers \hbthousandcutsWorstFrac\ of the
+overrun, against \hbsingleFracLo--\hbsingleFracHi\ for classes that inject
+one wait, so a per-event filter above 0.5\,ms emits nothing for these
+frames and one below it emits a stream for every normal frame. Grouped, the
+sleeps are one stall of a median \hbthousandcutsTopGroupCount\ waits, ranked
+first in \hbthousandcutsTop\ frames. Over all \hbtotRank\ injected frames
+whose cause is an off-CPU wait, the first-ranked group had the injected
+cause in \hbtotTop; explaining the longest single blocked interval, as \sys
+did before stall groups, gives \hbtotOld, failing every
+\texttt{thousand\_cuts} frame and every \texttt{preempt} frame, since a
+preemption is not a blocked interval. \todo{Run \texttt{perf record
+--off-cpu-thresh} on the same schedule and report capture rate against
+threshold, sweeping stall size and count.}
 
-\paragraph{Q4} The \texttt{thousand\_cuts} injector makes the root sleep
-about forty times for 0.5\,ms each. Every injected frame was recorded with
-the timer bucket largest, a median of \hbthousandcutsNstalls\ stalls in the
-frame, and a longest single stall covering only \hbthousandcutsWorstFrac\
-of the overrun, against \hbsingleFracLo--\hbsingleFracHi\ for the classes
-that inject one wait. The sleeps form one stall group, a median of
-\hbthousandcutsTopGroupCount\ waits, ranked first in
-\hbthousandcutsTop\ frames. A per-event
-filter at any threshold above 0.5\,ms emits nothing for these frames by
-construction, and one below it emits a comparable stream for every normal
-frame. \todo{Run \texttt{perf record --off-cpu --off-cpu-thresh} and the
-ftrace per-stall synthetic event on the same schedule and report capture
-rate vs.\ threshold (M2), and sweep stall size and count.}
+\paragraph{Same symptom, opposite causes}
+\label{sec:eval-chain}
+In \texttt{worker\_block} and \texttt{worker\_cpu} the root waits about
+20\,ms on a futex for a worker. In the first the worker is itself blocked,
+reading a pipe that a feeder writes after a 20\,ms sleep; in the second it
+computes. By bucket the two are the same; by resolution they are opposites:
+\hbworkerblockInherited\,ms inherited against \hbworkerblockWaitOncpu\,ms
+waiting on a running task, and \hbworkercpuInherited\,ms against
+\hbworkercpuWaitOncpu\,ms. The chain for \texttt{worker\_block} is
+\hbworkerblockChain\ in \hbworkerblockChainN\ frames. In
+\texttt{server\_queued} the worker is a server thread at the lowest priority
+that is asleep when three CPU hogs take its CPU; woken, it waits about
+20\,ms behind them without being preempted. Its hop names a hog as the
+CPU's last holder, flagged \emph{queued}, in \hbserverqueuedHolder\ frames;
+the miss is the first frame after attach, where the server had gone to
+sleep before \sys could see it.
 
-\subsection{Cause Gating}
+\paragraph{Cause gating}
 \label{sec:eval-gate}
+Two classes are over budget without a kernel stall: \texttt{cpu\_spike}
+burns 25\,ms of CPU and \texttt{present\_long} lengthens the present wait.
+The prototype's gate at $\sigma=0.5$ rejects both in every frame (median
+share \hbcpuspikeShare\ and \hbpresentlongShare) and passes every positive
+class, but it also passes \texttt{worker\_cpu} (share \hbworkercpuShare),
+because it counts the root's futex wait whether or not the worker was
+stalled. Subtracting the waiting on a running task that \sys already
+resolves drops \texttt{worker\_cpu} to \hbworkercpuRShare\ and rejects it
+in every frame, while every positive class still passes in every frame but
+the \texttt{server\_queued} frame above. On \texttt{vkcube} under lavapipe,
+which rasterizes inside present, 96.8\% of the recorded time was
+\bucket{block\_present}; without the present bracket the same waits appear
+as \bucket{block\_poll} in every record, so the bracket is what keeps display
+pacing from counting as a stall. The few frames that pass the gate there are
+over budget by a median 147\,$\mu$s, jitter that passes a ratio test
+because the denominator is tiny. \todo{Move the resolved gate into the BPF
+program, add a minimum-overrun floor, and re-run.}
 
-\paragraph{Q5} Two classes are negative controls, over budget for reasons that
-are not kernel stalls: \texttt{cpu\_spike} burns 25\,ms of CPU on the root,
-and \texttt{present\_long} lengthens the present wait. The prototype's gate
-at $\sigma=0.5$ rejects both in every frame (median share
-\hbcpuspikeShare\ and \hbpresentlongShare) and passes every positive class.
-It also passes \texttt{worker\_cpu} (share \hbworkercpuShare), because the
-gate counts the root's futex wait whether or not the thread it waited for
-was stalled. Subtracting the resolved \textit{wait\_oncpu} time, which \sys
-already computes, drops \texttt{worker\_cpu} to \hbworkercpuRShare\ and
-rejects it in every frame (\hbworkercpuRGated\ pass), while every positive
-class still passes in every frame but one: the first \texttt{server\_queued}
-frame after attach, whose wait resolves as waiting on a running task
-(\autoref{sec:eval-chain}; \autoref{tab:bench}, last column).
-\todo{Move the resolved gate into the BPF program and re-run.}
-
-\paragraph{vkcube} We also ran \sys on \texttt{vkcube-wayland} under lavapipe,
-which rasterizes inside the present call. With the present bracket and no
-cause gate, 98 of 210 frames (46.7\%) exceeded 16.7\,ms; in their records
-96.8\% of the time was \bucket{block\_present}, with \texttt{gnome-shell}
-named as the waker in 97 of 98, and a median of only 12\% of the overrun was
-kernel-observable. With $\sigma=0.5$, 25 of 479 frames (5.2\%) were emitted.
-Without the bracket, the same waits appear as \bucket{block\_poll} (86\% of
-recorded time) in every one of 223 records: the bracket is what keeps
-display pacing from being reported as a stall. The frames that survive the
-gate have a median overrun of only 147\,$\mu$s, sub-millisecond jitter that
-passes a ratio test easily because the denominator is tiny.
-\todo{Add a minimum-overrun floor to the gate.}
-
-\subsection{Case Studies}
+\subsection{Q1: Reproduced Stutters}
 \label{sec:eval-cases}
 
-\paragraph{Q6} \bench injects each cause into its own frame loop. To test the
-records on causes that come from outside the game, we reproduce the
-mechanisms behind documented Linux gaming stutters around one unmodified,
-game-shaped Vulkan program. It has a main thread (frame limiter, simulation,
-job submission, upload, present) and three workers that draw the frame in
-software, runs at a 60\,fps cap on four CPUs, and has no injectors; a hitch
-is a frame over 20.8\,ms. Something else on the machine supplies each cause:
+To test the records on causes that come from outside the game, we
+reproduce the mechanisms behind documented Linux gaming stutters around the
+game of \autoref{sec:example}, which has no injectors: its main thread runs
+the frame limiter, simulation and present, three workers draw the frame,
+it runs at a 60\,fps cap on four CPUs, and a hitch is a frame over
+20.8\,ms. Something else on the machine supplies each cause:
 a background program that wakes periodically and burns CPU, another program
 reading from a bandwidth-limited disk, a cgroup memory limit, a shim that
 raises the frame limiter's timer slack, a server process the game calls 30
@@ -250,34 +189,28 @@ the noise frames. In case 8, reclaim inside a page fault was counted twice,
 as reclaim and as fault time. In case 5 the server was never preempted, so
 no record could say who held its CPU; with the queued holder, records name
 the background program in 163 of 167 burst frames, and in the other four a
-kernel worker that ran just before the server. Stall groups matter most in
-case 3: a walk faults 64 pages back from swap, none of them waiting longer
-than about 0.7\,ms. Summed, the swap-in is the largest stall in every frame,
-but the longest single wait was a swap-in in only 8 to 15\% of them. The
-group's count equals the kernel's major-fault count for the thread, frame by
-frame, in 99 to 100\% of frames.
+kernel worker that ran just before the server. In case 3 the swap-in's 64
+short waits form one group whose count equals the kernel's major-fault
+count for the thread, frame by frame, in 99 to 100\% of frames.
 
-\paragraph{Ranking by total is not enough} A frame's normal waits are large: the
-main thread waits about 10\,ms for its workers and sleeps about 6\,ms in its
-limiter every frame. A short load's I/O group therefore ranks first by
-total in only 66 to 71\% of load frames, and a swap-in's in 33 to 60\%. The
-offline ranking by stall time puts the right group first in 81 to 100\%. We
+\paragraph{Ranking by total is not enough} Because of the frame's normal
+waits (C3), a short load's I/O group ranks first by total in only 66 to
+71\% of load frames, and a swap-in's in 33 to 60\%. The offline ranking by
+stall time puts the right group first in 81 to 100\%. We
 have not made it the record's: it would rank a late limiter sleep last, and
 case 4 shows that a late sleep is sometimes the cause. \sys measures that
 sleep exactly, 9.5\,ms against a usual 6, but cannot tell a sleep that
 overshot from one that was asked to be long.
 
 \paragraph{What a record cannot say} The last column of \autoref{tab:cases} is
-a list of what \sys would have to record next, and \autoref{sec:limitations}
-collects it. Faults, reclaim and compaction (cases 8 and 9) are measured but
-never ranked, because on-CPU kernel time forms no group.
+a list of what \sys would have to record next (\autoref{sec:limitations}).
 
-\subsection{Catching Rare Hitches}
+\subsection{Q2: Rare Hitches, Eight Tools}
 \label{sec:eval-catch}
 
-\paragraph{Q7} When a game hitches rarely, which tools' output shows each hitch,
-and which shows its cause? We wrote down the protocol and its scoring rules
-before the first run; three changes after short check runs, and one after
+When a game hitches rarely, which tools' output shows each hitch, and which
+shows its cause? We wrote down the protocol and its scoring rules before
+the first run; three changes after short check runs, and one after
 the measured run, are recorded with their reasons in the repository. Five of
 the case studies are made rare, one injection every 10\,s for 120\,s:
 \texttt{bgcpu}, \texttt{iothread} (the main thread waits for a streaming
@@ -380,10 +313,10 @@ no GPU stalls, and runs too short to fill Perfetto's ring. A sweep of
 rarities would show how quickly the summary tools' ranks fall; we have not
 run it.
 
-\subsection{Overhead and Output Volume}
+\subsection{Q3: Overhead and Output Volume}
 \label{sec:eval-overhead}
 
-\paragraph{Q8} We measured the cost of always-on tracing as a pilot in the VM.
+We measured the cost of always-on tracing as a pilot in the VM.
 The tools are those of \autoref{sec:eval-catch} except delay accounting
 (below), and \sys also without its interval log. perf \texttt{--off-cpu} and
 Perfetto were measured later, each in a pilot of its own with \sys
@@ -423,24 +356,20 @@ takes the user stack at every switch-out and keeps perf's usual on-CPU
 sampling, cost the uncapped game 5.5\% of its frame rate (95\% interval
 1.5 to 9.3\%).
 
-\paragraph{\sys is not cheaper} Per context switch it is among the more
-expensive tools (\autoref{tab:overhead}): about 480\,ns on the traced
-process, where only \texttt{offwaketime} costs more, and perf
-\texttt{--off-cpu}, about three times \sys in its own run; and among the
-most on other processes, about 410\,ns against \texttt{chaingraph}'s 18 and
-\texttt{perf sched}'s 73, level with perf \texttt{--off-cpu} in its run.
-Perfetto costs almost nothing per switch, like the ftrace recorder, since
-the kernel only writes each event into a ring; its work is done in user
-space, where reading and encoding the events took 1.0 to 2.3\% of a core,
-about what \sys's BPF programs take in the kernel (1.8\% in the same run). The reason is deliberate: it keeps a history for
-every task on the machine, because a chain can run through any process
-(\autoref{sec:limitations}). Its in-kernel time on the game is level with
-\texttt{chaingraph}'s and about twice \texttt{offwaketime}'s; its switch
-hook takes about 600\,ns per call there and its wakeup hook about 700\,ns.
-The queued holder adds a few comparisons per switch and writes only after a
-run-queue wait of at least 100\,$\mu$s; rerunning the pipe workloads after it
-(three runs) gave 70 to 880\,ns per switch on another process across three
-variants that run the same hook, so no change could be resolved.
+\paragraph{\sys is not cheaper} Per context switch it costs about 480\,ns
+on the traced process and 410\,ns on others (\autoref{tab:overhead}). Only
+\texttt{offwaketime} and perf \texttt{--off-cpu} (about three times \sys in
+its run) cost more on the traced process, and only perf \texttt{--off-cpu},
+level with \sys in its run, costs as much on others. The reason is
+deliberate: \sys keeps a history for every task on the machine, because a
+chain can run through any process (\autoref{sec:limitations}). Its
+in-kernel time on the game is level with \texttt{chaingraph}'s and about
+twice \texttt{offwaketime}'s. Perfetto, like the ftrace recorder, costs
+almost nothing per switch, since the kernel only writes each event into a
+ring; its work is in user space, where reading and encoding the events
+took 1.0 to 2.3\% of a core, about what \sys's BPF programs take in the
+kernel (1.8\% in the same run). The queued holder added no cost that this
+VM could resolve.
 
 \paragraph{What the cost buys} \sys's output is a few hundred times smaller than
 \texttt{perf sched}'s, the only other tool here that keeps per-frame detail
@@ -455,11 +384,11 @@ plus 72 per logged interval, so at one hitch per second \sys writes about
 40\,MB per hour, and nothing for frames within budget. The summary tools
 cost about the same as \sys but give one summary per run.
 
-\paragraph{What we claim} \sys's overhead is in the range of existing scheduler
-tracers, with no measurable effect on frame time in this VM. For that cost it
-produces a record of causes for every slow frame at a few hundred times less
-output than full tracing and misses none, so it can be left on for hours of
-play. It does not have lower CPU overhead.
+\paragraph{What we claim} \sys's overhead is in the range of existing
+scheduler tracers, not below it, with no measurable effect on frame time in
+this VM. What it saves is output, a few hundred times less than full tracing
+or a flight recorder with no slow frame missed, so it can stay on for a
+whole session.
 
 \paragraph{Not yet measured} Bare metal, with ten rounds of 30\,s; a cheaper path
 for tasks outside the game, tracked fully only once they touch its wake
@@ -470,10 +399,10 @@ created, and the harness turned it on after the game had started.
 \todo{Bare-metal run with the full preset; controlled hitch rates of 0.01,
 0.1 and 1 per second; snapshot drain time and dropped snapshots.}
 
-\subsection{Prevalence in Linux Games}
+\subsection{Q4: Prevalence in Linux Games}
 \label{sec:eval-prevalence}
 
-\paragraph{Q9} \todo{Not yet measured. Plan (M0): \tbd{5} titles (Proton and
+\todo{Not yet measured. Plan (M0): \tbd{5} titles (Proton and
 native) $\times$ 3 conditions (unconstrained; Deck-class cgroup limits;
 Deck-class plus a background download and a cold shader cache), $\geq$45
 minutes each, $\sigma=0$ so every over-budget frame is recorded. Report the

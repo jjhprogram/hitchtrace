@@ -2,11 +2,32 @@
 \label{sec:design}
 
 \sys explains over-budget frames while emitting nothing for normal frames,
-with no change to the game or the kernel.
+with no change to the game or the kernel. \autoref{fig:record} is its
+record for the frame of \autoref{sec:example}: the 30 waits for the server
+form one group of 8.9\,ms, and its chain says that the server was kept off
+the CPU for 5.5\,ms, queued behind a thread of the background program.
+
+\begin{figure*}[t]
+\centering
+\input{Fig/record}
+\resizebox{\textwidth}{!}{\usebox{\recordbox}}
+\caption{A \sys record, as printed, for the frame of \autoref{sec:example};
+three thread lines are cut. The game's main thread made 30 blocking calls
+to a server process in this frame; two were slow because the server, woken,
+waited for its CPU behind a thread of a background program. The header's
+share (852\%) is what the prototype's gate weighs: it counts the frame
+limiter's sleep and the wait for workers that were running, which is why
+the resolved gate subtracts the latter (\autoref{sec:eval-gate}). The same
+record, with its interval log, is written as JSONL.}
+\label{fig:record}
+\end{figure*}
 
 \subsection{Design Overview}
 
-\autoref{fig:arch} shows the components.
+\autoref{fig:arch} shows the components. Hooks on scheduler, syscall,
+fault and interrupt events keep per-task state in task-local storage
+(\autoref{sec:ebpf}); a uprobe at each frame mark decides whether to emit a
+record through the ring buffer.
 
 \begin{figure*}[t]
 \centering
@@ -18,25 +39,30 @@ over-budget frame.}
 \label{fig:arch}
 \end{figure*}
 
-Three principles guide the design.
+Four principles answer the challenges of \autoref{sec:challenges}.
 
-\paragraph{Account on the critical thread, not the process}
+\paragraph{Account on the root, not the process (C1, C3)}
 Summing off-CPU time over all of a game's threads is unbounded: a process
 with ten parked workers accumulates ten frames' worth of off-CPU time per
-frame. \sys accounts on the \emph{root} thread, the thread that presents,
-whose timeline within the frame is a partition of the frame time. Other
-threads enter the record as context and through the chain.
+frame. \sys accounts on the root, whose states partition the frame time;
+other threads enter the record as context and through the chain.
 
-\paragraph{Build chains forward, not backward}
+\paragraph{Group waits, then explain each group (C1)}
+The root's waits are summed by cause and by who ended them, and each group
+is explained through the chain of its longest wait, so forty short waits on
+one thing count as one stall.
+
+\paragraph{Build chains forward, not backward (C2, C3)}
 Instead of recording wakeup edges and searching them when a frame goes bad,
 every task carries the chain that led to its latest wakeup, copied forward
-from its waker at wakeup time. The chain is always current, so resolving a
-wait is a lookup, not a search.
+from its waker at wakeup time, with how long that waker was itself off-CPU.
+Resolving a wait is a lookup, not a search, and it tells a stalled waker
+from a busy one.
 
-\paragraph{Decide at frame end, in the kernel}
+\paragraph{Decide at frame end, in the kernel (C1, C4)}
 All per-frame state lives in maps until the frame mark. Only then does \sys
-know whether the frame was over budget and how much of the overrun was
-kernel-observable, and only then does it reserve ring-buffer space.
+know whether the frame was over budget, and only then does it reserve
+ring-buffer space.
 
 \subsection{Frame Source}
 \label{sec:layer}
@@ -49,16 +75,19 @@ exported, non-inlined marker functions around the next layer's present,
 passing a process-global present counter as the frame id. \sys attaches a
 uprobe to each marker in the layer's shared object. The layer is inert
 unless \texttt{HITCHTRACE=1} is set; with no probe attached the markers are
-two empty calls. Because the layer lives in the dispatch chain, it sees
-presents from applications that bypass the loader (\autoref{sec:background}),
+two empty calls. A uprobe on the Vulkan loader's exported
+\texttt{vkQueuePresentKHR} would not do (C5): applications that resolve
+device functions through \texttt{vkGetDeviceProcAddr}, as volk, DXVK,
+vkd3d-proton and Wine's Vulkan bridge do, receive a pointer into the first
+layer or the driver and never call the export~\cite{vulkan-loader}; on our
+machine \texttt{vkcube} imports no \texttt{vk*} symbol at all. The layer
+sits in the dispatch chain however the application obtained its pointers,
 and because Steam's container runtime resolves a host layer to the same
 inode, a uprobe attached through the host path fires inside it.
 \todo{Confirm inside pressure-vessel on the evaluation machine; the layer
 is 64-bit only.}
 
-For programs without a layer, \sys accepts any symbol in any binary as the
-frame marker, and \texttt{-M ret:} brackets a single function with a
-uprobe and a uretprobe.
+Programs without a layer can name any symbol as the frame marker.
 
 \paragraph{Frame model} Frame $N$ runs from present entry $N-1$ to present entry
 $N$. Blocked time of the root between present entry and present return is
@@ -173,7 +202,10 @@ blocked in, and whether its wait had ended before the previous hop's began
 a waker that was running (off-CPU for less than the minimum stall,
 100\,$\mu$s), or at a waker that spent most of the wait runnable rather than
 blocked. In the last case the cause is whoever held its CPU, not whoever had
-last woken it, and the hop names that holder instead of continuing. \sys
+last woken it, and the hop names that holder instead of continuing.
+\texttt{sched\_waking} runs in the waker's context, but a wakeup from an
+interrupt runs on whichever task the interrupt landed on; taking that task
+as the waker would splice a bystander's history into the chain. \sys
 detects hardirq and NMI context from the
 per-CPU preemption count, read through two weak kernel symbols because x86
 moved the variable into and back out of a per-CPU structure between kernel
@@ -197,10 +229,8 @@ in the same wait, and not one on a CPU the task migrated from.
 \subsection{Stall Groups}
 \label{sec:groups}
 
-A frame's time is often lost in many short waits on one thing rather than
-in one long wait: forty short sleeps, a read split into many requests, a
-worker preempted in slices. Explaining only the frame's longest interval
-picks the wrong wait whenever that happens, and can never pick preemption,
+Explaining only the frame's longest interval picks the wrong wait whenever
+the time is lost in many short ones (C1), and can never pick preemption,
 which is not a blocked interval. \sys therefore groups the root's off-CPU
 intervals within the frame by cause and by who ended them: blocked intervals
 by the thread that woke the root (or by an interrupt), time spent preempted
@@ -228,7 +258,7 @@ frames, with a floor. The frame is a hitch if $f > b$. With a share $\sigma
 where \textit{stall} is the root's time in every bucket except
 \bucket{oncpu} and \bucket{block\_present}. A share of zero gates on the
 symptom alone, which is what an unbiased prevalence study needs; a share of
-0.5 says ``at least half of the overrun must be kernel-observable.''
+0.5 says ``at least half of the overrun must be stalls.''
 
 For an emitted frame, \sys reserves a 10,344-byte record in the ring buffer
 and fills it with the partition, the resolution totals, the stall groups
@@ -246,19 +276,3 @@ refers to once in a table at its end, and produces a human-readable report
 and JSONL (\autoref{fig:record}). A viewer turns the JSONL into a page
 that draws each hitch's intervals as one lane per thread, with an arrow from
 whichever thread ended each wait, beside its groups and chains.
-
-\begin{figure*}[t]
-\centering
-\input{Fig/record}
-\resizebox{\textwidth}{!}{\usebox{\recordbox}}
-\caption{A \sys record, as printed, for a frame of the \texttt{ipc} case
-study (\autoref{sec:eval-cases}); three thread lines are cut. The game's main
-thread made 30 blocking calls to a server process in this frame; two were
-slow because the server, woken, waited for its CPU behind a thread of a
-background program. The header's share (852\%) is what the prototype's gate
-weighs: it counts the frame limiter's sleep and the wait for workers that
-were running, which is why the resolved gate subtracts the latter
-(\autoref{sec:eval-gate}). The same record, with its interval log, is written
-as JSONL.}
-\label{fig:record}
-\end{figure*}

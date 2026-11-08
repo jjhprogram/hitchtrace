@@ -1,14 +1,15 @@
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}lcccccc@{}}
+\setlength{\tabcolsep}{3.4pt}
+\begin{tabular}{@{}lccccc@{}}
 \toprule
- & \textbf{Gate} & \textbf{Sub-threshold} & \textbf{Output} & \textbf{Cause} & \textbf{Cross-thread} & \textbf{Custom} \\
- & \textbf{evaluated} & \textbf{sums} & \textbf{per hitch} & \textbf{attribution} & \textbf{chain} & \textbf{kernel code} \\
+ & \textbf{C1: sums a} & \textbf{C2: follows a} & \textbf{C3: tells stalls} & \textbf{C4: output} & \textbf{Rare hitches} \\
+ & \textbf{frame's waits} & \textbf{wait to its cause} & \textbf{from normal waits} & \textbf{per hitch} & \textbf{attributed} \\
 \midrule
-Flight recorder~\cite{ftracehist,perfetto-triggers,desfossez2016latency} & frame end, symptom & raw events & whole window & manual & manual & none / module \\
-Per-event threshold~\cite{perf-offcpu-thresh,gregg2019bpf} & each stall & \xmark & per stall & stack & one hop (offwake) & BPF \\
-Delay accounting~\cite{delayacct,psi} & polled & \cmark & counters & categories, no futex & \xmark & none \\
-Per-request accounting~\cite{varmri} & request end & \cmark & one record & categories & \xmark & kernel patch \\
-Offline critical path~\cite{giraldeau2016wait,zhou2018wperf,perfetto-critpath} & offline & \cmark & full trace & \cmark & \cmark & none \\
-\textbf{\sys} & \textbf{frame end, cause} & \cmark & \textbf{one record} & \cmark & \textbf{online, bounded} & \textbf{verified BPF} \\
+Flight recorder (ftrace, Perfetto)~\cite{ftracehist,perfetto-triggers} & raw events & by hand & by hand & 15--89\,MB & -- \\
+Full trace (\texttt{perf sched}) & raw events & by hand & by hand & 25--33\,MB & -- \\
+Per-wait off-CPU samples (\texttt{perf --off-cpu})~\cite{perf-offcpu-thresh} & \xmark & \xmark & \xmark & 1.3--3.7\,MB & 10 of 80 \\
+Whole-run summaries (\texttt{offwaketime}, \texttt{chaingraph})~\cite{gregg2019bpf} & \xmark & per run & \xmark & one summary & rank 20th--absent \\
+Delay accounting, read per frame~\cite{delayacct} & \cmark & \xmark & by category & $<$0.01\,MB & 35 of 74 \\
+Offline critical path~\cite{giraldeau2016wait,zhou2018wperf,perfetto-critpath} & \cmark & \cmark & by hand & a full trace & -- \\
+\textbf{\sys} & \cmark & \textbf{online, bounded} & \textbf{partly} & \textbf{0.08--0.10\,MB} & \textbf{76 of 77} \\
 \bottomrule
 \end{tabular}

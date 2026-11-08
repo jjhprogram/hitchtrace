@@ -23,6 +23,12 @@ or held its CPU, not the one that held it longest. Once a background
 program takes cores, the game's own threads start preempting each other,
 and the last holder is sometimes one of them.
 
+\paragraph{Normal waits, told apart in part (C3)} The present bracket keeps
+display pacing out of the stalls, and resolution separates waiting for a
+running thread from inheriting a stalled one. The frame limiter's sleep is
+not told apart: a sleep that ended late looks like one that was asked to be
+long (\autoref{sec:eval-cases}, case 4).
+
 \paragraph{The gate does not yet use the resolution} The share gate weighs
 blocked time including \textit{wait\_oncpu}. \autoref{sec:eval-gate}
 shows the consequence and that subtracting it fixes it.

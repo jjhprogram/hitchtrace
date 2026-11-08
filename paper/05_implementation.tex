@@ -1,9 +1,10 @@
 \section{Implementing Under the Verifier}
 \label{sec:verifier}
 
-Expressing this design as verified BPF required several restructurings,
-which we report because they are the practical cost of in-kernel
-attribution.
+\sys is 1,828 lines of BPF C and 1,992 lines of user-space C, plus a
+689-line Vulkan layer. Expressing the design under the verifier's rules
+(\autoref{sec:ebpf}) required several restructurings, which we report
+because they are the practical cost of in-kernel attribution.
 
 \paragraph{Per-thread slots by index, not by counter} The emit path copies up to
 32 per-thread lines into the record in a bounded loop that the verifier

@@ -1,35 +1,23 @@
 \begin{abstract}
 Intermittent frame hitches are among the most visible performance defects in
-games and among the hardest to diagnose: they are rare, rarely reproducible
-on demand, and often caused outside the game, by the scheduler, the memory
-manager, storage or another process. Flight-recorder tracers can capture the
-kernel events around a missed frame, but their trigger sees only the
-symptom, every dump costs a whole trace window, and an engineer must still
-reconstruct which thread waited on whom and why. This paper presents \sys,
-an eBPF tool that explains each over-budget frame of an unmodified Linux game
-at the moment the frame ends. \sys takes frame boundaries from an implicit
-Vulkan layer, partitions the presenting thread's frame into on-CPU,
-preempted, run-queue and blocked time by kernel cause, and resolves blocked
-time online through a chain of wakeups carried in task-local storage. The
-resolution separates time the thread inherited from a stalled waker from
-time it spent waiting for a waker that was simply running, and names who
-held a stalled waker's CPU. The decision to
-emit a record is made in the kernel at frame end, so frames within budget
-cost no output at all. On a synthetic benchmark with \hbnClasses\ injected
-stall classes, \sys produced exactly one record for each of the \hbtotOver\
-over-budget frames among \hbtotFrames, and none for frames within budget;
-the largest cause bucket named the injected mechanism in \hbtotMatch\ of
-\hbtotInj\ injected frames, and chain resolution attributed
-\hbworkerblockInherited\,ms of a blocked worker's stall to the waiting
-thread versus \hbworkercpuInherited\,ms for a busy one. In ten case studies
-that reproduce the mechanisms of documented Linux gaming stutters around an
-unmodified game-shaped program, its records explained nearly every affected
-frame, and showed what they cannot yet say. On rare hitches it attributed
-76 of 77 to their cause, against 35 of 74 for kernel delay accounting and
-10 of 80 for perf's off-CPU profiler, and was the only one of eight tools to
-name the culprit, at 155 to 900 times less output than the raw recorders,
-Perfetto's flight recorder among them, that also held the frames. Its overhead is in
-the range of existing scheduler tracers, not below it.
+games and among the hardest to diagnose: they are rare, and their cause often
+lies outside the game, in the scheduler, the memory manager, storage or
+another process. Existing tools either keep raw events around each slow
+frame and leave the diagnosis to an engineer, or judge stalls one at a time
+with no notion of the frame they belong to. This paper presents \sys, an
+eBPF tool that explains each over-budget frame of an unmodified Linux game
+when the frame ends. \sys partitions the presenting thread's frame by kernel
+cause, groups its waits by who ended them, and follows each group through a
+chain of wakeups carried forward in task-local storage, separating time
+inherited from a stalled waker from time spent waiting for one that was
+running. Records are built in the kernel and emitted only for frames over
+budget. On a benchmark of \hbnClasses\ injected stall classes, \sys recorded
+exactly the \hbtotOver\ over-budget frames among \hbtotFrames; in ten case
+studies that reproduce documented Linux gaming stutters, its records
+explained nearly every affected frame. On rare hitches it was the only one
+of eight tools to attribute nearly all of them and name their culprit, at
+155 to 900 times less output than the raw recorders that also held them,
+for a per-switch cost in the range of existing scheduler tracers.
 \tbd{[Results on Proton titles and the prevalence of kernel-observable
 hitches go here.]}
 \end{abstract}
