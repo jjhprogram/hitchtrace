@@ -49,7 +49,7 @@ static QLabel *hint(const QString &text)
 
 MainWindow::MainWindow(Session *session, QWidget *parent) : QMainWindow(parent), session_(session)
 {
-	setWindowTitle(tr("Hitchtrace Explorer"));
+	setWindowTitle(tr("hitchtracegui"));
 	setAcceptDrops(true);
 	setDockOptions(AnimatedDocks | AllowNestedDocks | AllowTabbedDocks);
 
@@ -317,7 +317,7 @@ void MainWindow::refresh()
 	} else {
 		waitBar_->hide();
 	}
-	setWindowTitle(tr("%1 – Hitchtrace Explorer").arg(r->title));
+	setWindowTitle(tr("%1 – hitchtracegui").arg(r->title));
 }
 
 void MainWindow::closeEvent(QCloseEvent *e)

@@ -4,7 +4,7 @@ The test game from the case studies, as an app of its own. Pick a case, press
 Start, and the game runs with that case's cause of hitches around it: a
 program competing for its cores, a slow shared disk, a memory limit, a late
 timer, a server it calls that can't get a CPU, and so on. Then record it with
-Hitchtrace Explorer like any other game.
+hitchtracegui like any other game.
 
 ## Build and run
 
@@ -13,15 +13,15 @@ Needs Qt 6, CMake, Vulkan and XCB headers (on Ubuntu 24.04:
 
 ```sh
 make layer layer-install                 # once: the Vulkan layer that marks frames
-cmake -S hitchlab -B build/hitchlab -G Ninja && cmake --build build/hitchlab
-cmake -S gui -B build/gui -G Ninja && cmake --build build/gui   # the explorer, to record with
+cmake -S cases/hitchlab -B build/hitchlab -G Ninja && cmake --build build/hitchlab
+cmake -S src/hitchtracegui -B build/hitchtracegui -G Ninja && cmake --build build/hitchtracegui   # to record with
 build/hitchlab/hitchlab
 ```
 
 1. Pick a case on the left. The right side says what it simulates, what to
-   look for in the explorer, its settings, and the exact commands it will run.
+   look for in hitchtracegui, its settings, and the exact commands it will run.
 2. Press **Start**. The game opens in its own window ("Hitch Lab: KEY").
-3. Press **Record with Hitchtrace Explorer…**. The explorer opens its Record
+3. Press **Record with hitchtracegui…**. hitchtracegui opens its Record
    dialog with the game already selected; record, stop, and look.
 4. **Stop** ends the game and everything the case started. Picking another
    case while one runs and pressing **Switch to this case** does both.

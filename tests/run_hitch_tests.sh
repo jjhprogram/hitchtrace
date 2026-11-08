@@ -15,7 +15,7 @@
 #   <class>.bench.log     hitchbench stdout/stderr
 #   <class>.stderr        hitchtrace stdout/stderr
 #
-# How the two binaries are driven (tests/hitchbench.c, src/hitchtrace.c):
+# How the two binaries are driven (tests/hitchbench.c, src/hitchtrace/hitchtrace.c):
 #
 #   build/hitchbench -c CLASS -d SECS -o GT.jsonl
 #	frame loop injecting CLASS into every 20th frame, ground truth to
@@ -111,7 +111,7 @@ read -r -a EXTRA_TRACE_ARGS <<<"${HITCHTRACE_ARGS:-}"
 # (check_hitches.py invariant --no-present). The classes and their
 # expected buckets are hitchbench's own table (tests/hitchbench.c,
 # `build/hitchbench -l`); the bucket names are enum ht_cause from
-# src/hitchtrace.h.
+# src/hitchtrace/hitchtrace.h.
 #
 # Both worker classes have the root waiting on a condvar, so the root's own
 # wait is a futex wait (HT_BLOCK_FUTEX) whichever way the worker is stalled;

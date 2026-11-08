@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
 //
-// hitchexplorer: look at hitchtrace recordings.
+// hitchtracegui: look at hitchtrace recordings.
 //
-//   hitchexplorer [--frame ID] [FILE.jsonl ...]
-//   hitchexplorer --record PID       open the Record dialog on that process
+//   hitchtracegui [--frame ID] [FILE.jsonl ...]
+//   hitchtracegui --record PID       open the Record dialog on that process
 //
 // Each file is one recording (`hitchtrace -o FILE`); the last one opened is
 // shown first. --screenshot FILE renders the window to an image and exits,
@@ -18,9 +18,9 @@
 int main(int argc, char **argv)
 {
 	QApplication app(argc, argv);
-	QApplication::setApplicationName(QStringLiteral("hitchexplorer"));
+	QApplication::setApplicationName(QStringLiteral("hitchtracegui"));
 	QApplication::setOrganizationName(QStringLiteral("hitchtrace"));
-	QApplication::setApplicationDisplayName(QStringLiteral("Hitchtrace Explorer"));
+	QApplication::setApplicationDisplayName(QStringLiteral("hitchtracegui"));
 
 	QCommandLineParser cli;
 	cli.setApplicationDescription(QStringLiteral("Look at hitchtrace recordings."));

@@ -17,7 +17,7 @@ CC          ?= gcc
 ARCH        := $(shell uname -m | sed -e 's/x86_64/x86/' -e 's/aarch64/arm64/')
 VMLINUX_BTF ?= /sys/kernel/btf/vmlinux
 
-INCLUDES    := -I$(OUTPUT) -Isrc
+INCLUDES    := -I$(OUTPUT) -Isrc/hitchtrace
 CFLAGS      := -g -O2 -Wall -Wextra -Wno-unused-parameter
 BPF_CFLAGS  := -g -O2 -Wall -Wno-unused-function -Wno-missing-declarations -mcpu=v3 -D__TARGET_ARCH_$(ARCH)
 LDLIBS      := -lelf -lz
@@ -54,7 +54,7 @@ $(OUTPUT)/vmlinux.h: | $(OUTPUT)
 	$(call msg,BTF,$@)
 	$(Q)$(BPFTOOL) btf dump file $(VMLINUX_BTF) format c > $@
 
-$(OUTPUT)/%.bpf.o: src/%.bpf.c src/%.h $(OUTPUT)/vmlinux.h $(LIBBPF_OBJ) | $(OUTPUT)
+$(OUTPUT)/%.bpf.o: src/hitchtrace/%.bpf.c src/hitchtrace/%.h $(OUTPUT)/vmlinux.h $(LIBBPF_OBJ) | $(OUTPUT)
 	$(call msg,BPF,$@)
 	$(Q)$(CLANG) $(BPF_CFLAGS) -target bpf $(INCLUDES) -c $< -o $@.tmp
 	$(Q)$(BPFTOOL) gen object $@ $@.tmp
@@ -64,12 +64,12 @@ $(OUTPUT)/%.skel.h: $(OUTPUT)/%.bpf.o | $(OUTPUT)
 	$(call msg,GEN-SKEL,$@)
 	$(Q)$(BPFTOOL) gen skeleton $< > $@
 
-# each tool: src/<app>.c + its skeleton, linked with the symbolizer
-$(OUTPUT)/%.o: src/%.c src/%.h src/syms.h $(OUTPUT)/%.skel.h $(LIBBPF_OBJ)
+# each tool: src/hitchtrace/<app>.c + its skeleton, linked with the symbolizer
+$(OUTPUT)/%.o: src/hitchtrace/%.c src/hitchtrace/%.h src/hitchtrace/syms.h $(OUTPUT)/%.skel.h $(LIBBPF_OBJ)
 	$(call msg,CC,$@)
 	$(Q)$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-$(OUTPUT)/syms.o: src/syms.c src/syms.h | $(OUTPUT)
+$(OUTPUT)/syms.o: src/hitchtrace/syms.c src/hitchtrace/syms.h | $(OUTPUT)
 	$(call msg,CC,$@)
 	$(Q)$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
@@ -83,7 +83,7 @@ $(addprefix $(OUTPUT)/,$(APPS)): $(OUTPUT)/%: $(OUTPUT)/%.o $(OUTPUT)/syms.o $(L
 LAYER_SO  := $(OUTPUT)/libVkLayer_hitchtrace.so
 LAYER_DIR ?= $(HOME)/.local/share/vulkan/implicit_layer.d
 
-$(LAYER_SO): layer/hitchtrace_layer.c | $(OUTPUT)
+$(LAYER_SO): src/layer/hitchtrace_layer.c | $(OUTPUT)
 	$(call msg,LAYER,$@)
 	$(Q)$(CC) -g -O2 -Wall -Wextra -fPIC -fvisibility=hidden -shared \
 		-pthread $< -o $@ -Wl,-z,defs
@@ -91,11 +91,11 @@ $(LAYER_SO): layer/hitchtrace_layer.c | $(OUTPUT)
 layer: $(LAYER_SO)
 
 # install the manifest for this user, pointing at the built .so
-layer-install: $(LAYER_SO) layer/VkLayer_hitchtrace.json
+layer-install: $(LAYER_SO) src/layer/VkLayer_hitchtrace.json
 	$(call msg,INSTALL,$(LAYER_DIR)/VkLayer_hitchtrace.json)
 	$(Q)mkdir -p $(LAYER_DIR)
 	$(Q)sed 's#"library_path": "[^"]*"#"library_path": "$(abspath $(LAYER_SO))"#' \
-		layer/VkLayer_hitchtrace.json > $(LAYER_DIR)/VkLayer_hitchtrace.json
+		src/layer/VkLayer_hitchtrace.json > $(LAYER_DIR)/VkLayer_hitchtrace.json
 
 # synthetic workload used by the test script; its frame marker must stay in
 # the symbol table for the uprobe

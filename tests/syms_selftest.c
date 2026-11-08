@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
 /*
- * Unprivileged self-test for src/syms.c.
+ * Unprivileged self-test for src/hitchtrace/syms.c.
  *
- *   gcc -g -O1 -fno-omit-frame-pointer -fsanitize=address,undefined -Isrc \
- *       tests/syms_selftest.c src/syms.c -lelf -lz -o build/syms_selftest
+ *   gcc -g -O1 -fno-omit-frame-pointer -fsanitize=address,undefined -Isrc/hitchtrace \
+ *       tests/syms_selftest.c src/hitchtrace/syms.c -lelf -lz -o build/syms_selftest
  *
  * Temporary files (mutated ELF copies) are created next to the test binary
  * and removed again; /tmp/perf-<pid>.map is created briefly for the JIT

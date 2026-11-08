@@ -126,7 +126,7 @@ Across the burst frames the chain credits a median **40%** of the waking worker'
 root's "resolved" line reports a median 3.2 ms inherited against 14.0 ms "waiting on a running task".
 
 **Why.** Three properties of the current implementation, all visible in `resolve()` and
-`record_wakeup()` in `src/hitchtrace.bpf.c`:
+`record_wakeup()` in `src/hitchtrace/hitchtrace.bpf.c`:
 
 1. **Only the waker's last off-CPU interval is inherited.** The scheduler alternates a worker and a
    `bgload` thread in slices of about 3 ms, so a worker is preempted several times per frame. Each

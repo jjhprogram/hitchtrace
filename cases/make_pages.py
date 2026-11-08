@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
 """Make one hitchview page per case recording, with its reading guide.
 
-Each page is named after its recording, the name hitchexplorer shows for it
+Each page is named after its recording, the name hitchtracegui shows for it
 (cases/out/iodisk/iodisk.html for cases/out/iodisk/hitch.jsonl), opens on the
-same typical frame the explorer's examples use, and starts with the guide in
+same typical frame hitchtracegui's examples use, and starts with the guide in
 cases/pages/<recording>.md: what was going on, how to read the page, what the
 record says about the cause, and what it cannot say.
 

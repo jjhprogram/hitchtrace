@@ -34,7 +34,7 @@ make layer layer-install          # the Vulkan layer that marks frames, for this
 ```
 
 The frame marks come from an implicit Vulkan layer, enabled per app with
-`HITCHTRACE=1` ([`layer/README.md`](layer/README.md)). Point `-x` at the
+`HITCHTRACE=1` ([`src/layer/README.md`](src/layer/README.md)). Point `-x` at the
 layer, not at the app:
 
 ```bash
@@ -44,28 +44,28 @@ sudo build/hitchtrace -p $! -x build/libVkLayer_hitchtrace.so \
 ```
 
 `build/hitchtrace --help` lists all options. `tools/hitchview.py` turns a
-JSONL file into an HTML page, and `gui/` is a desktop viewer for the same
-files.
+JSONL file into an HTML page, and `src/hitchtracegui/` is a desktop viewer
+for the same files.
 
 ## Tests
 
 ```bash
 sudo tests/run_hitch_tests.sh               # hitchbench end to end, every injector class
 python3 -m unittest tests/test_check_hitches.py
-gcc -g -O1 -fno-omit-frame-pointer -fsanitize=address,undefined -Isrc \
-    tests/syms_selftest.c src/syms.c -lelf -lz -o build/syms_selftest && build/syms_selftest
+gcc -g -O1 -fno-omit-frame-pointer -fsanitize=address,undefined -Isrc/hitchtrace \
+    tests/syms_selftest.c src/hitchtrace/syms.c -lelf -lz -o build/syms_selftest && build/syms_selftest
 ```
 
 ## Layout
 
 | Path | What it is |
 |---|---|
-| `src/` | hitchtrace: BPF programs (`hitchtrace.bpf.c`), shared types (`hitchtrace.h`), loader and output (`hitchtrace.c`), symbolizer (`syms.c`) |
-| `layer/` | the implicit Vulkan layer that marks frames |
+| `src/hitchtrace/` | the tool: BPF programs (`hitchtrace.bpf.c`), shared types (`hitchtrace.h`), loader and output (`hitchtrace.c`), symbolizer (`syms.c`) |
+| `src/layer/` | the implicit Vulkan layer that marks frames |
+| `src/hitchtracegui/` | a Qt desktop viewer for records, which can also start a recording |
 | `tests/` | hitchbench (a synthetic frame loop with injectable stalls), its checkers and end-to-end test |
-| `cases/` | ten case studies reproducing documented Linux gaming stutters: the game, the background programs, `run.sh`, results |
+| `cases/` | ten case studies reproducing documented Linux gaming stutters: the game, the background programs, `run.sh`, results; `cases/hitchlab/` runs them as an app |
 | `tools/` | `hitchview` (HTML page per run), `overhead/` (cost against other tools), `catch/` (rare hitches, seven tools) |
-| `gui/`, `hitchlab/` | hitchexplorer, a Qt viewer for records; Hitch Lab, the case studies as an app |
 | `paper/` | the paper draft (IEEEtran) |
 | `docs/` | evaluation status, protocols, the case catalogue, the original design notes |
 | `libbpf/` | upstream libbpf (its own license) |

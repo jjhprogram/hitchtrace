@@ -59,7 +59,7 @@ def hop(comm, ns, cause="oncpu", flags=(), pid=4243):
 
 def thread(comm, tid, root=False, largest=None, preemptor=None, open_ns=0,
            **buckets):
-    """One threads[] entry, spelled as src/hitchtrace.c writes it.
+    """One threads[] entry, spelled as src/hitchtrace/hitchtrace.c writes it.
 
     Buckets are named keyword arguments, as in causes(), but only the ones
     that partition a timeline: ht_thread has no resolved pair. `largest` is
@@ -228,13 +228,13 @@ SPEC_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                          "run_hitch_tests.sh")
 HEADER_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "src", "hitchtrace.h")
+    "src", "hitchtrace", "hitchtrace.h")
 BENCH_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                           "hitchbench.c")
 
 
 def read_enum_causes():
-    """enum ht_cause from src/hitchtrace.h, in order, as enum names.
+    """enum ht_cause from src/hitchtrace/hitchtrace.h, in order, as enum names.
 
     HT_CAUSE_PARTITION and HT_CAUSE_MAX are markers rather than buckets, and
     HT_RESOLVED_WAIT_ONCPU shares the first one's value.
@@ -1361,7 +1361,7 @@ class QuietHonestyTest(CliTest):
 class HeaderTableTest(unittest.TestCase):
     """The bucket table is enum ht_cause; the header is where it comes from."""
 
-    @unittest.skipUnless(os.path.exists(HEADER_PATH), "no src/hitchtrace.h")
+    @unittest.skipUnless(os.path.exists(HEADER_PATH), "no src/hitchtrace/hitchtrace.h")
     def test_the_table_is_the_enum(self):
         names = read_enum_causes()
         self.assertEqual([ch.enum_name(b) for b in ch.BUCKETS], names)

@@ -1,7 +1,7 @@
 # docs
 
 Design and research notes for hitchtrace. How to build and run each part is
-in the README next to it (`cases/`, `gui/`, `hitchlab/`, `layer/`, `paper/`,
+in the README next to it (`cases/`, `cases/hitchlab/`, `src/hitchtracegui/`, `src/layer/`, `paper/`,
 `tools/overhead/`).
 
 | File | What it is |

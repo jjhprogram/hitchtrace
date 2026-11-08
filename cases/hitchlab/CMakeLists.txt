@@ -2,9 +2,9 @@
 #
 # hitchlab: the case-study game as an app of its own. Pick a case, press Start,
 # and the game runs with that case's cause of hitches around it, ready to be
-# recorded like any game (Hitchtrace Explorer › Record).
+# recorded like any game (hitchtracegui › Record).
 #
-#   cmake -S hitchlab -B build/hitchlab -G Ninja && cmake --build build/hitchlab
+#   cmake -S cases/hitchlab -B build/hitchlab -G Ninja && cmake --build build/hitchlab
 #   build/hitchlab/hitchlab
 #
 # One executable: the window, and (hitchlab --run NAME ...) the game and the
@@ -27,7 +27,7 @@ find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GAMELIBS REQUIRED IMPORTED_TARGET vulkan xcb)
 
-set(CASES ${CMAKE_CURRENT_SOURCE_DIR}/../cases)
+set(CASES ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 # The programs, each one's main() renamed so they can share one binary.
 # Frame pointers so that hitchtrace -U can walk the game's stacks.

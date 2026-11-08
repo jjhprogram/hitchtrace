@@ -252,7 +252,7 @@ hours of play. It is not lower CPU overhead.
 **What a claim of an overhead advantage would need:**
 
 1. **The cost to other processes fixed.** `on_switch`
-   (`src/hitchtrace.bpf.c`) creates and updates per-task state for every
+   (`src/hitchtrace/hitchtrace.bpf.c`) creates and updates per-task state for every
    task on the machine. This is deliberate, since a wake chain can run
    through another process (a server, wineserver) whose history is needed
    before it is known to matter. Options: a much cheaper path for tasks

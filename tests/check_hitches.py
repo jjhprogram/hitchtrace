@@ -13,7 +13,7 @@ GROUND TRUTH (hitchbench), one object per frame it ran:
 or absent. "frame_us" may be spelled "frame_ns".
 
 RECORDS (hitchtrace), one object per over-budget frame: a JSON rendering of
-struct ht_record (src/hitchtrace.h).
+struct ht_record (src/hitchtrace/hitchtrace.h).
 
   {"frame_id": 412, "root_pid": 4242, "root_tgid": 4200, "root_comm": "hb_root",
    "frame_start_ns": 5099456789, "frame_end_ns": 5123456789,
@@ -142,7 +142,7 @@ import sys
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
-# enum ht_cause, in order, as src/hitchtrace.h spells it. The entries before
+# enum ht_cause, in order, as src/hitchtrace/hitchtrace.h spells it. The entries before
 # HT_CAUSE_PARTITION (the first resolution bucket) sum to frame_ns; the two
 # HT_RESOLVED_* buckets split the frame's blocked time by what the waker was
 # doing and are reported separately. This tuple is the only place the set of

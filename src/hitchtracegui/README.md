@@ -1,4 +1,4 @@
-# hitchexplorer
+# hitchtracegui
 
 A desktop viewer for hitchtrace recordings, in Qt 6 Widgets. It opens the
 `hitch.jsonl` files `hitchtrace -o` writes and shows, for every over-budget
@@ -10,10 +10,10 @@ Needs Qt 6.4 or newer, CMake and a C++20 compiler (on Ubuntu 24.04:
 `sudo apt install qt6-base-dev cmake ninja-build`).
 
 ```sh
-cmake -S gui -B build/gui -G Ninja
-cmake --build build/gui
-build/gui/hitchexplorer cases/out/*/hitch.jsonl     # one recording per file
-ctest --test-dir build/gui                         # analysis checks + GUI smoke test
+cmake -S src/hitchtracegui -B build/hitchtracegui -G Ninja
+cmake --build build/hitchtracegui
+build/hitchtracegui/hitchtracegui cases/out/*/hitch.jsonl   # one recording per file
+ctest --test-dir build/hitchtracegui                        # analysis checks + GUI smoke test
 ```
 
 Files can also be opened from File › Open or dropped on the window. Switch
@@ -36,8 +36,8 @@ hitchtrace's input (`hitchtrace --stop-on-eof`), since the app cannot signal a
 root process. Recordings go to `~/hitchtrace/` by default, one new file each
 time, created by the app so that it stays yours.
 
-`hitchexplorer --record PID` opens straight into the Record dialog with that
-process selected; Hitch Lab (`hitchlab/`) uses it to record its game.
+`hitchtracegui --record PID` opens straight into the Record dialog with that
+process selected; Hitch Lab (`cases/hitchlab/`) uses it to record its game.
 
 ## The window
 
@@ -69,18 +69,19 @@ layout is remembered between runs; View › Reset layout restores it.
 ## Layout
 
 ```
-src/data/       the recording: Run, Frame, Event; the JSONL loader
-src/analysis/   critical path, explain() for one wait, blame trees (no widgets)
-src/ui/         Session (shared selection state) and one widget per view
+data/           the recording: Run, Frame, Event; the JSONL loader
+analysis/       critical path, explain() for one wait, blame trees (no widgets)
+ui/             Session (shared selection state) and one widget per view
+main.cpp        command line, then the main window
 tests/          test_analysis: the analysis on cases/out, against figures
                 computed independently by the HTML mockup
                 gui_smoke: drives every view offscreen and saves screenshots
-                to build/gui/gui-smoke/; `gui_smoke DIR --record PID` also
+                to build/hitchtracegui/gui-smoke/; `gui_smoke DIR --record PID` also
                 records a running program through the dialog (needs root
                 through sudo -n)
 ```
 
-`hitchexplorer --screenshot FILE [--size WxH] [--frame ID] FILE.jsonl` renders
+`hitchtracegui --screenshot FILE [--size WxH] [--frame ID] FILE.jsonl` renders
 the window to an image and exits; with `QT_QPA_PLATFORM=offscreen` it needs
 no display.
 

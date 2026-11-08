@@ -76,7 +76,7 @@ QString shellQuote(const QString &s)
 
 QString defaultTracer()
 {
-	// build/gui/hitchexplorer next to build/hitchtrace, else one on PATH
+	// build/hitchtracegui/hitchtracegui next to build/hitchtrace, else one on PATH
 	const QString beside = QDir::cleanPath(QCoreApplication::applicationDirPath() + QStringLiteral("/../hitchtrace"));
 	if (QFileInfo(beside).isExecutable())
 		return beside;

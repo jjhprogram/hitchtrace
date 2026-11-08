@@ -61,7 +61,7 @@ when those runs are repeated:
   (each run's `summary.md`; the BPF-time totals sum its per-program rows).
 - The record in `Fig/record.tex`: frame 2475 of `../cases/out/ipc-holder/hitch.txt`, three thread
   lines cut.
-- Record size (10,344 bytes) and line counts in the introduction and design: `src/hitchtrace.h`,
+- Record size (10,344 bytes) and line counts in the introduction and design: `src/hitchtrace/hitchtrace.h`,
   `wc -l`.
 
 All runs so far are on the development VM (Hyper-V, lavapipe). The overhead subsection is a pilot;

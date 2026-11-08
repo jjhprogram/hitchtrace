@@ -21,7 +21,7 @@ struct Knob {
 struct LabCase {
 	QString key, title;
 	QString what;		// what it simulates
-	QString look;		// what to look for in Hitchtrace Explorer
+	QString look;		// what to look for in hitchtracegui
 	QString warning;	// shown before starting, if any
 	QList<Knob> knobs;
 };

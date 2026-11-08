@@ -3,7 +3,7 @@
 // The lab's window: the cases on the left; on the right what the selected one
 // simulates, what to look for, its settings and the exact commands it runs.
 // Start runs the game with the case's surroundings; Stop ends all of it.
-// Record opens Hitchtrace Explorer's Record dialog on the running game.
+// Record opens hitchtracegui's Record dialog on the running game.
 //
 // Every process the lab starts is pinned as the case asks and dies with the
 // lab (PR_SET_PDEATHSIG), so nothing is left burning CPU if the lab is killed.
@@ -66,7 +66,7 @@ private:
 	void log(const QString &who, const QString &line);
 	void updateStatus();
 	void recordGame();
-	QString explorerPath() const;
+	QString guiPath() const;
 
 	QList<LabCase> cases_;
 	QListWidget *list_;

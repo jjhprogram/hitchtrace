@@ -122,7 +122,7 @@ LabWindow::LabWindow(QWidget *parent) : QMainWindow(parent), cases_(labCases())
 	v->addWidget(heading(tr("What it simulates")));
 	what_ = wrapped();
 	v->addWidget(what_);
-	v->addWidget(heading(tr("What to look for in Hitchtrace Explorer")));
+	v->addWidget(heading(tr("What to look for in hitchtracegui")));
 	look_ = wrapped();
 	v->addWidget(look_);
 	warning_ = wrapped();
@@ -160,7 +160,7 @@ LabWindow::LabWindow(QWidget *parent) : QMainWindow(parent), cases_(labCases())
 	start_ = new QPushButton(tr("Start"));
 	start_->setDefault(true);
 	stop_ = new QPushButton(tr("Stop"));
-	record_ = new QPushButton(tr("Record with Hitchtrace Explorer…"));
+	record_ = new QPushButton(tr("Record with hitchtracegui…"));
 	buttons->addWidget(start_);
 	buttons->addWidget(stop_);
 	buttons->addStretch(1);
@@ -630,11 +630,11 @@ void LabWindow::updateStatus()
 	start_->setEnabled(stage_ == Stage::Idle ? !problem : stage_ == Stage::Running && !here);
 	start_->setText(stage_ == Stage::Running && !here ? tr("Switch to this case") : tr("Start"));
 	stop_->setEnabled(stage_ != Stage::Idle && stage_ != Stage::Stopping);
-	record_->setEnabled(stage_ == Stage::Running && !explorerPath().isEmpty());
-	record_->setToolTip(explorerPath().isEmpty()
-		? tr("Hitchtrace Explorer was not found: build gui/ (it is looked for in ../gui/ next to this program, "
-		     "then on PATH)")
-		: tr("Opens Hitchtrace Explorer's Record dialog with the game selected"));
+	record_->setEnabled(stage_ == Stage::Running && !guiPath().isEmpty());
+	record_->setToolTip(guiPath().isEmpty()
+		? tr("hitchtracegui was not found: build src/hitchtracegui/ (it is looked for in ../hitchtracegui/ "
+		     "next to this program, then on PATH)")
+		: tr("Opens hitchtracegui's Record dialog with the game selected"));
 	switch (stage_) {
 	case Stage::Idle:
 		status_->setText(tr("Not running. Pick a case and press Start: the game opens in its own window."));
@@ -667,13 +667,13 @@ void LabWindow::updateStatus()
 	}
 }
 
-QString LabWindow::explorerPath() const
+QString LabWindow::guiPath() const
 {
 	const QString beside =
-		QDir::cleanPath(QCoreApplication::applicationDirPath() + QStringLiteral("/../gui/hitchexplorer"));
+		QDir::cleanPath(QCoreApplication::applicationDirPath() + QStringLiteral("/../hitchtracegui/hitchtracegui"));
 	if (QFileInfo(beside).isExecutable())
 		return beside;
-	return QStandardPaths::findExecutable(QStringLiteral("hitchexplorer"));
+	return QStandardPaths::findExecutable(QStringLiteral("hitchtracegui"));
 }
 
 void LabWindow::recordGame()
@@ -681,8 +681,8 @@ void LabWindow::recordGame()
 	const qint64 pid = gamePid();
 	if (!pid)
 		return;
-	if (!QProcess::startDetached(explorerPath(), { QStringLiteral("--record"), QString::number(pid) }))
-		log(QStringLiteral("lab"), tr("could not start %1").arg(explorerPath()));
+	if (!QProcess::startDetached(guiPath(), { QStringLiteral("--record"), QString::number(pid) }))
+		log(QStringLiteral("lab"), tr("could not start %1").arg(guiPath()));
 }
 
 void LabWindow::closeEvent(QCloseEvent *e)
