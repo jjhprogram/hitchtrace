@@ -51,11 +51,11 @@ The other evaluation numbers are typed from the runs' own summaries, and must be
 when those runs are repeated:
 
 - Case studies (`Table/case_studies.tex`): `../cases/README.md`, data in `../cases/out/`.
-- Rare hitches (`Table/catch.tex`): `../docs/catch-test.md` (protocol) and
-  `../docs/evaluation-status.md`; runs `../build/catch/catch-20261104-171550`,
+- Rare hitches (`Table/catch.tex`): `../tools/catch/README.md` (protocol) and
+  `../docs/evaluation.md`; runs `../build/catch/catch-20261104-171550`,
   `../build/catch/catch-ipc-holder`, `../build/catch/catch-perfoffcpu` and
   `../build/catch/catch-perfetto` (each run's `summary.md` and `scores.json`).
-- Overhead (`Table/overhead.tex`): `../docs/evaluation-status.md`; runs
+- Overhead (`Table/overhead.tex`): `../docs/evaluation.md`; runs
   `../build/overhead/pilot-20261103-113525`, `../build/overhead/holder-pipe`,
   `../build/overhead/perfoffcpu-pilot` and `../build/overhead/perfetto-pilot`
   (each run's `summary.md`; the BPF-time totals sum its per-program rows).

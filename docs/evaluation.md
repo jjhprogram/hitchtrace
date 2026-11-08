@@ -1,7 +1,10 @@
-# Evaluation status
+# Evaluation
 
 What the paper claims, what each claim needs, and what has been measured so
-far. Updated 2026-11-09.
+far: the one place for results. How each harness works is in its README
+(`tests/`, `cases/README.md`, `tools/overhead/README.md`,
+`tools/catch/README.md`); what is left to run is in [todo.md](todo.md).
+Updated 2026-11-09.
 
 ## Claims and evidence
 
@@ -57,9 +60,13 @@ the 13-class run now in `tests/out/`.
   resolves as waiting on a running task, and the resolved gate drops that
   one frame (15 of 16 inside the window).
 
-Still open in the draft: §5.4's vkcube numbers and §5.5's "real Vulkan
-application" numbers. The artifacts for §5.5 were lost and must be
-regenerated (Q6).
+- The interval log agrees with the buckets: `tests/check_timeline.py` finds
+  every thread line within 50 µs (2,294 lines from the game, 511 from
+  hitchbench).
+- The paper's cause-gate numbers on vkcube (`tests/out/vkcube_*.jsonl`) come
+  from the September prototype. They match that data, and no later commit
+  changed what they depend on. A rerun on the current version is optional
+  ([todo.md](todo.md)).
 
 ### Case studies (`cases/README.md`)
 
@@ -82,7 +89,7 @@ figure computed from one record at a time. Each case has a reading guide in
 | 9 `compact` | huge pages while free memory is in pieces | 100% as "memory" | 78% of the allocation | not ranked at all | that the kernel gave up and used small pages |
 
 These are reproductions of mechanisms, not of the real reports in
-`cases.md`: they show the records are right when the cause is known, not
+[real-world-cases.md](real-world-cases.md): they show the records are right when the cause is known, not
 that the real cases look like this.
 
 ## Pilot: overhead against existing tools
@@ -276,37 +283,18 @@ without the kernel's accounting for the game's threads, and its catch figures
 counted lines carrying CPU delay only. Fixed in `tools/overhead/run.py`;
 the delayacct arm needs rerunning.
 
-### Harness problems found and fixed during the pilot
-
-Recorded so that the same mistakes are not made again in the bare-metal run.
-
-- Python's `open(path, "a")` seeks to the end of the file, and tracefs's
-  seq_file files (`uprobe_events`, `synthetic_events`) refuse that with
-  EINVAL. Opening a trigger file with `"w"` truncates it, which removes the
-  triggers already there. tracefs is now written with a plain
-  `os.open(O_WRONLY)`.
-- A synthetic-event field `pid_t` did not match `common_pid` (`int`). The
-  field was dropped; the synthetic event's own `common_pid` is the game
-  thread.
-- Slow-frame counts and output sizes covered the tool's whole life, which
-  includes the game's startup frames, while the game's count covered only
-  the window. Both now count only the window. The game also warms up for 3 s
-  before the tool starts.
-- The ipc server was stopped before the game, so some games died without
-  writing their frame log. Helpers are now stopped in reverse order.
-- The rule that drops an arm after two failures also dropped the no-tool
-  baseline. Only failures of the tool itself to start or attach now count,
-  and never the baseline's.
+Harness problems found and fixed during the pilot are listed in
+`tools/overhead/README.md`.
 
 ## Run: does hitchtrace catch what others miss?
 
-Protocol, with its rules fixed before the run: [catch-test.md](catch-test.md).
+Protocol, with its rules fixed before the run: [tools/catch/README.md](../tools/catch/README.md).
 Run `build/catch/catch-20261104-171550` (`tools/catch/run.sh`, scored by
 `tools/catch/score.py`; table in its `summary.md`): five cases, six tools,
 one 120 s run each, one injection every 10 s, tools on CPUs 6-9. All 30 runs
 completed; no rule was changed after this run. Two more tools were added on
 2026-11-06, with their rules written into the protocol before their own runs
-(["Added tools"](catch-test.md#added-tools)): `perf record --off-cpu`
+(["Added tools"](../tools/catch/README.md#added-tools)): `perf record --off-cpu`
 (`build/catch/catch-perfoffcpu`) and Perfetto as a flight recorder
 (`build/catch/catch-perfetto`), same cases, rarity and placement.
 
@@ -406,16 +394,4 @@ runs; Perfetto in a session long enough to fill its ring.
 
 ## Next
 
-- Future work, not scheduled: cut hitchtrace's cost for processes outside
-  the game (track a task fully only once it is related to the game's wake
-  chain), then rerun `pipe-other` and `pipe-target`, and the case studies
-  whose chains cross processes (1, 2b, 5).
-- Overhead on bare metal with `--preset full`, plus a disk-bound game for
-  perf sched's write interference.
-- Real software on bare metal (Proton and native free titles), then the
-  catch-what-others-miss comparison on the same rare hitches.
-- Blind diagnosis, and the prevalence study (the paper's Q4).
-- Perfetto in a session long enough to fill its ring, for its output per
-  hitch at steady state; and the per-event threshold sweep the paper's TODO on
-  many small waits asks for (`thousand_cuts` under `perf record --off-cpu-thresh` at several
-  thresholds), now that a perf with BPF skeletons is built.
+In [todo.md](todo.md), under Runs.

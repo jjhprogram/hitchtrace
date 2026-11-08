@@ -99,3 +99,25 @@ run anywhere.
 - The runner changes `kernel.bpf_stats_enabled` and `kernel.task_delayacct`
   and creates an ftrace instance, uprobe events and a synthetic event; it puts
   all of them back when it finishes or is interrupted.
+
+## Harness problems found and fixed during the pilot
+
+Recorded so that the same mistakes are not made again in the bare-metal run.
+
+- Python's `open(path, "a")` seeks to the end of the file, and tracefs's
+  seq_file files (`uprobe_events`, `synthetic_events`) refuse that with
+  EINVAL. Opening a trigger file with `"w"` truncates it, which removes the
+  triggers already there. tracefs is now written with a plain
+  `os.open(O_WRONLY)`.
+- A synthetic-event field `pid_t` did not match `common_pid` (`int`). The
+  field was dropped; the synthetic event's own `common_pid` is the game
+  thread.
+- Slow-frame counts and output sizes covered the tool's whole life, which
+  includes the game's startup frames, while the game's count covered only
+  the window. Both now count only the window. The game also warms up for 3 s
+  before the tool starts.
+- The ipc server was stopped before the game, so some games died without
+  writing their frame log. Helpers are now stopped in reverse order.
+- The rule that drops an arm after two failures also dropped the no-tool
+  baseline. Only failures of the tool itself to start or attach now count,
+  and never the baseline's.

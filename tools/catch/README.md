@@ -14,6 +14,9 @@ one's.
 
 ## Hitches
 
+How to run: `tools/catch/run.sh [NAME]` (see its header), then
+`tools/catch/score.py build/catch/NAME`.
+
 Five of the case studies (`cases/run.sh`, `cases/README.md`), each made rare:
 one injection every `RARE_S` = 10 seconds, for 120 seconds per run, so about
 11 injections per run among the VM's own occasional slow frames.
@@ -146,7 +149,7 @@ injection every 3 s), before the measured run.
    threads existed, so only CPU delay (from scheduler statistics, always on)
    was reported: no block I/O delay even for a 31 ms asset load. Accounting is
    now turned on before the game starts. (The same fault affects the overhead
-   pilot's delayacct figures; see `evaluation-status.md`.)
+   pilot's delayacct figures; see `docs/evaluation.md`.)
 2. **The ftrace rule asked for the wrong span.** The snapshot a slow frame
    triggers is taken at its frame mark, where present starts, and the ring
    then starts empty. So that snapshot never runs past the frame's end, and in
@@ -281,7 +284,7 @@ session it would hold the last few minutes. No rule was changed.
 Measured run: `build/catch/catch-20261104-171550` (2026-11-04, all 30 runs
 completed). No rule was changed for it after it ran; change 4 applies to a
 rerun of a changed hitchtrace. Results and the misses looked at one by one:
-[evaluation-status.md](evaluation-status.md#run-does-hitchtrace-catch-what-others-miss).
+[docs/evaluation.md](../../docs/evaluation.md#run-does-hitchtrace-catch-what-others-miss).
 
 Second version, after change 4: `build/catch/catch-ipc-holder` (2026-11-05,
 `ht` in `ipc` only, same rules otherwise). 29 injected hitches: 29 recorded,

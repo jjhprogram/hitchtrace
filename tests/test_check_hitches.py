@@ -352,7 +352,7 @@ class NormalizeTest(unittest.TestCase):
             self.assertEqual(ch.normalize_bucket(i), name)
 
     def test_the_new_taxonomy_is_known(self):
-        # the plan's 2.3 buckets, which the old table did not have
+        # buckets the first prototype's table did not have
         for spelling, name in (("HT_ONCPU_FAULT", "oncpu_fault"),
                                ("HT_ONCPU_FAULT_MAJOR", "oncpu_fault_major"),
                                ("oncpu_reclaim", "oncpu_reclaim"),

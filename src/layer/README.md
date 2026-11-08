@@ -83,8 +83,8 @@ With nothing attached the two markers are two empty calls.
 * Static dispatch tables: 16 instances, 32 devices per process. Beyond that
   `vkCreateInstance`/`vkCreateDevice` fail loudly rather than silently returning
   an unhooked chain.
-* Only `vkQueuePresentKHR` is bracketed. Review issue 7 also wants
-  `vkAcquireNextImageKHR`, `vkWaitForPresentKHR` and fence-wait brackets; on WSI
+* Only `vkQueuePresentKHR` is bracketed, not `vkAcquireNextImageKHR`,
+  `vkWaitForPresentKHR` or fence waits (`docs/todo.md`). On WSI
   stacks that throttle in *acquire* rather than in present, the pacing wait lands
   outside this bracket and is currently charged to the frame, not to
   `HT_BLOCK_PRESENT`.

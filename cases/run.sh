@@ -12,40 +12,40 @@
 #   baseline   the game alone on CPUs $GAME_CPUS
 #   bgcpu      + bgload on the same CPUs: a background application that
 #              wakes every BG_PERIOD_MS and burns BG_BURST_MS on BG_THREADS
-#              threads (cases.md A/E2: a game losing its cores to another
+#              threads (real-world-cases.md A/E2: a game losing its cores to another
 #              process)
 #   iomain     the game loads an ASSET_MB asset every ASSET_EVERY frames on
-#              its main thread (cases.md C: a frame waiting on storage)
+#              its main thread (real-world-cases.md C: a frame waiting on storage)
 #   iothread   the same load done by a streaming thread that the main thread
 #              waits for
 #   mem        the game keeps a WORLD_MB world in memory and walks WALK_MB of
 #              it every ASSET_EVERY frames, inside a cgroup limited to
-#              MEM_MAX, so the walk faults pages back in from swap (cases.md
+#              MEM_MAX, so the walk faults pages back in from swap (real-world-cases.md
 #              B: memory pressure)
 #   memthp     the same with transparent huge pages asked for the world
 #   alloc      the game allocates and fills ALLOC_MB of new memory every
 #              ALLOC_EVERY frames, keeping the newest ALLOC_KEEP blocks, with
 #              its unwalked world filling the cgroup to MEM_MAX: the kernel
-#              has to make room first (cases.md B: reclaim)
+#              has to make room first (real-world-cases.md B: reclaim)
 #   compact    the game's memory grows by THP_MB of huge pages every
 #              ALLOC_EVERY frames while frag holds the machine's free memory
-#              in single pages, all but FRAG_LEAVE_MB (cases.md B2: huge
+#              in single pages, all but FRAG_LEAVE_MB (real-world-cases.md B2: huge
 #              pages and compaction). Not limited to a cgroup: when the free
 #              memory is used up the whole machine is short, so keep it brief
 #   slack      the game's sleeps are made imprecise in bursts by a preloaded
-#              library (cases.md F2: timers delivered late)
+#              library (real-world-cases.md F2: timers delivered late)
 #   ipc        the game makes IPC_CALLS blocking calls per frame to a server
-#              process on CPU SRV_CPU, where bgload runs too (cases.md D1: a
+#              process on CPU SRV_CPU, where bgload runs too (real-world-cases.md D1: a
 #              game waiting on wineserver)
 #   cpuspike   the game burns BURN_MS of CPU on its main thread every
 #              ASSET_EVERY frames: a negative control, not a kernel stall
 #   squeeze    every SQ_PERIOD_MS, squeeze confines all the game's threads to
 #              CPUs SQ_CPUS for SQ_BURST_MS, with nothing else running there
-#              (cases.md A: a scheduler packing a game's threads onto too
+#              (real-world-cases.md A: a scheduler packing a game's threads onto too
 #              few cores)
 #   iodisk     iothread on a disk the game shares: the game and bgio, reading
 #              in bursts, run in one cgroup whose reads from the data disk
-#              are limited to DISK_BPS (cases.md C1: other I/O saturating a
+#              are limited to DISK_BPS (real-world-cases.md C1: other I/O saturating a
 #              slow disk). Needs the io controller delegated to the user
 #              manager; DISK_BPS=none runs it without the limit
 #

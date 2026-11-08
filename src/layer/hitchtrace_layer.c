@@ -16,7 +16,7 @@
  * at all. Layers sit in the device dispatch chain no matter how the app got
  * its pointers, so this fires for every present.
  *
- * Frame model (plan 2.2 as amended by review issue 8):
+ * Frame model (docs/design.md, "Frames"):
  *	frame N = [present_enter(N-1), present_enter(N))
  * hitch_frame_mark() IS present entry and IS the frame boundary: the frame it
  * names ends there and the next one opens. hitch_present_end() closes the

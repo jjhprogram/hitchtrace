@@ -13,7 +13,8 @@ only when the frame ends over budget.
 
 This is a thesis prototype. The paper draft is in [`paper/`](paper/), and
 what has been measured so far is in
-[`docs/evaluation-status.md`](docs/evaluation-status.md).
+[`docs/evaluation.md`](docs/evaluation.md); the docs are indexed in
+[`docs/README.md`](docs/README.md).
 
 ## Requirements
 

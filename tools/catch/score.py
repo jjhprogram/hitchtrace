@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
-"""Score a tools/catch/run.sh directory by the rules in docs/catch-test.md.
+"""Score a tools/catch/run.sh directory by the rules in tools/catch/README.md.
 
 Per injected hitch (the case's cause at work, by ground truth no tool
 supplies, and the game's own log over budget): did each tool's output record
@@ -417,7 +417,7 @@ def main():
                 "|---|---|---|---|---|---|---|", *table, ""]
     head = [f"# Catch test: {os.path.basename(root)}", "",
             f"{plan['seconds']} s per run, one injection every {plan['rare_s']} s; commit {plan['commit']}. "
-            "Rules: docs/catch-test.md. Counts are of injected hitches; for the summary tools, "
+            "Rules: tools/catch/README.md. Counts are of injected hitches; for the summary tools, "
             f"'Attributed' says whether the cause is among the summary's {TOP} heaviest lines.", ""]
     text = "\n".join(head + out)
     with open(f"{root}/summary.md", "w") as f:

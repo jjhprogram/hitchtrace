@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
 #
 # Does hitchtrace catch what other tools miss? Every case study, made rare,
-# once with each tool, then scored by the rules in docs/catch-test.md.
+# once with each tool, then scored by the rules in tools/catch/README.md.
 # Run as your normal user: sudo asks for your password once, at the start.
 #
 #   make && make layer layer-install && make -C cases && make -C tools/overhead

@@ -7,7 +7,7 @@
  * thread's timer slack to SLACK_NS before the sleep. The kernel may then
  * deliver the wakeup that much late, which is what a frame limiter sees
  * when timers are being deferred under it: the Linux 7.0 clockevents
- * regression in cases.md, or a power policy that coalesces timers.
+ * regression in docs/real-world-cases.md, or a power policy that coalesces timers.
  *
  * Another process cannot set a thread's timer slack without privilege, so
  * this runs inside the game; the game's own code is not changed.
