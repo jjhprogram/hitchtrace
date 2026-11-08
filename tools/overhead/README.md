@@ -30,7 +30,6 @@ adds `summary.md` and `summary.csv`.
 | `ftrace` | a flight recorder: `sched_switch`, `sched_waking` and the two frame marks in an overwriting ring, a snapshot when a frame runs long (uprobes, a synthetic event and a hist trigger; no BPF) | a window of events per slow frame |
 | `perfetto` | Perfetto v59.1 as a flight recorder: `traced`, `traced_probes`, a 32 MB ring of `sched_switch`, `sched_waking` and the frame mark, and a `CLONE_SNAPSHOT` trigger fired by a watcher of the frame marks when a frame runs long (`build/perfetto/v59.1/linux-amd64`, or `$PERFETTO_DIR`) | the whole ring per slow frame |
 | `offwaketime` | bcc `offwaketime`: blocked stacks with their wakers' stacks, summed | one summary at the end |
-| `chaingraph` | this repository's wake-chain profiler | one summary at the end |
 | `delayacct` | the kernel's delay accounting, read every frame through taskstats (`delayacct_frames.c`; a uprobe marks frames, no BPF) | per-thread delays per slow frame |
 
 Three arms may not run everywhere: Ubuntu's `perf` is built without BPF

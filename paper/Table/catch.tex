@@ -1,16 +1,16 @@
 \setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{@{}lcccccccc@{}}
+\begin{tabular}{@{}lccccccc@{}}
 \toprule
- & \textbf{\sys} & \textbf{delay acct.} & \textbf{perf off-cpu} & \textbf{ftrace} & \textbf{Perfetto} & \textbf{perf sched} & \textbf{offwaketime} & \textbf{chaingraph} \\
-\textbf{Case} & \multicolumn{3}{c}{\emph{recorded / attributed / culprit}} & \multicolumn{3}{c}{\emph{recorded}} & \multicolumn{2}{c}{\emph{rank of the cause}} \\
+ & \textbf{\sys} & \textbf{delay acct.} & \textbf{perf off-cpu} & \textbf{ftrace} & \textbf{Perfetto} & \textbf{perf sched} & \textbf{offwaketime} \\
+\textbf{Case} & \multicolumn{3}{c}{\emph{recorded / attributed / culprit}} & \multicolumn{3}{c}{\emph{recorded}} & \emph{rank of the cause} \\
 \midrule
-\texttt{bgcpu} & 8/8/8 of 8 & 11/11/-- of 11 & 11/0/0 of 11 & 8 of 8 & 11 of 11 & 10 of 10 & 39th & absent \\
-\texttt{iothread} & 12/12/12 of 12 & 12/12/-- of 12 & 12/10/0 of 12 & 11 of 12 & 12 of 12 & 12 of 12 & 22nd & 47th \\
-\texttt{ipc} & 33/33/\textbf{0} of 33 & 28/0/-- of 30 & 33/0/0 of 33 & 29 of 33 & 33 of 33 & 32 of 32 & absent & absent \\
-\quad with queued holder & 29/29/29 of 29 & & & & & & & \\
-\texttt{mem} & 12/11 of 12 & 9/0 of 9 & 12/0 of 12 & 12 of 12 & 12 of 12 & 12 of 12 & 20th & 37th \\
-\texttt{cpuspike} & 12/12 of 12 & 12/12 of 12 & 12/0 of 12 & 12 of 12 & 12 of 12 & 12 of 12 & -- & -- \\
+\texttt{bgcpu} & 8/8/8 of 8 & 11/11/-- of 11 & 11/0/0 of 11 & 8 of 8 & 11 of 11 & 10 of 10 & 39th \\
+\texttt{iothread} & 12/12/12 of 12 & 12/12/-- of 12 & 12/10/0 of 12 & 11 of 12 & 12 of 12 & 12 of 12 & 22nd \\
+\texttt{ipc} & 33/33/\textbf{0} of 33 & 28/0/-- of 30 & 33/0/0 of 33 & 29 of 33 & 33 of 33 & 32 of 32 & absent \\
+\quad with queued holder & 29/29/29 of 29 & & & & & & \\
+\texttt{mem} & 12/11 of 12 & 9/0 of 9 & 12/0 of 12 & 12 of 12 & 12 of 12 & 12 of 12 & 20th \\
+\texttt{cpuspike} & 12/12 of 12 & 12/12 of 12 & 12/0 of 12 & 12 of 12 & 12 of 12 & 12 of 12 & -- \\
 \midrule
-MB per injected hitch & 0.08--0.10 & $<$0.01 & 1.3--3.7 & 15--42 & 45--89 & 25--33 & 0.01--0.02$^\ast$ & 0.01--0.04$^\ast$ \\
+MB per injected hitch & 0.08--0.10 & $<$0.01 & 1.3--3.7 & 15--42 & 45--89 & 25--33 & 0.01--0.02$^\ast$ \\
 \bottomrule
 \end{tabular}

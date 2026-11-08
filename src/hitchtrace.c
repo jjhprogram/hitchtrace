@@ -454,8 +454,6 @@ static bool has_prefix(const char *s, const char *prefix)
 
 /*
  * Frames of the tracing machinery itself, at the leaf end of kernel stacks.
- * Kept in step with chaingraph's copy; deliberately not shared, the two tools
- * are independent front ends.
  */
 static bool is_tracing_frame(const char *name)
 {

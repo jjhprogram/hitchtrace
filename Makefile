@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
 #
-# chaingraph build: libbpf (vendored, static) + CO-RE BPF object + skeleton.
+# hitchtrace build: libbpf (vendored, static) + CO-RE BPF object + skeleton.
 #
-#   make            build build/chaingraph
-#   make test       run the end-to-end chain test (needs root)
+#   make            build build/hitchtrace and build/hitchbench
+#   make layer      build the Vulkan layer (make layer-install to register it)
+#   make test       run the hitchbench end-to-end tests (needs root)
 #   make clean
 
 OUTPUT      := build
@@ -21,8 +22,8 @@ CFLAGS      := -g -O2 -Wall -Wextra -Wno-unused-parameter
 BPF_CFLAGS  := -g -O2 -Wall -Wno-unused-function -Wno-missing-declarations -mcpu=v3 -D__TARGET_ARCH_$(ARCH)
 LDLIBS      := -lelf -lz
 
-APPS        := chaingraph hitchtrace
-BENCHES     := chainload hitchbench
+APPS        := hitchtrace
+BENCHES     := hitchbench
 
 ifeq ($(V),1)
 Q =
@@ -32,7 +33,7 @@ Q = @
 msg = @printf '  %-8s %s\n' "$(1)" "$(2)";
 endif
 
-.PHONY: all clean test test-hitch layer layer-install
+.PHONY: all clean test layer layer-install
 all: $(addprefix $(OUTPUT)/,$(APPS) $(BENCHES))
 
 $(OUTPUT) $(OUTPUT)/libbpf:
@@ -96,20 +97,13 @@ layer-install: $(LAYER_SO) layer/VkLayer_hitchtrace.json
 	$(Q)sed 's#"library_path": "[^"]*"#"library_path": "$(abspath $(LAYER_SO))"#' \
 		layer/VkLayer_hitchtrace.json > $(LAYER_DIR)/VkLayer_hitchtrace.json
 
-# synthetic workloads used by the test scripts
-$(OUTPUT)/chainload: tests/chainload.c | $(OUTPUT)
-	$(call msg,CC,$@)
-	$(Q)$(CC) -g -O1 -fno-omit-frame-pointer -Wall -Wextra $< -o $@
-
-# the frame marker must stay in the symbol table for the uprobe
+# synthetic workload used by the test script; its frame marker must stay in
+# the symbol table for the uprobe
 $(OUTPUT)/hitchbench: tests/hitchbench.c | $(OUTPUT)
 	$(call msg,CC,$@)
 	$(Q)$(CC) -g -O1 -fno-omit-frame-pointer -Wall -Wextra -pthread $< -o $@
 
 test: all
-	tests/run_tests.sh
-
-test-hitch: all
 	tests/run_hitch_tests.sh
 
 clean:

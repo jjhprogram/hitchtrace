@@ -45,7 +45,9 @@ the hitches are the same mechanism at the same rate, not the same frames.
 | `ftrace` | the flight recorder of `tools/overhead`, with `trace_clock` set to `mono` and each snapshot saved as text |
 | `perfsched` | `perf sched record -k CLOCK_MONOTONIC` |
 | `offwaketime` | bcc `offwaketime -f -p PID` |
-| `chaingraph` | `chaingraph -p PID -f` |
+
+The measured run also ran `chaingraph`, a wake-chain profiler this repository
+held until 2026-11-09; it is left out of these docs.
 
 ## Scoring
 
@@ -96,11 +98,11 @@ within 1 ms.
   someone analyses them; that is the blind test's question. Their cost to
   get there is reported instead: MB of output per injected hitch.
 
-### `offwaketime`, `chaingraph`
+### `offwaketime`
 
-Both print one summary for the whole run, so no hitch is recorded per frame.
+It prints one summary for the whole run, so no hitch is recorded per frame.
 Scored instead: is the cause visible in the summary? Each folded line is one
-stack (offwaketime) or chain (chaingraph) with its time; a line carries the
+blocked stack with its wakers' stacks and its time; a line carries the
 case's signature if it contains:
 
 | Case | Signature |
@@ -123,14 +125,14 @@ at work.
 
 Per case and tool: injected hitches, then recorded / attributed / culprit as
 counts of them; noise hitches and false attributions; output size and MB per
-injected hitch; for the summary tools, visible or not and the signature's
+injected hitch; for offwaketime, visible or not and the signature's
 share.
 
 ## Limits
 
 - The development VM: no GPU stalls (lavapipe), a fast virtual disk.
-- One rarity. A sweep (one injection per 2, 10, 60 s) would show how the
-  summary tools' visibility falls with rarity; not run yet.
+- One rarity. A sweep (one injection per 2, 10, 60 s) would show how
+  offwaketime's visibility falls with rarity; not run yet.
 - One run per case and tool.
 
 ## Changes

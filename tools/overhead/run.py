@@ -18,7 +18,7 @@ machine alone while it works. --no-root runs only the arms that need no more
 than a passwordless sudo rule for hitchtrace.
 
 Arms       none, ht (hitchtrace), ht-notimeline, ht-stacks (-U), perfsched,
-           perfoffcpu, ftrace (flight recorder), offwaketime, chaingraph, delayacct
+           perfoffcpu, ftrace (flight recorder), perfetto, offwaketime, delayacct
 Workloads  game60 (the game at its 60 fps cap), gamemax (uncapped), ipc (30
            server calls per frame), bg1s, bg10s (a burst of background load per
            1 s or 10 s, to vary the hitch rate), pipe-target (context switches
@@ -45,7 +45,6 @@ GAME = f"{B}/cases/minigame"
 BGLOAD = f"{B}/cases/bgload"
 IPCSERVER = f"{B}/cases/ipcserver"
 HITCHTRACE = f"{B}/hitchtrace"
-CHAINGRAPH = f"{B}/chaingraph"
 LAYER = f"{B}/libVkLayer_hitchtrace.so"
 DELAYACCT = f"{B}/overhead/delayacct_frames"
 # --off-cpu needs a perf built with BPF skeletons, which Ubuntu's is not: one
@@ -63,8 +62,8 @@ BUDGET_US = 20833
 PIPE_OPS_PER_S = 70000	# about this machine's rate with no tool
 
 ALL_ARMS = ["ht", "ht-notimeline", "ht-stacks", "perfsched", "perfoffcpu", "ftrace", "perfetto",
-            "offwaketime", "chaingraph", "delayacct"]
-BPF_ARMS = ["ht", "ht-notimeline", "ht-stacks", "offwaketime", "chaingraph"]
+            "offwaketime", "delayacct"]
+BPF_ARMS = ["ht", "ht-notimeline", "ht-stacks", "offwaketime"]
 NO_ROOT_ARMS = ["ht", "ht-notimeline", "ht-stacks"]
 
 PRESETS = {
@@ -361,18 +360,6 @@ class Offwaketime(Arm):
                 break
             time.sleep(0.2)
         raise RuntimeError(f"{self.name} did not start: {tail(self.log, 800)}")
-
-    def output_bytes(self):
-        return os.path.getsize(self.log) if os.path.exists(self.log) else 0
-
-
-class Chaingraph(Arm):
-    name = "chaingraph"
-    summary = True
-    ready = r"Tracing off-CPU"
-
-    def command(self):
-        return [CHAINGRAPH, "-p", str(self.pid), "-f"]
 
     def output_bytes(self):
         return os.path.getsize(self.log) if os.path.exists(self.log) else 0
@@ -729,7 +716,7 @@ def perfetto_run(cfg, out, stats):
 
 
 ARMS = {c.name: c for c in (Arm, Hitchtrace, HitchtraceNoTimeline, HitchtraceStacks, PerfSched, PerfOffCpu,
-                            Ftrace, Perfetto, Offwaketime, Chaingraph, Delayacct)}
+                            Ftrace, Perfetto, Offwaketime, Delayacct)}
 
 
 # ------------------------------------------------------------- bpf costs
@@ -961,9 +948,8 @@ def unavailable_arms():
         out["offwaketime"] = "no offwaketime-bpfcc (bpfcc-tools)"
     elif not os.path.isdir(f"/lib/modules/{os.uname().release}/build"):
         out["offwaketime"] = "no kernel headers for bcc"
-    for a, path in (("chaingraph", CHAINGRAPH), ("delayacct", DELAYACCT)):
-        if not os.path.exists(path):
-            out[a] = f"no {os.path.relpath(path, ROOT)}"
+    if not os.path.exists(DELAYACCT):
+        out["delayacct"] = f"no {os.path.relpath(DELAYACCT, ROOT)}"
     return out
 
 

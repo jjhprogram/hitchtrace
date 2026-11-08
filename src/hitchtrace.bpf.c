@@ -304,7 +304,7 @@ struct {
 	__type(value, __u64);
 } stats SEC(".maps");
 
-/* Interrupt context, as in chaingraph: the per-CPU preempt count. */
+/* Interrupt context: the per-CPU preempt count. */
 extern const int __preempt_count __ksym __weak;
 
 struct pcpu_hot___ht {

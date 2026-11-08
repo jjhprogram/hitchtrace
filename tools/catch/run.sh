@@ -17,7 +17,7 @@ ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)
 NAME=${1:-catch-$(date +%Y%m%d-%H%M%S)}
 OUTROOT=$ROOT/build/catch/$NAME
 CASES=${CASES:-bgcpu iothread ipc mem cpuspike}
-TOOLS=${TOOLS:-ht delayacct ftrace perfsched offwaketime chaingraph}
+TOOLS=${TOOLS:-ht delayacct ftrace perfsched offwaketime}
 SECS=${SECS:-120}
 RARE_S=${RARE_S:-10}
 

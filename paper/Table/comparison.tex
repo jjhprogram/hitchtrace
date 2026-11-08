@@ -7,7 +7,7 @@
 Flight recorder (ftrace, Perfetto)~\cite{ftracehist,perfetto-triggers} & raw events & by hand & by hand & 15--89\,MB & -- \\
 Full trace (\texttt{perf sched}) & raw events & by hand & by hand & 25--33\,MB & -- \\
 Per-wait off-CPU samples (\texttt{perf --off-cpu})~\cite{perf-offcpu-thresh} & \xmark & \xmark & \xmark & 1.3--3.7\,MB & 10 of 80 \\
-Whole-run summaries (\texttt{offwaketime}, \texttt{chaingraph})~\cite{gregg2019bpf} & \xmark & per run & \xmark & one summary & rank 20th--absent \\
+Whole-run summary (\texttt{offwaketime})~\cite{gregg2019bpf} & \xmark & per run & \xmark & one summary & rank 20th--absent \\
 Delay accounting, read per frame~\cite{delayacct} & \cmark & \xmark & by category & $<$0.01\,MB & 35 of 74 \\
 Offline critical path~\cite{giraldeau2016wait,zhou2018wperf,perfetto-critpath} & \cmark & \cmark & by hand & a full trace & -- \\
 \textbf{\sys} & \cmark & \textbf{online, bounded} & \textbf{partly} & \textbf{0.08--0.10\,MB} & \textbf{76 of 77} \\

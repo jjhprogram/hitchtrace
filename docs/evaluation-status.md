@@ -1,7 +1,7 @@
 # Evaluation status
 
 What the paper claims, what each claim needs, and what has been measured so
-far. Updated 2026-11-06.
+far. Updated 2026-11-09.
 
 ## Claims and evidence
 
@@ -10,13 +10,18 @@ far. Updated 2026-11-06.
 | The records are correct | Injected causes with independent ground truth | **Done** in a VM: hitchbench, 10 case studies ([below](#done-the-records-are-correct)) |
 | It works on real software | Proton and native free titles on bare metal | Not started |
 | It's cheap enough for long sessions | Overhead against no tool and existing tools | **Pilot only**, in a VM ([below](#pilot-overhead-against-existing-tools)); bare metal not started |
-| It catches what others miss | Same rare hitches, same machine, hitchtrace vs existing tools | **Run once in the VM** on five case studies, eight tools ([below](#run-does-hitchtrace-catch-what-others-miss)); real software not started |
+| It catches what others miss | Same rare hitches, same machine, hitchtrace vs existing tools | **Run once in the VM** on five case studies, seven tools ([below](#run-does-hitchtrace-catch-what-others-miss)); real software not started |
 | It finds the cause without being told | Blind diagnosis | Not started |
 | This class of hitch matters | Share of real hitches that are kernel-observable | Not started (the paper's Q4) |
 | It tells us something new | A finding nobody had measured | Not started |
 
 Everything so far ran on the development VM (Hyper-V, 10 vCPUs of an
 i7-12700H, kernel 7.0, lavapipe). None of it is a bare-metal number.
+
+The overhead pilot and the measured catch run also ran `chaingraph`, a
+wake-chain profiler this repository held until 2026-11-09 (last in commit
+b114afa). Its rows in those runs' `summary.md` are left out here and in the
+paper.
 
 ## Done: the records are correct
 
@@ -98,7 +103,6 @@ measured. Tools' own processes are pinned to the game's four CPUs.
 | `perfsched` | `perf sched record`: every scheduler event |
 | `ftrace` | flight recorder: `sched_switch`/`sched_waking` in an overwriting ring, snapshot on a slow frame (uprobes, synthetic event, hist trigger; no BPF) |
 | `offwaketime` | bcc `offwaketime`: blocked and waker stacks, summed |
-| `chaingraph` | this repository's wake-chain profiler |
 | `delayacct` | kernel delay accounting read per frame through taskstats (no BPF) |
 | `perfoffcpu` | not run: Ubuntu's perf is built without BPF skeletons |
 
@@ -133,7 +137,6 @@ log, inside the measured window):
 | `ftrace` | 10 / 21 | 44 / 60 | 1,766–5,154 |
 | `perfsched` | all | all | 9,646–25,215 on the game; about 108,000 on pipe |
 | `offwaketime` | no per-frame output | | one summary at exit, 84–112 KB |
-| `chaingraph` | no per-frame output | | one summary at exit, 111–357 KB |
 
 ftrace misses the frames whose extra time was inside present: its frame
 runs from present's return to the next frame mark, since ftrace can pair two
@@ -149,7 +152,6 @@ baseline about 4.2 µs per switch in this VM):
 | `ht-notimeline` | 569 ns | 413 ns |
 | `ht-stacks` | 458 ns | 454 ns |
 | `offwaketime` | 881 ns | 322 ns |
-| `chaingraph` | 430 ns | 18 ns |
 | `perfsched` | 325 ns | 73 ns |
 | `delayacct` | 199 ns | −132 ns (noise) |
 | `ftrace` | 134 ns | 168 ns |
@@ -163,7 +165,6 @@ baseline about 4.2 µs per switch in this VM):
 | `ht-notimeline` | 2.14% | 7.40% |
 | `ht-stacks` | 2.26% | 10.47% |
 | `offwaketime` | 1.13% | 11.81% |
-| `chaingraph` | 2.17% | 13.87% |
 
 hitchtrace's switch hook takes about 600 ns per call on `game60` and its
 wakeup hook about 700 ns.
@@ -209,7 +210,7 @@ each tool with `ht` in its own run.
   time was not measured that way.
 
 **Other observations.** Server calls in `ipc` came out about 10% faster
-under hitchtrace and about 15% slower under chaingraph and offwaketime, with
+under hitchtrace and about 15% slower under offwaketime, with
 wide intervals. The speed-up may be the extra kernel work keeping vCPUs out
 of idle; untested.
 
@@ -220,10 +221,10 @@ of idle; untested.
 - **Per context switch** it is among the more expensive tools: about 480 ns
   on the traced process (only offwaketime is higher, and perf `--off-cpu`,
   measured later: about three times `ht` in its run), and the highest of all
-  on other processes (about 410 ns against chaingraph's 18 and perf sched's
-  73; level with perf `--off-cpu` in its run, above Perfetto's).
-- **In-kernel time on the game** it is level with chaingraph and about
-  twice offwaketime's. It is cheaper than both only on the pipe benchmark.
+  on other processes (about 410 ns against offwaketime's 322 and perf
+  sched's 73; level with perf `--off-cpu` in its run, above Perfetto's).
+- **In-kernel time on the game** it is about twice offwaketime's. It
+  is cheaper only on the pipe benchmark.
 - **At frame level** every tool is indistinguishable from no tool, so no tool
   has a measurable advantage there, hitchtrace included.
 
@@ -237,8 +238,8 @@ of idle; untested.
   caught half to three quarters at 2–5 GB/hour. Perfetto as a flight
   recorder, with a trigger that sees the whole frame, also caught every one,
   at 2.6–15.8 GB/hour in 15 s runs (more in a long session).
-- **Per-frame causes:** offwaketime and chaingraph cost about the same but
-  give one summary for the whole run, with nothing per frame. delayacct is
+- **Per-frame causes:** offwaketime costs about the same but gives
+  one summary for the whole run, with nothing per frame. delayacct is
   cheaper but has no wake chain. They are not doing the same work.
 
 **A claim that can be defended now.** hitchtrace's overhead is in the same
@@ -311,18 +312,18 @@ completed; no rule was changed after this run. Two more tools were added on
 
 Injected hitches recorded / attributed / culprit named:
 
-| Case | ht | delayacct | perf off-cpu | ftrace | Perfetto | perf sched | offwaketime | chaingraph |
-|---|---|---|---|---|---|---|---|---|
-| `bgcpu` | 8/8/8 of 8 | 11/11/– of 11 | 11/0/0 of 11 | 8 of 8 | 11 of 11 | 10 of 10 | cause ranked 39th | cause absent |
-| `iothread` | 12/12/12 of 12 | 12/12/– of 12 | 12/10/0 of 12 | 11 of 12 | 12 of 12 | 12 of 12 | 22nd | 47th |
-| `ipc` | 33/33/**0** of 33; second version 29/29/**29** of 29 | 28/0/– of 30 | 33/0/0 of 33 | 29 of 33 | 33 of 33 | 32 of 32 | absent | absent |
-| `mem` | 12/11 of 12 | 9/**0** of 9 | 12/0 of 12 | 12 of 12 | 12 of 12 | 12 of 12 | 20th | 37th |
-| `cpuspike` | 12/12 of 12 | 12/12 of 12 | 12/0 of 12 | 12 of 12 | 12 of 12 | 12 of 12 | n/a | n/a |
-| MB per injected hitch | 0.08–0.10 | < 0.01 | 1.3–3.7 | 15–42 | 45–89 | 25–33 | 0.01–0.02 (total) | 0.01–0.04 (total) |
+| Case | ht | delayacct | perf off-cpu | ftrace | Perfetto | perf sched | offwaketime |
+|---|---|---|---|---|---|---|---|
+| `bgcpu` | 8/8/8 of 8 | 11/11/– of 11 | 11/0/0 of 11 | 8 of 8 | 11 of 11 | 10 of 10 | cause ranked 39th |
+| `iothread` | 12/12/12 of 12 | 12/12/– of 12 | 12/10/0 of 12 | 11 of 12 | 12 of 12 | 12 of 12 | 22nd |
+| `ipc` | 33/33/**0** of 33; second version 29/29/**29** of 29 | 28/0/– of 30 | 33/0/0 of 33 | 29 of 33 | 33 of 33 | 32 of 32 | absent |
+| `mem` | 12/11 of 12 | 9/**0** of 9 | 12/0 of 12 | 12 of 12 | 12 of 12 | 12 of 12 | 20th |
+| `cpuspike` | 12/12 of 12 | 12/12 of 12 | 12/0 of 12 | 12 of 12 | 12 of 12 | 12 of 12 | n/a |
+| MB per injected hitch | 0.08–0.10 | < 0.01 | 1.3–3.7 | 15–42 | 45–89 | 25–33 | 0.01–0.02 (total) |
 
 ftrace, Perfetto and perf sched are scored for recording only: they hold the cause
 when they hold the frame, but say nothing until someone analyses them (the
-blind test's question). The summary tools' column is the rank of the
+blind test's question). offwaketime's column is the rank of the
 heaviest line carrying the cause; "visible" needs the top 10. The number of
 injected hitches differs between tools because a burst makes a hitch only
 when it lands in a frame without enough slack: same mechanism, not the same
@@ -348,10 +349,10 @@ What it shows:
   now names the task that held the CPU at the end of a run-queue wait. In a
   second version of `ht` in `ipc` only (`build/catch/catch-ipc-holder`), it
   names `bgload` in 29 of 29, and in none of 88 noise hitches.
-- **The summary tools lose rare hitches**: the cause was never among the ten
-  heaviest lines, and its share of the summary rounded to 0.0% in every
-  case. offwaketime and chaingraph never show `bgload` at all in `bgcpu` and
-  `ipc`, where it preempts rather than wakes.
+- **offwaketime's summary loses rare hitches**: the cause was never among
+  the ten heaviest lines, and its share of the summary rounded to 0.0% in
+  every case. In `bgcpu` and `ipc` it never shows `bgload` at all, since
+  `bgload` preempts rather than wakes.
 - **The raw recorders hold almost everything at 155 to 900 times
   hitchtrace's output** per injected hitch (ftrace 155–454, perf sched
   293–420, Perfetto 502–903, case by case). perf sched and Perfetto recorded
@@ -399,8 +400,8 @@ Misses and weak spots, looked at one by one:
   budget by under 1 ms, where any short run-queue wait is "half the
   overrun". The culprit column is the one that measures false blame.
 
-Not shown by these runs: real software; GPU stalls; other rarities (the
-summary tools' ranks should fall with rarer hitches, not tested); repeat
+Not shown by these runs: real software; GPU stalls; other rarities (offwaketime's
+ranks should fall with rarer hitches, not tested); repeat
 runs; Perfetto in a session long enough to fill its ring.
 
 ## Next

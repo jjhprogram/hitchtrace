@@ -29,9 +29,8 @@ per interval above a threshold and sums shorter ones at the end of the
 run~\cite{perf-offcpu-thresh}. bcc's \texttt{offwaketime} sums blocked
 stacks paired with their wakers' stacks over the run, and
 \texttt{runqslower} prints run-queue delays above a
-threshold~\cite{gregg2019bpf}. Chain-graph profilers, including our earlier
-one, follow wakers back to the waker's waker and sum the chains. A hitch
-is diagnosed by reading the heaviest stacks or chains.
+threshold~\cite{gregg2019bpf}. A hitch is diagnosed by reading the
+heaviest stacks.
 
 \paragraph{Accounting} The kernel's delay accounting accumulates, per task and
 without a threshold, time spent waiting for a CPU, for block I/O, in
@@ -73,9 +72,8 @@ and no event names that task. On the server hitch, delay accounting
 attributed none of 30 hitches: the server is another process, and the
 game's thread merely slept. \texttt{perf --off-cpu} recorded waits in all
 of them, but each sample carries only the waiting thread's stack: the game
-waited, not why the server was late. In the summaries of
-\texttt{offwaketime} and our chain profiler the background program does not
-appear at all, since it never woke anyone.
+waited, not why the server was late. In \texttt{offwaketime}'s summary the
+background program does not appear at all, since it never woke anyone.
 
 \paragraph{C3: Tell stalls from a frame's normal waits} Every frame waits: in
 present for the display, in the frame limiter's sleep, for the game's own
@@ -102,7 +100,7 @@ They hold the answer for nearly every hitch, for someone to find in them.
 \caption{Approaches against the shortcomings of \autoref{sec:challenges}.
 \emph{Rare hitches attributed}: injected hitches whose cause the output
 names without further analysis (\autoref{sec:eval-catch}); ``--'': raw
-events, not scored; whole-run summaries are scored by the rank of the
+events, not scored; the whole-run summary is scored by the rank of the
 cause's heaviest line. \sys tells stalls from normal waits only in part
 (\autoref{sec:limitations}).}
 \label{tab:compare}

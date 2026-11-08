@@ -1,7 +1,7 @@
 # build outputs (make)
 /build/
 
-# end-to-end test outputs (sudo tests/run_tests.sh)
+# end-to-end test outputs (sudo tests/run_hitch_tests.sh)
 /tests/out/
 
 __pycache__/

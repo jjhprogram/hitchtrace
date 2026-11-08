@@ -205,7 +205,7 @@ overshot from one that was asked to be long.
 \paragraph{What a record cannot say} The last column of \autoref{tab:cases} is
 a list of what \sys would have to record next (\autoref{sec:limitations}).
 
-\subsection{Q2: Rare Hitches, Eight Tools}
+\subsection{Q2: Rare Hitches, Seven Tools}
 \label{sec:eval-catch}
 
 When a game hitches rarely, which tools' output shows each hitch, and which
@@ -225,9 +225,8 @@ The tools are \sys; per-frame delay accounting~\cite{delayacct}, read for
 every game thread at each frame mark; an ftrace flight
 recorder~\cite{ftracehist} that keeps \texttt{sched\_switch} and
 \texttt{sched\_waking} in an overwriting ring and snapshots it on a slow
-frame; \texttt{perf sched record}; bcc's
-\texttt{offwaketime}~\cite{gregg2019bpf}; and \texttt{chaingraph}, our
-earlier wake-chain profiler. After the measured run we added two more, with
+frame; \texttt{perf sched record}; and bcc's
+\texttt{offwaketime}~\cite{gregg2019bpf}. After the measured run we added two more, with
 their rules written down before their own runs: \texttt{perf record
 --off-cpu --off-cpu-thresh 1}~\cite{perf-offcpu-thresh}, built with the BPF
 skeletons it needs, which emits a sample for each blocked interval of at
@@ -243,8 +242,8 @@ without further analysis), and \emph{culprit} (it names the background
 program, or for the read the device interrupt). ftrace, Perfetto and
 \texttt{perf sched} keep raw events, which hold the cause whenever they hold the frame but
 say nothing until someone analyzes them, so they are scored for recording
-and for its cost in output. \texttt{offwaketime} and \texttt{chaingraph}
-print one summary per run, so they are scored on the rank of the heaviest
+and for its cost in output. \texttt{offwaketime}
+prints one summary per run, so it is scored on the rank of the heaviest
 summary line that carries the cause; \emph{visible} means among the ten
 heaviest.
 
@@ -287,11 +286,10 @@ of the frame were the game writing pages to swap inside reclaim, inside a
 swap-in, and the kernel stack was cut at 32 frames before the page fault,
 so the rule's ``the stack is a page fault'' did not match.
 
-\paragraph{Summaries lose rare hitches} In \texttt{offwaketime} and
-\texttt{chaingraph} the cause was never among the ten heaviest lines, and
-its share of the summary rounded to 0.0\% in every case. In \texttt{bgcpu}
-and \texttt{ipc}, where the background program preempts rather than wakes,
-it does not appear in either summary at all.
+\paragraph{Summaries lose rare hitches} In \texttt{offwaketime}'s summary
+the cause was never among the ten heaviest lines, and its share rounded to
+0.0\% in every case. In \texttt{bgcpu} and \texttt{ipc}, where the
+background program preempts rather than wakes, it does not appear at all.
 
 \paragraph{Raw recorders hold the frames, at a price} \texttt{perf sched}
 and Perfetto recorded every injected hitch and the ftrace flight recorder
@@ -310,7 +308,7 @@ anything about the cause until someone analyzes its output.
 
 \paragraph{Limits} One rarity, one run per case and tool, the VM's fast disk and
 no GPU stalls, and runs too short to fill Perfetto's ring. A sweep of
-rarities would show how quickly the summary tools' ranks fall; we have not
+rarities would show how quickly \texttt{offwaketime}'s ranks fall; we have not
 run it.
 
 \subsection{Q3: Overhead and Output Volume}
@@ -363,8 +361,7 @@ its run) cost more on the traced process, and only perf \texttt{--off-cpu},
 level with \sys in its run, costs as much on others. The reason is
 deliberate: \sys keeps a history for every task on the machine, because a
 chain can run through any process (\autoref{sec:limitations}). Its
-in-kernel time on the game is level with \texttt{chaingraph}'s and about
-twice \texttt{offwaketime}'s. Perfetto, like the ftrace recorder, costs
+in-kernel time on the game is about twice \texttt{offwaketime}'s. Perfetto, like the ftrace recorder, costs
 almost nothing per switch, since the kernel only writes each event into a
 ring; its work is in user space, where reading and encoding the events
 took 1.0 to 2.3\% of a core, about what \sys's BPF programs take in the
@@ -381,8 +378,8 @@ events and cannot pair present entry with itself. Perfetto, whose watcher
 sees the whole frame, caught every slow frame too, at 2.6 to 15.8\,GB per
 hour in these short runs. A record is 10,344 bytes
 plus 72 per logged interval, so at one hitch per second \sys writes about
-40\,MB per hour, and nothing for frames within budget. The summary tools
-cost about the same as \sys but give one summary per run.
+40\,MB per hour, and nothing for frames within budget. \texttt{offwaketime}
+costs about the same as \sys but gives one summary per run.
 
 \paragraph{What we claim} \sys's overhead is in the range of existing
 scheduler tracers, not below it, with no measurable effect on frame time in
