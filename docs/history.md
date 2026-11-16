@@ -186,3 +186,16 @@ hitchbench gained the `server_queued` class.
   to [bare-metal-plan.md](bare-metal-plan.md), [todo.md](todo.md) and
   [real-world-cases.md](real-world-cases.md). Four exported Claude Code
   transcripts from 2026-09-30 were deleted too; they were never in git.
+
+## A torn wake-chain copy (2026-11-17)
+
+Found by reading the code, not by a run. The copy of the waker's chain
+compared `seq` before and after, but did not check that it was even to
+begin with. A copy taken while another CPU was rewriting the waker's links,
+and checked before that rewrite finished, passed with half-old, half-new
+links. The waker's `depth` was also read after the check, so it could
+belong to a newer chain than the links copied. Both are fixed: an odd `seq`
+discards the copy, `depth` is read inside the window, and compiler barriers
+hold the order on both sides. The effect was confined to chain hops past
+the first, and needed a waker woken by another CPU between setting its
+state and `schedule()`, while issuing a wakeup itself.

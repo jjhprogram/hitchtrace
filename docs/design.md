@@ -132,9 +132,18 @@ began to wait (from the waker's checkpoints); the cause and kernel stack of
 its last blocked interval; and its last holder in that window (`p_*`, with
 `HT_HOP_QUEUED` if it was queued rather than preempted). The waker's own
 links are then copied in behind it. The copy is always four links, as the
-verifier requires constant-size copies, and is trimmed logically. If the
-waker's `seq` changed during the copy (another CPU woke the waker
-meanwhile), the copy is discarded.
+verifier requires constant-size copies, and is trimmed logically.
+
+The copy is a seqcount read. Another CPU can be waking the waker at that
+moment: a task that has set its state to sleep but not yet called
+`schedule()` is still running, can issue a wakeup, and can be woken. The
+writer makes `seq` odd, rewrites the links and `depth`, and makes it even
+again. The reader reads `seq` and `depth`, copies, and reads `seq` again.
+It discards the copy if `seq` was odd at the start (a rewrite was under
+way) or changed (one ran during the copy). Compiler barriers keep the copy
+between the two reads; x86 does not reorder loads with loads, and a weakly
+ordered CPU would also need read barriers. Writers cannot collide: wakeups
+of one task are serialized by its `pi_lock`.
 
 **Resolution.** When the root switches in after a blocked interval
 `[lo, hi)` ended by a task, `resolve()` computes

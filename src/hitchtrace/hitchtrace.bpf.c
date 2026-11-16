@@ -688,18 +688,32 @@ static __always_inline int record_wakeup(void *ctx, struct task_struct *p)
 	if (!interrupt)
 		wts = bpf_task_storage_get(&task_states, waker, NULL, 0);
 
+	/* odd from here until the links and depth below are all written */
 	ts->seq++;
+	barrier();
 	if (wts && wts->depth) {
-		__u32 wseq = wts->seq;
+		/*
+		 * A seqcount read. Another CPU may be waking the waker right now
+		 * (it set its state to sleep but has not left the CPU yet) and
+		 * rewriting its links meanwhile. An odd count means a rewrite was
+		 * under way when the copy began, a changed one that one ran
+		 * during it: either way the copy may mix two wakeups, so it is
+		 * discarded. depth is read inside the same window, so that it
+		 * belongs to the links copied. The barriers keep the compiler
+		 * from moving the copy, or the depth, outside the two reads of
+		 * the count; x86 does not reorder loads with loads.
+		 */
+		__u32 wseq = READ_ONCE(wts->seq);
+		__u32 wdepth = READ_ONCE(wts->depth);
 
+		barrier();
 		__builtin_memcpy(&ts->links[1], &wts->links[0],
 				 sizeof(struct hop_link) * (HT_MAX_HOPS - 1));
-		if (wts->seq != wseq) {	/* rewritten under us */
+		barrier();
+		if ((wseq & 1) || READ_ONCE(wts->seq) != wseq) {
 			__builtin_memset(&ts->links[1], 0,
 					 sizeof(struct hop_link) * (HT_MAX_HOPS - 1));
 		} else {
-			__u32 wdepth = wts->depth;
-
 			if (wdepth > HT_MAX_HOPS - 1)
 				wdepth = HT_MAX_HOPS - 1;
 			depth = wdepth + 1;
@@ -749,7 +763,8 @@ static __always_inline int record_wakeup(void *ctx, struct task_struct *p)
 		}
 	}
 	ts->depth = depth;
-	ts->seq++;
+	barrier();
+	ts->seq++;	/* even again: a reader may copy */
 	ts->wake_ts = now;
 	return 0;
 }
