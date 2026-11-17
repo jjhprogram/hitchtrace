@@ -130,7 +130,8 @@ MainWindow::MainWindow(Session *session, QWidget *parent) : QMainWindow(parent),
 	v->addSpacing(6);
 	v->addWidget(heading(tr("Threads")));
 	v->addWidget(hint(tr("Grey: running. Colour: off the CPU, by what it waited for. The outlined path follows "
-			     "the blame across threads. Click any wait to follow its own chain.")));
+			     "the blame across threads. Click any wait to follow its own chain. Ctrl+wheel zooms in "
+			     "time, drag pans, and a double-click on the time scale shows the whole frame.")));
 	auto *scroll = new QScrollArea;
 	scroll->setWidgetResizable(true);
 	scroll->setFrameShape(QFrame::NoFrame);

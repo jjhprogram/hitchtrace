@@ -11,6 +11,7 @@
 //                                   press Stop, and check the recording opened.
 //                                   Needs PID running with the hitchtrace layer
 //                                   and hitchtrace runnable as root (sudo -n)
+#include "ui/lanes.h"
 #include "ui/main_window.h"
 #include "ui/record_dialog.h"
 
@@ -78,6 +79,20 @@ int main(int argc, char **argv)
 		expect(session.scopeTree() && session.scopeTree()->ns == session.frame()->duration,
 		       "frame blame tree does not add up to the frame", c.dir);
 		shot(QStringLiteral("%1-frame").arg(QLatin1String(c.dir)));
+
+		// zoom the thread lanes 4x into the frame's middle, then back out
+		if (auto *lanes = win.findChild<Lanes *>()) {
+			const std::int64_t d = session.frame()->duration;
+			lanes->zoomBy(4, d / 2);
+			const auto [a, b] = lanes->view();
+			expect(lanes->zoomed() && std::llabs((b - a) - d / 4) <= 1 && a <= d / 2 && b >= d / 2,
+			       "zoom does not show a quarter of the frame around its middle", c.dir);
+			shot(QStringLiteral("%1-zoom").arg(QLatin1String(c.dir)));
+			lanes->resetZoom();
+			expect(!lanes->zoomed(), "zoom does not reset", c.dir);
+		} else {
+			expect(false, "no thread lanes", c.dir);
+		}
 
 		// follow the presenting thread's longest wait
 		const Run &run = *session.run();

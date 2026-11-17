@@ -50,6 +50,8 @@ process selected; Hitch Lab (`cases/hitchlab/`) uses it to record its game.
 - **Threads**: one lane per thread of the game. The path is lit and outlined
   across lanes; other processes on it get hatched placeholder lanes, since
   hitchtrace records only their names. Click any wait to follow its own chain.
+  Ctrl+wheel zooms in time about the pointer; drag, or Shift+wheel, pans;
+  double-click the time scale for the whole frame again.
 - **Blame tree** (docked right): an icicle where width is time and each row
   down is one hop of the chain, for this frame, the selected frames, all
   hitches, or the wait being followed. Click a box to zoom in; hover it to
