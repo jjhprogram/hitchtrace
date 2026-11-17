@@ -8,6 +8,7 @@
 | [history.md](history.md) | How the design got here: each change and what found it, plus where the deleted September documents are in git |
 | [bare-metal-plan.md](bare-metal-plan.md) | The plan for real hardware and real games: the machine, Deck-like limits, Proton specifics, controls |
 | [real-world-cases.md](real-world-cases.md) | About 30 documented Linux gaming stutters, mapped to hitchtrace's causes; `cases/` reproduces their mechanisms |
+| [reading-real-world-cases.md](reading-real-world-cases.md) | For each of those stutters: what hitchtrace's record would show, how to read it to the root cause, and what it leaves out |
 
 How to build and run each part is in the README next to it: `src/layer/`,
 `src/hitchtracegui/`, `cases/`, `cases/hitchlab/`, `tools/overhead/`,

@@ -14,6 +14,7 @@ games on Linux, built for a master's thesis. Overview and layout:
 | Why is the design the way it is? | [docs/history.md](docs/history.md) |
 | Plan for bare metal and real games | [docs/bare-metal-plan.md](docs/bare-metal-plan.md) |
 | Documented real-world stutters | [docs/real-world-cases.md](docs/real-world-cases.md) |
+| What hitchtrace would show for each of them, and how to read it | [docs/reading-real-world-cases.md](docs/reading-real-world-cases.md) |
 | How to run a harness | `tests/run_hitch_tests.sh` header, [cases/README.md](cases/README.md), [tools/overhead/README.md](tools/overhead/README.md), [tools/catch/README.md](tools/catch/README.md) |
 | Where each paper number comes from | [paper/README.md](paper/README.md) |
 
