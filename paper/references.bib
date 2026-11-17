@@ -64,8 +64,14 @@
   title        = {Perfetto {SQL} standard library: critical path and thread executing span},
   howpublished = {\url{https://perfetto.dev/docs/analysis/stdlib-docs}},
   year         = {2025},
-  note         = {VERIFY: module name and URL},
+  note         = {Modules \texttt{sched.thread\_executing\_span} and \texttt{sched.thread\_executing\_span\_with\_slice}, Perfetto v59.1. VERIFY: URL},
 }
+% Module names checked 2026-11-09 in trace_processor_shell v59.1
+% (__intrinsic_stdlib_objects). The critical path is
+% _thread_executing_span_critical_path(utid, ts, dur) in the first module, and
+% the stack view _thread_executing_span_critical_path_stack in the second. Both
+% are internal (underscore) objects, which the stdlib-docs page above does not
+% list. Source: https://github.com/google/perfetto/blob/v59.1/src/trace_processor/perfetto_sql/stdlib/sched/thread_executing_span.sql
 
 @misc{systing,
   author       = {Josef Bacik},

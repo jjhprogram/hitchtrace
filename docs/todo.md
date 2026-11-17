@@ -86,7 +86,8 @@ What the records cannot say yet, each with the case that showed it
 - **A rarity sweep** for the catch test: one injection per 2, 10 and 60 s.
 - **Repeat runs:** every catch and case result so far is one run.
 - **Perfetto in a session long enough to fill its ring**, for its steady-state
-  output per hitch.
+  output per hitch, and the critical path's steady-state cost per snapshot
+  (`tools/catch/critpath.py`).
 - **The per-event threshold sweep the paper asks for:** `thousand_cuts`
   under `perf record --off-cpu-thresh` at several thresholds.
 - **Optional: rerun vkcube on the current version**, so that every paper
@@ -106,6 +107,15 @@ What the records cannot say yet, each with the case that showed it
 
 ## The paper
 
+- **"Record but do not explain" against the critical-path run**
+  ([evaluation.md](evaluation.md#perfettos-critical-path-on-each-snapshot),
+  2026-11-09). Perfetto's own critical path, run on each snapshot with no
+  one in the loop, attributed 68 of 80 injected hitches. Its output named
+  0 of 56 culprits, and one join named all 56. The claim in the paper's
+  prose and the comparison table's rows ("Offline critical path": "by
+  hand", "--"; flight recorder: "--") predate this run. The source for
+  any number taken from it is `build/catch/catch-perfetto/critpath.md`, to
+  be added to `paper/README.md` when the paper uses it.
 - **Related work: latency-tracker's rt tracker** (checked 2026-11-09) is the
   closest precedent for online, deadline-scoped wake chains, and the paper
   cites latency-tracker only as a flight recorder.

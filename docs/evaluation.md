@@ -311,7 +311,9 @@ Injected hitches recorded / attributed / culprit named:
 
 ftrace, Perfetto and perf sched are scored for recording only: they hold the cause
 when they hold the frame, but say nothing until someone analyses them (the
-blind test's question). offwaketime's column is the rank of the
+blind test's question). Perfetto's snapshots were also run through
+Perfetto's own critical-path analysis, with no one in the loop
+([below](#perfettos-critical-path-on-each-snapshot)). offwaketime's column is the rank of the
 heaviest line carrying the cause; "visible" needs the top 10. The number of
 injected hitches differs between tools because a burst makes a hitch only
 when it lands in a frame without enough slack: same mechanism, not the same
@@ -387,6 +389,90 @@ Misses and weak spots, looked at one by one:
   44 of 55, delay accounting 32 of 72): 39 of hitchtrace's 44 were over
   budget by under 1 ms, where any short run-queue wait is "half the
   overrun". The culprit column is the one that measures false blame.
+
+### Perfetto's critical path on each snapshot
+
+The question: do the Perfetto recorder's snapshots explain a hitch once an
+existing offline analysis runs on each one, with no one in the loop? The
+rules were written before the analysis ran on all snapshots:
+["Critical path on the Perfetto snapshots"](../tools/catch/README.md#critical-path-on-the-perfetto-snapshots).
+
+`tools/catch/critpath.py build/catch/catch-perfetto` ran on 2026-11-09
+(table in the run's `critpath.md`). It loads each of the 479 snapshots in
+the order it would arrive. For each new slow frame it runs the SQL standard
+library's critical path (`sched.thread_executing_span`, Perfetto v59.1) of
+the thread that hit the frame mark.
+
+| Case | Injected | Recorded | Attributed | Culprit, library | Culprit, + join | Noise attributed (under 1 ms over) | Noise culprit | Analysis per snapshot, median / max |
+|---|---|---|---|---|---|---|---|---|
+| `bgcpu` | 11 | 11 | 11 | 0 | 11 | 44 of 51 (43) | 0 | 2.2 / 6.7 s |
+| `iothread` | 12 | 12 | 12 | 0 | 12 | 0 of 69 | 0 | 2.2 / 5.9 s |
+| `ipc` | 33 | 33 | 33 | 0 | 33 | 71 of 158 (60) | 0 | 5.1 / 18.2 s |
+| `mem` | 12 | 12 | 0, not attributable | – | – | 0 of 50 | – | 2.3 / 5.7 s |
+| `cpuspike` | 12 | 12 | 12 | – | – | 0 of 64 | – | 2.1 / 4.8 s |
+
+The two culprit columns:
+
+- **Library** reads only the library's output: the path's threads and their
+  states.
+- **+ join** also reads two fields of the same snapshot: whether the wake
+  that ended a sleep came from an interrupt, and who held the CPU when a
+  run-queue wait ended.
+
+What it shows:
+
+- **Run automatically, the critical path attributes what hitchtrace
+  attributes, except in `mem`.** It attributes 68 of 80 injected hitches,
+  against hitchtrace's 76 of 77. In `ipc`, for example, the path runs from
+  `mg_main` through `mg_server`, which was runnable for 10.4 ms. When the
+  cause is a wake chain or a wait for a CPU, the snapshots hold the
+  explanation, and an existing analysis finds it without a human.
+- **The library's own output names no culprit: 0 of 56.**
+  - The path follows wakeups. `bgload` wakes no one, so it is never on a
+    path.
+  - In `iothread` the path ends at `mg_stream` in `D`, without saying what
+    woke it.
+  - One join beyond the library names all 56: `bgload` as the CPU's holder
+    (11 in `bgcpu`, 33 in `ipc`) and the interrupt (12 in `iothread`).
+    That join is the step hitchtrace added in change 4.
+  - No noise hitch got a false culprit, with or without the join.
+- **`mem` cannot be attributed from scheduler events.** A swap-in is the
+  main thread in `D`, the same as a file read. Not scored: the root's own
+  `D` on its path is at least half the overrun in 12 of 12 injected hitches
+  and 0 of 50 noise hitches. So the path points at the main thread's own
+  sleep, but nothing in it says memory. hitchtrace's 11 of 12 come from
+  page-fault and reclaim time and kernel stacks, which this recorder did not
+  record.
+- **Attributed noise hitches are mostly frames barely over budget**, as with
+  hitchtrace: 43 of 44 in `bgcpu` and 60 of 71 in `ipc` were over by under
+  1 ms. The `ipc` rule (one runnable piece of the server of at least
+  100 µs) is looser than hitchtrace's (the server runnable for most of a
+  wait), hence 71 of 158 noise hitches, against hitchtrace's 10 of 88. The
+  holders in those 71 are `llvmpipe` threads and idle CPUs, never `bgload`.
+- **The cost comes per snapshot, and the trigger fires on every slow frame,
+  noise included.**
+  - Per snapshot: loading it and running the path took a median of 2.1 to
+    5.1 s per case, and up to 18 s, with a peak of 0.9 to 1.5 GB of memory.
+  - In all: 479 snapshots for 80 injected hitches took 29 minutes for five
+    120 s runs. `ipc` alone took 1,073 s, about 9 times the length of its
+    run.
+  - In a long session: here each snapshot holds the whole run so far,
+    since the ring never filled. Once it fills, every snapshot is the full
+    32 MB ring, like the largest one here (29 MB: 10 s, 1.5 GB).
+  - The library's fuller view, its critical-path stack
+    (`sched.thread_executing_span_with_slice`), took 69 s and 4 GB on that
+    snapshot.
+  - The snapshots, 45 to 89 MB per injected hitch, must be kept until they
+    are analysed. hitchtrace's record is computed in the kernel as the
+    frame ends, at 0.08 to 0.10 MB.
+- **For the claim that flight recorders "record but do not explain":** it
+  holds for the recorder alone, not for the recorder plus Perfetto's own
+  analysis. For wake chains and CPU waits, that pair attributes the
+  hitches. What remains with hitchtrace:
+  - the culprit, which needs a step beyond the library (a small one);
+  - causes that no scheduler event shows (`mem`);
+  - cost: seconds of analysis and a gigabyte of memory per slow frame,
+    after the fact, plus tens of MB stored, against a 0.1 MB record.
 
 Not shown by these runs: real software; GPU stalls; other rarities (offwaketime's
 ranks should fall with rarer hitches, not tested); repeat

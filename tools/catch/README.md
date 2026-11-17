@@ -279,6 +279,85 @@ fills only after about 3.5 minutes: in a 120 s run each snapshot holds
 everything since tracing began and grows through the run, where in a longer
 session it would hold the last few minutes. No rule was changed.
 
+### Critical path on the Perfetto snapshots
+
+Written 2026-11-09, after the `perfetto` run, and after trying the analysis
+on the first injected hitch of each case, but before it ran on all
+snapshots. The question: do the snapshots explain a hitch once an existing
+offline analysis runs on each one, with no human in the loop? The analysis
+is Perfetto's own critical path. The `perfetto` rules above stay as they
+are; this scores a second reading of the same snapshots.
+
+How to run: `tools/catch/critpath.py DIR`, for a run with the `perfetto`
+tool. The script takes each snapshot in trigger order, as it would arrive,
+and loads it once into `trace_processor_shell` (v59.1). For each slow frame
+whose end mark is newer than the previous snapshot's last mark, it runs the
+SQL standard library's critical path of the thread that hit the mark, over
+the frame:
+
+- A slow frame is one frame mark to the next on the same thread, over
+  budget.
+- The critical path is `INCLUDE PERFETTO MODULE sched.thread_executing_span`
+  and then `_thread_executing_span_critical_path(utid, ts, dur)`.
+
+Each span of the path is split by its thread's `thread_state` (`Running`,
+`R`, `R+`, `S`, `D`). That is what the library's critical-path stack
+(`sched.thread_executing_span_with_slice`) shows as "blocking thread_state".
+The stack itself is not run: on the largest snapshot (`ipc`,
+`perfetto-trace.186`, 29 MB) it took 69 s and 4 GB, against about 10 s and
+1.5 GB for the path alone. Both functions are internal
+(their names start with an underscore), and the public stdlib docs page
+does not list them. The source is
+`src/trace_processor/perfetto_sql/stdlib/sched/thread_executing_span.sql`.
+
+How the library builds the path: it follows wakeups. While the thread waits,
+the path is the thread that woke it, and then whatever that thread waited
+for. The chain ends at a thread that was running or was woken from interrupt
+context (`thread_state.irq_context`). The output names threads and their
+states. It does not name who held a CPU: a task that only takes a CPU wakes
+no one, so it is never on a path.
+
+Two fields beyond the library give a second culprit score, **+ join**:
+
+- the `irq_context` of the wake that ended a sleep on the path;
+- for a runnable piece of at least 100 µs, the task that held its CPU when
+  the piece ended: the task switched out as the waiting one switched in.
+  This is hitchtrace's holder (change 4).
+
+The overrun below is the frame's length from its marks, minus the budget.
+
+- Recorded: a report for the frame (its end within 1 ms of the frame's end
+  in the game's log), from a snapshot in which every CPU's first scheduler
+  event is before the frame began (the `perfetto` rule).
+- Attributed, by case:
+  - `bgcpu`: runnable time (`R`, `R+`) on the path is ≥ half the overrun.
+    hitchtrace's rule counts any game thread's runnable time. This one
+    counts the path's, since the path is the output.
+  - `iothread`: `mg_stream` is on the path in uninterruptible sleep (`D`)
+    for ≥ 100 µs. hitchtrace's rule asks for a block I/O wait. A `D` state
+    says only "uninterruptible": the blocked function would need Android's
+    `sched_blocked_reason` tracepoint, which upstream kernels lack.
+  - `ipc`: one piece of `mg_server` on the path is runnable for ≥ 100 µs
+    (hitchtrace's minimum stall).
+  - `mem`: never. A swap-in shows as the main thread in `D`, the same as a
+    file read, and no scheduler event says "page fault". The share of
+    frames whose root is in `D` on its own path for ≥ half the overrun is
+    reported, but not scored.
+  - `cpuspike`: the root's own `Running` on the path is ≥ half the overrun,
+    and runnable plus uninterruptible time on the path is < a quarter of it.
+- Culprit (library), from the path's threads and states alone:
+  - `bgcpu`, `ipc`: a thread on the path is `bgload`;
+  - `iothread`: never. The path ends at `mg_stream` in `D` without saying
+    what woke it.
+- Culprit (+ join):
+  - `bgcpu`: the holder of some runnable piece is `bgload`;
+  - `ipc`: the holder of an attributed `mg_server` piece is `bgload`;
+  - `iothread`: a wake from interrupt context ended an attributed `D` piece.
+- Noise hitches: the same rules.
+- Cost: the wall time and peak memory of `trace_processor_shell` per
+  snapshot (loading and analysis), one snapshot at a time on the
+  development VM.
+
 ## Run
 
 Measured run: `build/catch/catch-20261104-171550` (2026-11-04, all 30 runs
@@ -298,3 +377,14 @@ alone in a run of its own; no rule was changed after these runs):
   attributed. 1.3 to 3.7 MB per injected hitch.
 - `build/catch/catch-perfetto`: 80 injected hitches, 80 recorded; 479
   triggers, 479 snapshots. 45 to 89 MB per injected hitch.
+
+Critical path on those snapshots (2026-11-09, by the rules under
+[Critical path on the Perfetto snapshots](#critical-path-on-the-perfetto-snapshots);
+`critpath.md` and `critpath.json` in the run's directory; no rule was
+changed after it ran):
+
+- 80 recorded and 68 attributed (none in `mem`).
+- Culprit: 0 of 56 from the library's output, 56 of 56 with the join.
+- Noise: 115 of 392 noise hitches attributed, 103 of them over budget by
+  under 1 ms; 0 false culprits.
+- Cost: 2.1 to 5.1 s per snapshot (median by case), up to 18 s and 1.5 GB.
